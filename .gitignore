@@ -4,7 +4,7 @@
 *.dll
 *.so
 *.dylib
-
+/.idea/
 # Test binary, built with `go test -c`
 *.test
 
@@ -13,3 +13,10 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+vendor
+
+debug
+./swaggerui/statik.go
+./swaggerui_src/swagger.json
+./certs/key.pem
+./certs/cert.pem
