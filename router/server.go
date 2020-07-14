@@ -2,9 +2,9 @@ package router
 
 import (
 	"fmt"
+	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	"github.com/equinor/radix-cost-allocation-api/models"
 	_ "github.com/equinor/radix-cost-allocation-api/swaggerui" // statik files
-	"github.com/equinor/radix-cost-allocation-api/utils"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rakyll/statik/fs"
@@ -16,7 +16,6 @@ import (
 
 const (
 	apiVersionRoute                 = "/api/v1"
-	admissionControllerRootPath     = "/admissioncontrollers"
 	healthControllerPath            = "/health/"
 	radixDNSZoneEnvironmentVariable = "RADIX_DNS_ZONE"
 )
@@ -47,10 +46,6 @@ func NewServer(clusterName string, kubeUtil utils.KubeUtil, controllers ...model
 
 	serveMux := http.NewServeMux()
 	serveMux.Handle(healthControllerPath, negroni.New(
-		negroni.Wrap(router),
-	))
-
-	serveMux.Handle(fmt.Sprintf("%s/", admissionControllerRootPath), negroni.New(
 		negroni.Wrap(router),
 	))
 
@@ -90,8 +85,8 @@ func getCORSHandler(apiRouter *Server) http.Handler {
 
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{
-			"http://localhost:3000",
 			"http://localhost:3001",
+			"http://localhost:3003",
 			"http://localhost:8086", // For swaggerui testing
 			// TODO: We should consider:
 			// 1. "https://*.radix.equinor.com"

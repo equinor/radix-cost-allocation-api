@@ -13,6 +13,7 @@ require (
 	github.com/rs/cors v1.6.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/pflag v1.0.5
+	github.com/stretchr/testify v1.4.0
 	github.com/urfave/negroni v1.0.0
 	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550
 	gotest.tools v2.2.0+incompatible

@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
+	"github.com/equinor/radix-cost-allocation-api/api/cost"
+	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	"github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/equinor/radix-cost-allocation-api/router"
-	"github.com/equinor/radix-cost-allocation-api/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 	"net/http"
@@ -33,12 +34,14 @@ func main() {
 
 	err := <-errs
 	if err != nil {
-		log.Fatalf("Radix cost allocation api server crached: %v", err)
+		log.Fatalf("Radix cost allocation api server crashed: %v", err)
 	}
 }
 
 func getControllers() []models.Controller {
-	return []models.Controller{}
+	return []models.Controller{
+		cost.NewApplicationController(),
+	}
 }
 
 func initializeFlagSet() *pflag.FlagSet {
