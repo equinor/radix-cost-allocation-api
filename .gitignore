@@ -4,7 +4,6 @@
 *.dll
 *.so
 *.dylib
-.idea/
 # Test binary, built with `go test -c`
 *.test
 
@@ -15,6 +14,7 @@
 # vendor/
 vendor
 
+.idea/
 debug
 ./swaggerui/statik.go
 ./swaggerui_src/swagger.json
