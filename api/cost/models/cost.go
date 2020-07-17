@@ -1,5 +1,7 @@
 package models
 
+// Cost details of cost
+// swagger:model Cost
 type Cost struct {
 	// ApplicationName the name of the application
 	//

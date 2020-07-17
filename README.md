@@ -29,7 +29,6 @@ Go modules are used for dependency management. See [link](https://blog.golang.or
 The following env vars are needed. Useful default values in brackets.
 
 - `RADIX_CONTAINER_REGISTRY` - (`radixdev.azurecr.io`)
-- `PIPELINE_IMG_TAG` - (`master-latest`)
 
 You also probably want to start with the argument `--useOutClusterClient=false`. If this is set to `true` (the default) the program will connect to the K8S API host defined by the `K8S_API_HOST` env var and will require auth tokens in all client requests. Set to `false`, a service principal with superpowers is used to authorise the requests instead (**you still need to send** a `bearer whatever` auth header with the requests, but its value is ignored).
 
@@ -48,7 +47,7 @@ If you are using VSCode, there is a convenient launch configuration in `.vscode`
 #### Prerequisites
 
 1. Install draft (https://draft.sh/)
-2. `draft init` from project directory (inside `radix-api`)
+2. `draft init` from project directory (inside `radix-cost-allocation-api`)
 3. `draft config set registry radixdev.azurecr.io`
 4. `az acr login --name radixdev`
 
@@ -57,7 +56,7 @@ If you are using VSCode, there is a convenient launch configuration in `.vscode`
 1. Update version in header of swagger version in `main.go` so that you can see that the version in the environment corresponds with what you wanted
 2. Execute `draft up` to install to dev environment of radix-api
 3. Wait for pods to start
-4. Go to `https://server-radix-api-dev.<cluster name>.dev.radix.equinor.com/swaggerui/` to see if the version in the swagger corresponds with the version you set in the header.
+4. Go to `https://server-radix-cost-allocation-api-dev.<cluster name>.dev.radix.equinor.com/swaggerui/` to see if the version in the swagger corresponds with the version you set in the header.
 
 ## Deployment
 

@@ -33,18 +33,15 @@ func (costController *costController) GetRoutes() models.Routes {
 
 // GetTotalCost for an application
 func (costController *costController) GetTotalCost(accounts models.Accounts, w http.ResponseWriter, r *http.Request) {
-	// swagger:operation GET /totalcost/{appName} application getTotalCost
-	//
+	// swagger:operation GET /totalcost/{appName} cost getTotalCost
 	// ---
-	// summary: Gets the application application by name
+	// summary: Gets the total cost for an application
 	// parameters:
 	// - name: appName
 	//   in: path
 	//   description: Name of application
 	//   type: string
 	//   required: true
-	// summary: Total cost for an application.
-	// parameters:
 	// - name: Impersonate-User
 	//   in: header
 	//   description: Works only with custom setup of cluster. Allow impersonation of test users (Required if Impersonate-Group is set)
@@ -57,7 +54,7 @@ func (costController *costController) GetTotalCost(accounts models.Accounts, w h
 	//   required: false
 	// responses:
 	//   "200":
-	//     description: "Successful operation"
+	//     description: "Successful get cost"
 	//     schema:
 	//        "$ref": "#/definitions/Cost"
 	//   "401":

@@ -12,6 +12,7 @@
       "program": "${workspaceFolder}/main.go",
       "env": {
         "RADIX_CONTAINER_REGISTRY":"radixdev.azurecr.io",
+        "K8S_API_HOST": "https://weekly-28-clusters-16ede4-8e6342f8.hcp.northeurope.azmk8s.io"
       },
       "args": [
         "--useOutClusterClient=false"
