@@ -30,8 +30,8 @@ spec:
           memory: "100M"
           cpu: "50m"
         limits:
-          memory: "250M"
-          cpu: "500m"
+          memory: "100M"
+          cpu: "50m"
       variables:
         PIPELINE_IMG_TAG: "master-latest"
     - environment: prod
@@ -42,7 +42,7 @@ spec:
           memory: "200M"
           cpu: "100m"
         limits:
-          memory: "500M"
-          cpu: "1000m"
+          memory: "200M"
+          cpu: "100m"
       variables:
         PIPELINE_IMG_TAG: "release-latest"
