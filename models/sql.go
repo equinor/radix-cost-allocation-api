@@ -43,10 +43,13 @@ func (sqlClient SQLClient) GetRunsBetweenTimes(from, to *time.Time) ([]costModel
 		return nil, err
 	}
 
-	tsql := "SELECT r.id run_id, r.measured_time_utc, COALESCE(r.cluster_cpu_millicores, 0) AS cluster_cpu_millicores," +
-		" COALESCE(r.cluster_memory_mega_bytes, 0) AS cluster_memory_mega_bytes, rr.id, rr.wbs, rr.application," +
-		" rr.environment, rr.component, rr.cpu_millicores, rr.memory_mega_bytes, rr.replicas FROM [cost].[runs] r" +
-		" JOIN [cost].[required_resources] rr ON r.id = rr.run_id WHERE measured_time_utc BETWEEN @from AND @to;"
+	tsql := "SELECT r.id run_id, r.measured_time_utc," +
+		" COALESCE(r.cluster_cpu_millicores, 0) AS cluster_cpu_millicores," +
+		" COALESCE(r.cluster_memory_mega_bytes, 0) AS cluster_memory_mega_bytes," +
+		" rr.id, rr.wbs, rr.application, rr.environment, rr.component, rr.cpu_millicores, rr.memory_mega_bytes, rr.replicas" +
+		" FROM [cost].[runs] r" +
+		" JOIN [cost].[required_resources] rr ON r.id = rr.run_id" +
+		" WHERE measured_time_utc BETWEEN @from AND @to;"
 
 	// Execute query
 	rows, err := sqlClient.db.QueryContext(ctx, tsql, sql.Named("from", from), sql.Named("to", to))
@@ -110,10 +113,12 @@ func (sqlClient SQLClient) GetRunsBetweenTimes(from, to *time.Time) ([]costModel
 		}
 	}
 
-	runsAsArray := []costModels.Run{}
+	runsAsArray := make([]costModels.Run, len(runs))
+	runEntryIndex := 0
 	for key, val := range runs {
 		val.Resources = *runsResources[key]
-		runsAsArray = append(runsAsArray, val)
+		runsAsArray[runEntryIndex] = val
+		runEntryIndex++
 	}
 
 	return runsAsArray, nil

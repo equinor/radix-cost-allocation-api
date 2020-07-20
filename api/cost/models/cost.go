@@ -57,6 +57,11 @@ type ApplicationCost struct {
 	//
 	// required: true
 	CostPercentageByMemory float64
+
+	// Comment regarding cost
+	//
+	// required: false
+	Comment string
 }
 
 // NewCost aggregate cost over a time period for applications

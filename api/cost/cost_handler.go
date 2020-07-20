@@ -1,12 +1,14 @@
 package cost
 
 import (
+	"fmt"
 	_ "github.com/denisenkom/go-mssqldb"
 	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
 	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	"github.com/equinor/radix-cost-allocation-api/models"
 	v1 "github.com/equinor/radix-operator/pkg/apis/radix/v1"
 	crdUtils "github.com/equinor/radix-operator/pkg/apis/utils"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"strings"
 	"time"
@@ -34,21 +36,6 @@ func (costHandler CostHandler) getServiceAccount() models.Account {
 
 // GetTotalCost handler for GetTotalCost
 func (costHandler CostHandler) GetTotalCost(appName string, fromTime, toTime *time.Time) (*costModels.Cost, error) {
-	//radixRegistration, err := costHandler.getServiceAccount().RadixClient.RadixV1().RadixRegistrations().Get(appName, metav1.GetOptions{})
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//applicationRegistrationBuilder := NewBuilder()
-	//applicationRegistration := applicationRegistrationBuilder.
-	//	withRadixRegistration(radixRegistration).
-	//	Build()
-
-	//return &costModels.Cost{
-	//
-	//	ApplicationName:    applicationRegistration.Name,
-	//	ApplicationOwner:   applicationRegistration.Owner,
-	//	ApplicationCreator: applicationRegistration.Creator}, nil
 	return costHandler.GetTotalCosts(fromTime, toTime)
 }
 
@@ -60,44 +47,50 @@ func (costHandler CostHandler) GetTotalCosts(fromTime, toTime *time.Time) (*cost
 	sqlClient := models.NewSQLClient(os.Getenv("SQL_SERVER"), os.Getenv("SQL_DATABASE"), port, os.Getenv("SQL_USER"), os.Getenv("SQL_PASSWORD"))
 	defer sqlClient.Close()
 
-	// printCostBetweenDates(time.Now().UTC().AddDate(0, 0, -3), time.Now().UTC(), promClient, sqlClient)
-
 	runs, err := sqlClient.GetRunsBetweenTimes(fromTime, toTime)
 	if err != nil {
 		return nil, err
 	}
 
-	appCosts := costHandler.getApplicationCostsFrom(&runs)
-	return &costModels.Cost{
-		From:             *fromTime,
-		To:               *toTime,
-		ApplicationCosts: *appCosts}, nil
+	cost := costModels.NewCost(*fromTime, *toTime, runs)
+
+	err = costHandler.setApplicationProperties(&cost.ApplicationCosts)
+	if err != nil {
+		return nil, err
+	}
+
+	return &cost, nil
 }
 
-func (costHandler CostHandler) getApplicationCostsFrom(runs *[]costModels.Run) *[]costModels.ApplicationCost {
-	appCostMap := make(map[string]*costModels.ApplicationCost)
-	for _, run := range *runs {
-		for _, res := range run.Resources {
-			appCost, exists := appCostMap[res.Application]
-			if !exists {
-				appCost = &costModels.ApplicationCost{
-					Name:                   res.Application,
-					CostPercentageByCPU:    float64(0),
-					CostPercentageByMemory: float64(0),
-				}
-				appCostMap[res.Application] = appCost
-			}
-			appCost.CostPercentageByCPU += float64(res.CPUMillicore)
-			appCost.CostPercentageByMemory += float64(res.MemoryMegaBytes)
+func (costHandler CostHandler) setApplicationProperties(applicationCosts *[]costModels.ApplicationCost) error {
+	rrMap, err := costHandler.getRadixRegistrationMap()
+	if err != nil {
+		return err
+	}
+	for idx, _ := range *applicationCosts {
+		rr, rrExists := (*rrMap)[(*applicationCosts)[idx].Name]
+		if !rrExists {
+			(*applicationCosts)[idx].Comment = fmt.Sprintf("RadixRegistraction not found by application name %s.", (*applicationCosts)[idx].Name)
+			continue
 		}
+		(*applicationCosts)[idx].Creator = rr.Spec.Creator
+		(*applicationCosts)[idx].Owner = rr.Spec.Owner
+		(*applicationCosts)[idx].WBS = rr.Spec.WBS
 	}
-	appCosts := make([]costModels.ApplicationCost, len(appCostMap))
-	i := 0
-	for _, appCost := range appCostMap {
-		appCosts[i] = *appCost
-		i++
+	return nil
+}
+
+func (costHandler CostHandler) getRadixRegistrationMap() (*map[string]*v1.RadixRegistration, error) {
+	radixRegistrationList, err := costHandler.getServiceAccount().RadixClient.RadixV1().RadixRegistrations().List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
 	}
-	return &appCosts
+	//TODO: radixRegistrations := ah.filterRadixRegByAccessAndSSHRepo(radixRegistrationList.Items, sshRepo, hasAccess)
+	rrMap := make(map[string]*v1.RadixRegistration)
+	for idx, _ := range radixRegistrationList.Items {
+		rrMap[radixRegistrationList.Items[idx].Name] = &radixRegistrationList.Items[idx]
+	}
+	return &rrMap, nil
 }
 
 // ApplicationBuilder Handles construction of DTO
