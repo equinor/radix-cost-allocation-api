@@ -34,16 +34,11 @@ func (costHandler CostHandler) getServiceAccount() models.Account {
 	return costHandler.accounts.ServiceAccount
 }
 
-// GetTotalCost handler for GetTotalCost
-func (costHandler CostHandler) GetTotalCost(appName string, fromTime, toTime *time.Time) (*costModels.Cost, error) {
-	return costHandler.GetTotalCosts(fromTime, toTime)
-}
-
 // todo! create write only connection string? dont need read/admin access
 const port = 1433
 
 // GetTotalCost handler for GetTotalCost
-func (costHandler CostHandler) GetTotalCosts(fromTime, toTime *time.Time) (*costModels.Cost, error) {
+func (costHandler CostHandler) GetTotalCost(fromTime, toTime *time.Time) (*costModels.Cost, error) {
 	sqlClient := models.NewSQLClient(os.Getenv("SQL_SERVER"), os.Getenv("SQL_DATABASE"), port, os.Getenv("SQL_USER"), os.Getenv("SQL_PASSWORD"))
 	defer sqlClient.Close()
 
