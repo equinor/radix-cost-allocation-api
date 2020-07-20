@@ -1,13 +1,15 @@
 package cost
 
 import (
+	_ "github.com/denisenkom/go-mssqldb"
 	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
 	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	"github.com/equinor/radix-cost-allocation-api/models"
 	v1 "github.com/equinor/radix-operator/pkg/apis/radix/v1"
 	crdUtils "github.com/equinor/radix-operator/pkg/apis/utils"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"os"
 	"strings"
+	"time"
 )
 
 // CostHandler Instance variables
@@ -31,21 +33,71 @@ func (costHandler CostHandler) getServiceAccount() models.Account {
 }
 
 // GetTotalCost handler for GetTotalCost
-func (costHandler CostHandler) GetTotalCost(appName string) (*costModels.Cost, error) {
-	radixRegistration, err := costHandler.getServiceAccount().RadixClient.RadixV1().RadixRegistrations().Get(appName, metav1.GetOptions{})
+func (costHandler CostHandler) GetTotalCost(appName string, fromTime, toTime *time.Time) (*costModels.Cost, error) {
+	//radixRegistration, err := costHandler.getServiceAccount().RadixClient.RadixV1().RadixRegistrations().Get(appName, metav1.GetOptions{})
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//applicationRegistrationBuilder := NewBuilder()
+	//applicationRegistration := applicationRegistrationBuilder.
+	//	withRadixRegistration(radixRegistration).
+	//	Build()
+
+	//return &costModels.Cost{
+	//
+	//	ApplicationName:    applicationRegistration.Name,
+	//	ApplicationOwner:   applicationRegistration.Owner,
+	//	ApplicationCreator: applicationRegistration.Creator}, nil
+	return costHandler.GetTotalCosts(fromTime, toTime)
+}
+
+// todo! create write only connection string? dont need read/admin access
+const port = 1433
+
+// GetTotalCost handler for GetTotalCost
+func (costHandler CostHandler) GetTotalCosts(fromTime, toTime *time.Time) (*costModels.Cost, error) {
+	sqlClient := models.NewSQLClient(os.Getenv("SQL_SERVER"), os.Getenv("SQL_DATABASE"), port, os.Getenv("SQL_USER"), os.Getenv("SQL_PASSWORD"))
+	defer sqlClient.Close()
+
+	// printCostBetweenDates(time.Now().UTC().AddDate(0, 0, -3), time.Now().UTC(), promClient, sqlClient)
+
+	runs, err := sqlClient.GetRunsBetweenTimes(fromTime, toTime)
 	if err != nil {
 		return nil, err
 	}
 
-	applicationRegistrationBuilder := NewBuilder()
-	applicationRegistration := applicationRegistrationBuilder.
-		withRadixRegistration(radixRegistration).
-		Build()
-
+	appCosts := costHandler.getApplicationCostsFrom(&runs)
 	return &costModels.Cost{
-		ApplicationName:    applicationRegistration.Name,
-		ApplicationOwner:   applicationRegistration.Owner,
-		ApplicationCreator: applicationRegistration.Creator}, nil
+		From:             *fromTime,
+		To:               *toTime,
+		ApplicationCosts: *appCosts}, nil
+}
+
+func (costHandler CostHandler) getApplicationCostsFrom(runs *[]costModels.Run) *[]costModels.ApplicationCost {
+	appCostMap := make(map[string]*costModels.ApplicationCost)
+	for _, run := range *runs {
+		for _, res := range run.Resources {
+			appCost, exists := appCostMap[res.Application]
+			if !exists {
+				appCost = &costModels.ApplicationCost{
+					Name:                   res.Application,
+					CostPercentageByCPU:    float64(0),
+					CostPercentageByMemory: float64(0),
+				}
+				appCostMap[res.Application] = appCost
+			}
+			appCost.CostPercentageByCPU += float64(res.CPUMillicore)
+			appCost.CostPercentageByMemory += float64(res.MemoryMegaBytes)
+		}
+	}
+	appCosts := make([]costModels.ApplicationCost, len(appCostMap))
+	i := 0
+	for _, appCost := range appCostMap {
+		appCosts[i] = *appCost
+		i++
+	}
+	return &appCosts
 }
 
 // ApplicationBuilder Handles construction of DTO
