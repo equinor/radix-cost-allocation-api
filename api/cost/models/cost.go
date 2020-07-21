@@ -25,6 +25,16 @@ type Cost struct {
 	//
 	// required: true
 	runs []Run
+
+	// TotalRequestedCPU within the period.
+	//
+	// required: true
+	TotalRequestedCPU int
+
+	// TotalRequestedMemory within the period.
+	//
+	// required: true
+	TotalRequestedMemory int
 }
 
 type ApplicationCost struct {
@@ -66,11 +76,14 @@ type ApplicationCost struct {
 
 // NewCost aggregate cost over a time period for applications
 func NewCost(from, to time.Time, runs []Run) Cost {
+	applicationCosts, totalRequestedCPU, totalRequestedMemory := aggregateCostBetweenDatesOnApplications(runs)
 	cost := Cost{
-		From:             from,
-		To:               to,
-		ApplicationCosts: aggregateCostBetweenDatesOnApplications(runs),
-		runs:             runs,
+		From:                 from,
+		To:                   to,
+		ApplicationCosts:     applicationCosts,
+		TotalRequestedCPU:    totalRequestedCPU,
+		TotalRequestedMemory: totalRequestedMemory,
+		runs:                 runs,
 	}
 	return cost
 }
@@ -86,7 +99,7 @@ func (cost Cost) GetCostBy(appName string) *ApplicationCost {
 }
 
 // aggregateCostBetweenDatesOnApplications calculates cost for an application
-func aggregateCostBetweenDatesOnApplications(runs []Run) []ApplicationCost {
+func aggregateCostBetweenDatesOnApplications(runs []Run) ([]ApplicationCost, int, int) {
 	totalRequestedCPU := totalRequestedCPU(runs)
 	totalRequestedMemory := totalRequestedMemoryMegaBytes(runs)
 	cpuPercentages := map[string]float64{}
@@ -103,13 +116,12 @@ func aggregateCostBetweenDatesOnApplications(runs []Run) []ApplicationCost {
 	var applications []ApplicationCost
 	for appName, cpu := range cpuPercentages {
 		applications = append(applications, ApplicationCost{
-			Name: appName,
-			//TODO: add owner, creator
+			Name:                   appName,
 			CostPercentageByCPU:    cpu,
 			CostPercentageByMemory: memoryPercentage[appName],
 		})
 	}
-	return applications
+	return applications, totalRequestedCPU, totalRequestedMemory
 }
 
 func totalRequestedMemoryMegaBytes(runs []Run) int {

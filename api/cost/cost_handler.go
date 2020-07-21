@@ -38,7 +38,7 @@ func (costHandler CostHandler) getServiceAccount() models.Account {
 const port = 1433
 
 // GetTotalCost handler for GetTotalCost
-func (costHandler CostHandler) GetTotalCost(fromTime, toTime *time.Time) (*costModels.Cost, error) {
+func (costHandler CostHandler) GetTotalCost(fromTime, toTime *time.Time, appName string) (*costModels.Cost, error) {
 	sqlClient := models.NewSQLClient(os.Getenv("SQL_SERVER"), os.Getenv("SQL_DATABASE"), port, os.Getenv("SQL_USER"), os.Getenv("SQL_PASSWORD"))
 	defer sqlClient.Close()
 
@@ -48,6 +48,9 @@ func (costHandler CostHandler) GetTotalCost(fromTime, toTime *time.Time) (*costM
 	}
 
 	cost := costModels.NewCost(*fromTime, *toTime, runs)
+	if len(appName) > 0 {
+		cost.ApplicationCosts = costHandler.filterApplicationCostsBy(appName, &cost)
+	}
 
 	err = costHandler.setApplicationProperties(&cost.ApplicationCosts)
 	if err != nil {
@@ -55,6 +58,15 @@ func (costHandler CostHandler) GetTotalCost(fromTime, toTime *time.Time) (*costM
 	}
 
 	return &cost, nil
+}
+
+func (costHandler CostHandler) filterApplicationCostsBy(appName string, cost *costModels.Cost) []costModels.ApplicationCost {
+	for _, applicationCost := range (*cost).ApplicationCosts {
+		if applicationCost.Name == appName {
+			return []costModels.ApplicationCost{applicationCost}
+		}
+	}
+	return []costModels.ApplicationCost{}
 }
 
 func (costHandler CostHandler) setApplicationProperties(applicationCosts *[]costModels.ApplicationCost) error {
