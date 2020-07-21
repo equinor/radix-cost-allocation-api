@@ -6,12 +6,22 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ParseTimestamp Converts timestamp to time
+const defaultLayout = time.RFC3339
+
+// ParseTimestamp Converts timestamp to time by RFC3339 layout
 func ParseTimestamp(timestamp string) (time.Time, error) {
-	return time.Parse(time.RFC3339, timestamp)
+	return ParseTimestampBy(defaultLayout, timestamp)
 }
 
-// FormatTimestamp Converts time to formatted timestamp
+// ParseTimestamp Converts timestamp to time by custom layout
+func ParseTimestampBy(layout, timestamp string) (time.Time, error) {
+	if len(layout) == len(timestamp) {
+		return time.Parse(layout, timestamp)
+	}
+	return time.Parse(defaultLayout, timestamp)
+}
+
+// ParseTimestamp Converts timestamp to time
 func FormatTimestamp(timestamp time.Time) string {
 	emptyTime := time.Time{}
 
