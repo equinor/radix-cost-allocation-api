@@ -1,4 +1,4 @@
-package models
+package cost_models
 
 // ApplicationRegistration describe an application
 // swagger:model ApplicationRegistration

@@ -1,13 +1,17 @@
 package cost
 
 import (
+	"fmt"
+	_ "github.com/denisenkom/go-mssqldb"
 	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
 	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	"github.com/equinor/radix-cost-allocation-api/models"
 	v1 "github.com/equinor/radix-operator/pkg/apis/radix/v1"
 	crdUtils "github.com/equinor/radix-operator/pkg/apis/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"os"
 	"strings"
+	"time"
 )
 
 // CostHandler Instance variables
@@ -30,22 +34,70 @@ func (costHandler CostHandler) getServiceAccount() models.Account {
 	return costHandler.accounts.ServiceAccount
 }
 
+// todo! create write only connection string? dont need read/admin access
+const port = 1433
+
 // GetTotalCost handler for GetTotalCost
-func (costHandler CostHandler) GetTotalCost(appName string) (*costModels.Cost, error) {
-	radixRegistration, err := costHandler.getServiceAccount().RadixClient.RadixV1().RadixRegistrations().Get(appName, metav1.GetOptions{})
+func (costHandler CostHandler) GetTotalCost(fromTime, toTime *time.Time, appName string) (*costModels.Cost, error) {
+	sqlClient := models.NewSQLClient(os.Getenv("SQL_SERVER"), os.Getenv("SQL_DATABASE"), port, os.Getenv("SQL_USER"), os.Getenv("SQL_PASSWORD"))
+	defer sqlClient.Close()
+
+	runs, err := sqlClient.GetRunsBetweenTimes(fromTime, toTime)
 	if err != nil {
 		return nil, err
 	}
 
-	applicationRegistrationBuilder := NewBuilder()
-	applicationRegistration := applicationRegistrationBuilder.
-		withRadixRegistration(radixRegistration).
-		Build()
+	cost := costModels.NewCost(*fromTime, *toTime, runs)
+	if len(appName) > 0 {
+		cost.ApplicationCosts = costHandler.filterApplicationCostsBy(appName, &cost)
+	}
 
-	return &costModels.Cost{
-		ApplicationName:    applicationRegistration.Name,
-		ApplicationOwner:   applicationRegistration.Owner,
-		ApplicationCreator: applicationRegistration.Creator}, nil
+	err = costHandler.setApplicationProperties(&cost.ApplicationCosts)
+	if err != nil {
+		return nil, err
+	}
+
+	return &cost, nil
+}
+
+func (costHandler CostHandler) filterApplicationCostsBy(appName string, cost *costModels.Cost) []costModels.ApplicationCost {
+	for _, applicationCost := range (*cost).ApplicationCosts {
+		if applicationCost.Name == appName {
+			return []costModels.ApplicationCost{applicationCost}
+		}
+	}
+	return []costModels.ApplicationCost{}
+}
+
+func (costHandler CostHandler) setApplicationProperties(applicationCosts *[]costModels.ApplicationCost) error {
+	rrMap, err := costHandler.getRadixRegistrationMap()
+	if err != nil {
+		return err
+	}
+	for idx, _ := range *applicationCosts {
+		rr, rrExists := (*rrMap)[(*applicationCosts)[idx].Name]
+		if !rrExists {
+			(*applicationCosts)[idx].Comment = fmt.Sprintf("RadixRegistraction not found by application name %s.", (*applicationCosts)[idx].Name)
+			continue
+		}
+		(*applicationCosts)[idx].Creator = rr.Spec.Creator
+		(*applicationCosts)[idx].Owner = rr.Spec.Owner
+		(*applicationCosts)[idx].WBS = rr.Spec.WBS
+	}
+	return nil
+}
+
+func (costHandler CostHandler) getRadixRegistrationMap() (*map[string]*v1.RadixRegistration, error) {
+	radixRegistrationList, err := costHandler.getServiceAccount().RadixClient.RadixV1().RadixRegistrations().List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	//TODO: radixRegistrations := ah.filterRadixRegByAccessAndSSHRepo(radixRegistrationList.Items, sshRepo, hasAccess)
+	rrMap := make(map[string]*v1.RadixRegistration)
+	for idx, _ := range radixRegistrationList.Items {
+		rrMap[radixRegistrationList.Items[idx].Name] = &radixRegistrationList.Items[idx]
+	}
+	return &rrMap, nil
 }
 
 // ApplicationBuilder Handles construction of DTO
