@@ -17,8 +17,6 @@ vendor
 
 .idea/
 debug
-./swaggerui/statik.go
-./swaggerui_src/swagger.json
-./certs/key.pem
-./certs/cert.pem
+swaggerui/statik.go
+swaggerui_src/swagger.json
 
