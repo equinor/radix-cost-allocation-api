@@ -20,8 +20,6 @@ spec:
       port: 3003
     public: true
     secrets:
-      - SQL_USER
-      - SQL_PASSWORD
     environmentConfig:
     - environment: qa
       horizontalScaling:
@@ -37,8 +35,6 @@ spec:
           cpu: "50m"
       variables:
         PIPELINE_IMG_TAG: "master-latest"
-        SQL_SERVER: "test-sql-server-name-qa"
-        SQL_DATABASE: "test-sql-database-name-qa"
     - environment: prod
       replicas: 2
       monitoring: true
@@ -51,5 +47,3 @@ spec:
           cpu: "100m"
       variables:
         PIPELINE_IMG_TAG: "release-latest"
-        SQL_SERVER: "test-sql-server-name-prod"
-        SQL_DATABASE: "test-sql-database-name-prod"
