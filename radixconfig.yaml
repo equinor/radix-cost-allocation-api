@@ -20,6 +20,8 @@ spec:
       port: 3003
     public: true
     secrets:
+      - SQL_USER
+      - SQL_PASSWORD
     environmentConfig:
     - environment: qa
       replicas: 1
@@ -36,6 +38,8 @@ spec:
           cpu: "50m"
       variables:
         PIPELINE_IMG_TAG: "master-latest"
+        SQL_SERVER: "sql-radix-cost-allocation-dev.database.windows.net"
+        SQL_DATABASE: "sqldb-radix-cost-allocation"
     - environment: prod
       replicas: 2
       monitoring: true
