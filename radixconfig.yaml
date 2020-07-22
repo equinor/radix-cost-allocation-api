@@ -22,6 +22,7 @@ spec:
     secrets:
     environmentConfig:
     - environment: qa
+      replicas: 1
       horizontalScaling:
         minReplicas: 1
         maxReplicas: 2
