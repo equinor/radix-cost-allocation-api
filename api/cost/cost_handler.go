@@ -4,43 +4,55 @@ import (
 	"fmt"
 	_ "github.com/denisenkom/go-mssqldb"
 	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
-	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	"github.com/equinor/radix-cost-allocation-api/models"
-	v1 "github.com/equinor/radix-operator/pkg/apis/radix/v1"
-	crdUtils "github.com/equinor/radix-operator/pkg/apis/utils"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
+	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client"
+	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/application"
+	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/platform"
 	"os"
 	"strings"
 	"time"
 )
 
 // CostHandler Instance variables
-type CostHandler struct {
+type Handler struct {
 	accounts models.Accounts
 }
 
 // Init Constructor
-func Init(accounts models.Accounts) CostHandler {
-	return CostHandler{
+func Init(accounts models.Accounts) Handler {
+	return Handler{
 		accounts: accounts,
 	}
 }
 
-func (costHandler CostHandler) getUserAccount() models.Account {
+func (costHandler Handler) getUserAccount() models.Account {
 	return costHandler.accounts.UserAccount
 }
 
-func (costHandler CostHandler) getServiceAccount() models.Account {
-	return costHandler.accounts.ServiceAccount
+func (costHandler Handler) getToken() string {
+	return costHandler.accounts.GetToken()
 }
 
 // todo! create write only connection string? dont need read/admin access
 const port = 1433
 
 // GetTotalCost handler for GetTotalCost
-func (costHandler CostHandler) GetTotalCost(fromTime, toTime *time.Time, appName string) (*costModels.Cost, error) {
-	sqlClient := models.NewSQLClient(os.Getenv("SQL_SERVER"), os.Getenv("SQL_DATABASE"), port, os.Getenv("SQL_USER"), os.Getenv("SQL_PASSWORD"))
+func (costHandler Handler) GetTotalCost(fromTime, toTime *time.Time, appName *string) (*costModels.Cost, error) {
+	var (
+		sqlServer   = os.Getenv("SQL_SERVER")
+		sqlDatabase = os.Getenv("SQL_DATABASE")
+		sqlUser     = os.Getenv("SQL_USER")
+		sqlPassword = os.Getenv("SQL_PASSWORD")
+	)
+	sqlClient := models.NewSQLClient(sqlServer, sqlDatabase, port, sqlUser, sqlPassword)
 	defer sqlClient.Close()
+
+	var (
+		context        = os.Getenv("RADIX_CLUSTER_TYPE")
+		apiEnvironment = os.Getenv("RADIX_ENVIRONMENT")
+		cluster        = os.Getenv("RADIX_CLUSTER_NAME")
+	)
 
 	runs, err := sqlClient.GetRunsBetweenTimes(fromTime, toTime)
 	if err != nil {
@@ -48,11 +60,12 @@ func (costHandler CostHandler) GetTotalCost(fromTime, toTime *time.Time, appName
 	}
 
 	cost := costModels.NewCost(*fromTime, *toTime, runs)
-	if len(appName) > 0 {
+	if appName != nil && !strings.EqualFold(*appName, "") {
 		cost.ApplicationCosts = costHandler.filterApplicationCostsBy(appName, &cost)
 	}
 
-	err = costHandler.setApplicationProperties(&cost.ApplicationCosts)
+	radixApi := radix_api.GetForToken(context, cluster, apiEnvironment, costHandler.getToken())
+	err = costHandler.setApplicationProperties(&cost.ApplicationCosts, radixApi, appName)
 	if err != nil {
 		return nil, err
 	}
@@ -60,210 +73,77 @@ func (costHandler CostHandler) GetTotalCost(fromTime, toTime *time.Time, appName
 	return &cost, nil
 }
 
-func (costHandler CostHandler) filterApplicationCostsBy(appName string, cost *costModels.Cost) []costModels.ApplicationCost {
+func (costHandler Handler) filterApplicationCostsBy(appName *string, cost *costModels.Cost) []costModels.ApplicationCost {
 	for _, applicationCost := range (*cost).ApplicationCosts {
-		if applicationCost.Name == appName {
+		if applicationCost.Name == *appName {
 			return []costModels.ApplicationCost{applicationCost}
 		}
 	}
 	return []costModels.ApplicationCost{}
 }
 
-func (costHandler CostHandler) setApplicationProperties(applicationCosts *[]costModels.ApplicationCost) error {
-	rrMap, err := costHandler.getRadixRegistrationMap()
+func (costHandler Handler) setApplicationProperties(applicationCosts *[]costModels.ApplicationCost, radixApi *client.Radixapi, appName *string) error {
+	rrMap, err := costHandler.getRadixRegistrationMap(radixApi, appName)
 	if err != nil {
 		return err
 	}
-	for idx, _ := range *applicationCosts {
-		rr, rrExists := (*rrMap)[(*applicationCosts)[idx].Name]
+	for idx := range *applicationCosts {
+		radixApp, rrExists := (*rrMap)[(*applicationCosts)[idx].Name]
 		if !rrExists {
-			(*applicationCosts)[idx].Comment = fmt.Sprintf("RadixRegistraction not found by application name %s.", (*applicationCosts)[idx].Name)
+			(*applicationCosts)[idx].Comment = fmt.Sprintf("RadixApplication not found by application name %s.", (*applicationCosts)[idx].Name)
 			continue
 		}
-		(*applicationCosts)[idx].Creator = rr.Spec.Creator
-		(*applicationCosts)[idx].Owner = rr.Spec.Owner
-		(*applicationCosts)[idx].WBS = rr.Spec.WBS
+		(*applicationCosts)[idx].Creator = radixApp.Creator
+		(*applicationCosts)[idx].Owner = radixApp.Owner
+		(*applicationCosts)[idx].WBS = radixApp.WBS
 	}
 	return nil
 }
 
-func (costHandler CostHandler) getRadixRegistrationMap() (*map[string]*v1.RadixRegistration, error) {
-	radixRegistrationList, err := costHandler.getServiceAccount().RadixClient.RadixV1().RadixRegistrations().List(metav1.ListOptions{})
+type radixApplication struct {
+	Name    string
+	Creator string
+	Owner   string
+	WBS     string
+}
+
+func (costHandler Handler) getRadixRegistrationMap(radixApiClient *client.Radixapi, appName *string) (*map[string]*radixApplication, error) {
+	if appName != nil && !strings.EqualFold(*appName, "") {
+		app, err := costHandler.getRadixApplicationDetails(radixApiClient, appName)
+		if err != nil {
+			return nil, err
+		}
+		return &map[string]*radixApplication{app.Name: app}, nil
+	}
+
+	showApplicationParams := platform.NewShowApplicationsParams()
+	resp, err := radixApiClient.Platform.ShowApplications(showApplicationParams, nil)
 	if err != nil {
 		return nil, err
 	}
-	//TODO: radixRegistrations := ah.filterRadixRegByAccessAndSSHRepo(radixRegistrationList.Items, sshRepo, hasAccess)
-	rrMap := make(map[string]*v1.RadixRegistration)
-	for idx, _ := range radixRegistrationList.Items {
-		rrMap[radixRegistrationList.Items[idx].Name] = &radixRegistrationList.Items[idx]
+
+	radixAppMap := make(map[string]*radixApplication)
+	for _, appSummary := range resp.Payload {
+		name := appSummary.Name
+		radixAppMap[name] = &radixApplication{
+			Name: name,
+		}
 	}
-	return &rrMap, nil
+	return &radixAppMap, err
 }
 
-// ApplicationBuilder Handles construction of DTO
-type ApplicationBuilder interface {
-	withName(name string) ApplicationBuilder
-	withOwner(owner string) ApplicationBuilder
-	withCreator(creator string) ApplicationBuilder
-	withWBS(string) ApplicationBuilder
-	withRadixRegistration(*v1.RadixRegistration) ApplicationBuilder
-	Build() costModels.ApplicationRegistration
-}
-
-type applicationBuilder struct {
-	name         string
-	owner        string
-	creator      string
-	repository   string
-	sharedSecret string
-	adGroups     []string
-	publicKey    string
-	privateKey   string
-	cloneURL     string
-	machineUser  bool
-	wbs          string
-}
-
-func (rb *applicationBuilder) withAppRegistration(appRegistration *costModels.ApplicationRegistration) ApplicationBuilder {
-	rb.withName(appRegistration.Name)
-	rb.withRepository(appRegistration.Repository)
-	rb.withSharedSecret(appRegistration.SharedSecret)
-	rb.withAdGroups(appRegistration.AdGroups)
-	rb.withPublicKey(appRegistration.PublicKey)
-	rb.withPrivateKey(appRegistration.PrivateKey)
-	rb.withOwner(appRegistration.Owner)
-	rb.withWBS(appRegistration.WBS)
-	return rb
-}
-
-func (rb *applicationBuilder) withRadixRegistration(radixRegistration *v1.RadixRegistration) ApplicationBuilder {
-	rb.withName(radixRegistration.Name)
-	rb.withCloneURL(radixRegistration.Spec.CloneURL)
-	rb.withSharedSecret(radixRegistration.Spec.SharedSecret)
-	rb.withAdGroups(radixRegistration.Spec.AdGroups)
-	rb.withPublicKey(radixRegistration.Spec.DeployKeyPublic)
-	rb.withOwner(radixRegistration.Spec.Owner)
-	rb.withCreator(radixRegistration.Spec.Creator)
-	rb.withMachineUser(radixRegistration.Spec.MachineUser)
-	rb.withWBS(radixRegistration.Spec.WBS)
-
-	// Private part of key should never be returned
-	return rb
-}
-
-func (rb *applicationBuilder) withName(name string) ApplicationBuilder {
-	rb.name = name
-	return rb
-}
-
-func (rb *applicationBuilder) withOwner(owner string) ApplicationBuilder {
-	rb.owner = owner
-	return rb
-}
-
-func (rb *applicationBuilder) withCreator(creator string) ApplicationBuilder {
-	rb.creator = creator
-	return rb
-}
-
-func (rb *applicationBuilder) withRepository(repository string) ApplicationBuilder {
-	rb.repository = repository
-	return rb
-}
-
-func (rb *applicationBuilder) withCloneURL(cloneURL string) ApplicationBuilder {
-	rb.cloneURL = cloneURL
-	return rb
-}
-
-func (rb *applicationBuilder) withSharedSecret(sharedSecret string) ApplicationBuilder {
-	rb.sharedSecret = sharedSecret
-	return rb
-}
-
-func (rb *applicationBuilder) withAdGroups(adGroups []string) ApplicationBuilder {
-	rb.adGroups = adGroups
-	return rb
-}
-
-func (rb *applicationBuilder) withPublicKey(publicKey string) ApplicationBuilder {
-	rb.publicKey = strings.TrimSuffix(publicKey, "\n")
-	return rb
-}
-
-func (rb *applicationBuilder) withPrivateKey(privateKey string) ApplicationBuilder {
-	rb.privateKey = strings.TrimSuffix(privateKey, "\n")
-	return rb
-}
-
-func (rb *applicationBuilder) withDeployKey(deploykey *utils.DeployKey) ApplicationBuilder {
-	if deploykey != nil {
-		rb.publicKey = deploykey.PublicKey
-		rb.privateKey = deploykey.PrivateKey
+func (costHandler Handler) getRadixApplicationDetails(radixApiClient *client.Radixapi, appName *string) (*radixApplication, error) {
+	getApplicationParams := application.NewGetApplicationParams()
+	getApplicationParams.SetAppName(*appName)
+	resp, err := radixApiClient.Application.GetApplication(getApplicationParams, nil)
+	if err != nil || resp == nil {
+		return nil, err
 	}
-
-	return rb
-}
-
-func (rb *applicationBuilder) withMachineUser(machineUser bool) ApplicationBuilder {
-	rb.machineUser = machineUser
-	return rb
-}
-
-func (rb *applicationBuilder) withWBS(wbs string) ApplicationBuilder {
-	rb.wbs = wbs
-	return rb
-}
-
-func (rb *applicationBuilder) Build() costModels.ApplicationRegistration {
-	repository := rb.repository
-	if repository == "" {
-		repository = crdUtils.GetGithubRepositoryURLFromCloneURL(rb.cloneURL)
-	}
-
-	return costModels.ApplicationRegistration{
-		Name:         rb.name,
-		Repository:   repository,
-		SharedSecret: rb.sharedSecret,
-		AdGroups:     rb.adGroups,
-		PublicKey:    rb.publicKey,
-		PrivateKey:   rb.privateKey,
-		Owner:        rb.owner,
-		Creator:      rb.creator,
-		MachineUser:  rb.machineUser,
-		WBS:          rb.wbs,
-	}
-}
-
-func (rb *applicationBuilder) BuildRR() (*v1.RadixRegistration, error) {
-	builder := crdUtils.NewRegistrationBuilder()
-
-	radixRegistration := builder.
-		WithPublicKey(rb.publicKey).
-		WithPrivateKey(rb.privateKey).
-		WithName(rb.name).
-		WithRepository(rb.repository).
-		WithSharedSecret(rb.sharedSecret).
-		WithAdGroups(rb.adGroups).
-		WithOwner(rb.owner).
-		WithCreator(rb.creator).
-		WithMachineUser(rb.machineUser).
-		WithWBS(rb.wbs).
-		BuildRR()
-
-	return radixRegistration, nil
-}
-
-// NewBuilder Constructor for application builder
-func NewBuilder() ApplicationBuilder {
-	return &applicationBuilder{}
-}
-
-// AnApplicationRegistration Constructor for application builder with test values
-func AnApplicationRegistration() ApplicationBuilder {
-	return &applicationBuilder{
-		name:    "my-app",
-		owner:   "a_test_user@equinor.com",
-		creator: "a_test_user@equinor.com",
-	}
+	ar := resp.Payload.Registration
+	return &radixApplication{
+		Name:    *ar.Name,
+		Creator: *ar.Creator,
+		Owner:   *ar.Owner,
+		WBS:     ar.WBS,
+	}, nil
 }

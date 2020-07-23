@@ -76,7 +76,7 @@ func (costController *costController) GetTotalCosts(accounts models.Accounts, w 
 	//     description: "Unauthorized"
 	//   "404":
 	//     description: "Not found"
-	costController.getTotalCosts(accounts, w, r, "")
+	costController.getTotalCosts(accounts, w, r, nil)
 }
 
 // GetTotalCost for an application for period
@@ -122,10 +122,10 @@ func (costController *costController) GetTotalCost(accounts models.Accounts, w h
 	//   "404":
 	//     description: "Not found"
 	appName := mux.Vars(r)["appName"]
-	costController.getTotalCosts(accounts, w, r, appName)
+	costController.getTotalCosts(accounts, w, r, &appName)
 }
 
-func (costController *costController) getTotalCosts(accounts models.Accounts, w http.ResponseWriter, r *http.Request, appName string) {
+func (costController *costController) getTotalCosts(accounts models.Accounts, w http.ResponseWriter, r *http.Request, appName *string) {
 	fromTime, toTime, err := getCostPeriod(w, r)
 	if err != nil {
 		utils.ErrorResponse(w, r, err)

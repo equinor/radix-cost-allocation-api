@@ -10,21 +10,15 @@ import (
 
 // NewAccounts creates a new Accounts struct
 func NewAccounts(
-	inClusterClient kubernetes.Interface,
-	inClusterRadixClient radixclient.Interface,
-	outClusterClient kubernetes.Interface,
-	outClusterRadixClient radixclient.Interface,
+	client kubernetes.Interface,
+	radixClient radixclient.Interface,
 	token string,
 	impersonation Impersonation) Accounts {
 
 	return Accounts{
 		UserAccount: Account{
-			Client:      outClusterClient,
-			RadixClient: outClusterRadixClient,
-		},
-		ServiceAccount: Account{
-			Client:      inClusterClient,
-			RadixClient: inClusterRadixClient,
+			Client:      client,
+			RadixClient: radixClient,
 		},
 		token:         token,
 		impersonation: impersonation,
@@ -33,10 +27,9 @@ func NewAccounts(
 
 // Accounts contains accounts for accessing k8s API.
 type Accounts struct {
-	UserAccount    Account
-	ServiceAccount Account
-	token          string
-	impersonation  Impersonation
+	UserAccount   Account
+	token         string
+	impersonation Impersonation
 }
 
 // RadixHandlerFunc Pattern for handler functions
@@ -68,6 +61,11 @@ func (accounts Accounts) GetUserAccountUserPrincipleName() (string, error) {
 	}
 
 	return getUserPrincipleNameFromToken(accounts.token)
+}
+
+// GetToken get the user token
+func (accounts Accounts) GetToken() string {
+	return accounts.token
 }
 
 func getUserPrincipleNameFromToken(token string) (string, error) {

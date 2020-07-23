@@ -6,6 +6,10 @@ build: $(BINS)
 test:
 	go test -cover `go list ./...`
 
+.PHONY: generate-radix-api-client
+generate-radix-api-client:
+	swagger generate client -t ./models/radix_api/generated_client -f https://api.radix.equinor.com/swaggerui/swagger.json -A radixapi
+
 # This make command is only needed for local testing now
 # we also do make swagger inside Dockerfile
 .PHONY: swagger
