@@ -51,14 +51,11 @@ func (handler *RadixMiddleware) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	inClusterClient, inClusterRadixClient := handler.kubeUtil.GetInClusterKubernetesClient()
-	outClusterClient, outClusterRadixClient := handler.kubeUtil.GetOutClusterKubernetesClientWithImpersonation(token, impersonation)
+	kubeClient, radixClient := handler.kubeUtil.GetInClusterKubernetesClient()
 
 	accounts := models.NewAccounts(
-		inClusterClient,
-		inClusterRadixClient,
-		outClusterClient,
-		outClusterRadixClient,
+		kubeClient,
+		radixClient,
 		token,
 		impersonation)
 

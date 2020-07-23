@@ -15,8 +15,10 @@ radix-cost-allocation-api
 # vendor/
 vendor
 
-.idea/
+/.idea/
 debug
-swaggerui/statik.go
-swaggerui_src/swagger.json
+/swaggerui/statik.go
+/swaggerui_src/swagger.json
 
+/models/radix_api/generated_client/client/
+/models/radix_api/generated_client/models/
