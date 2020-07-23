@@ -2,6 +2,7 @@ package cost
 
 import (
 	"fmt"
+	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
 	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	models "github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/gorilla/mux"
@@ -132,13 +133,16 @@ func (costController *costController) getTotalCosts(accounts models.Accounts, w 
 		return
 	}
 
-	handler := Init(accounts)
-	cost, err := handler.GetTotalCost(fromTime, toTime, appName)
-
-	if err != nil {
-		utils.ErrorResponse(w, r, err)
-		return
+	//handler := Init(accounts)
+	//cost, err := handler.GetTotalCost(fromTime, toTime, appName)
+	cost := costModels.NewCost(*fromTime, *toTime, []costModels.Run{})
+	cost.ApplicationCosts = []costModels.ApplicationCost{
+		{Name: "App1"}, {Name: "App2"},
 	}
+	//if err != nil {
+	//	utils.ErrorResponse(w, r, err)
+	//	return
+	//}
 
 	utils.JSONResponse(w, r, cost)
 }
