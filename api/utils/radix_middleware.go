@@ -1,27 +1,22 @@
 package utils
 
 import (
-	"errors"
 	"github.com/equinor/radix-cost-allocation-api/metrics"
 	"github.com/equinor/radix-cost-allocation-api/models"
-	"github.com/gorilla/mux"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"time"
 )
 
 // RadixMiddleware The middleware between router and radix handler functions
 type RadixMiddleware struct {
-	kubeUtil KubeUtil
-	path     string
-	method   string
-	next     models.RadixHandlerFunc
+	path   string
+	method string
+	next   models.RadixHandlerFunc
 }
 
 // NewRadixMiddleware Constructor for radix middleware
-func NewRadixMiddleware(kubeUtil KubeUtil, path, method string, next models.RadixHandlerFunc) *RadixMiddleware {
+func NewRadixMiddleware(path, method string, next models.RadixHandlerFunc) *RadixMiddleware {
 	handler := &RadixMiddleware{
-		kubeUtil,
 		path,
 		method,
 		next,
@@ -51,43 +46,19 @@ func (handler *RadixMiddleware) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kubeClient, radixClient := handler.kubeUtil.GetInClusterKubernetesClient()
-
 	accounts := models.NewAccounts(
-		kubeClient,
-		radixClient,
 		token,
 		impersonation)
-
-	// Check if registration of application exists for application-specific requests
-	if appName, exists := mux.Vars(r)["appName"]; exists {
-		if _, err := accounts.UserAccount.RadixClient.RadixV1().RadixRegistrations().Get(appName, metav1.GetOptions{}); err != nil {
-			ErrorResponse(w, r, err)
-			return
-		}
-	}
 
 	handler.next(accounts, w, r)
 }
 
-// BearerTokenHeaderVerifyerMiddleware Will verify that the request has a bearer token in header
-func BearerTokenHeaderVerifyerMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+// BearerTokenHeaderVerifierMiddleware Will verify that the request has a bearer token in header
+func BearerTokenHeaderVerifierMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	_, err := getBearerTokenFromHeader(r)
 
 	if err != nil {
 		ErrorResponse(w, r, err)
-		return
-	}
-
-	next(w, r)
-}
-
-// BearerTokenQueryVerifyerMiddleware Will verify that the request has a bearer token as query variable
-func BearerTokenQueryVerifyerMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	// For socket connections it should be in the query
-	jwtToken := GetTokenFromQuery(r)
-	if jwtToken == "" {
-		ErrorResponse(w, r, errors.New("Authentication token is required"))
 		return
 	}
 

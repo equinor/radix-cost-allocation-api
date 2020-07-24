@@ -19,7 +19,6 @@ require (
 	github.com/rakyll/statik v0.1.6
 	github.com/rs/cors v1.6.0
 	github.com/sirupsen/logrus v1.4.2
-	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.6.1
 	github.com/urfave/negroni v1.0.0

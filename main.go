@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/equinor/radix-cost-allocation-api/api/cost"
-	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	"github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/equinor/radix-cost-allocation-api/router"
 	log "github.com/sirupsen/logrus"
@@ -18,9 +17,8 @@ func main() {
 	fs := initializeFlagSet()
 
 	var (
-		port                = fs.StringP("port", "p", defaultPort(), "Port where API will be served")
-		useOutClusterClient = fs.Bool("useOutClusterClient", true, "In case of testing on local machine you may want to set this to false")
-		clusterName         = os.Getenv(clusternameEnvironmentVariable)
+		port        = fs.StringP("port", "p", defaultPort(), "Port where API will be served")
+		clusterName = os.Getenv(clusternameEnvironmentVariable)
 	)
 
 	parseFlagsFromArgs(fs)
@@ -28,7 +26,7 @@ func main() {
 	errs := make(chan error)
 	go func() {
 		log.Infof("Api is serving on port %s", *port)
-		err := http.ListenAndServe(fmt.Sprintf(":%s", *port), router.NewServer(clusterName, utils.NewKubeUtil(*useOutClusterClient), getControllers()...))
+		err := http.ListenAndServe(fmt.Sprintf(":%s", *port), router.NewServer(clusterName, getControllers()...))
 		errs <- err
 	}()
 

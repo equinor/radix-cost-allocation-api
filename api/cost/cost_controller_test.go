@@ -9,7 +9,6 @@ import (
 	controllertest "github.com/equinor/radix-cost-allocation-api/api/test"
 	"github.com/equinor/radix-operator/pkg/apis/defaults"
 	commontest "github.com/equinor/radix-operator/pkg/apis/test"
-	"github.com/equinor/radix-operator/pkg/client/clientset/versioned/fake"
 	"github.com/stretchr/testify/assert"
 	kubefake "k8s.io/client-go/kubernetes/fake"
 )
@@ -17,28 +16,23 @@ import (
 const (
 	clusterName       = "AnyClusterName"
 	containerRegistry = "any.container.registry"
-	dnsZone           = "dev.radix.equinor.com"
-	appAliasDNSZone   = "app.dev.radix.equinor.com"
 )
 
-func setupTest() (*commontest.Utils, *controllertest.Utils, *kubefake.Clientset, *fake.Clientset) {
-	// Setup
+func setupTest() *controllertest.Utils {
 	kubeclient := kubefake.NewSimpleClientset()
-	radixclient := fake.NewSimpleClientset()
-
 	// commonTestUtils is used for creating CRDs
-	commonTestUtils := commontest.NewTestUtils(kubeclient, radixclient)
+	commonTestUtils := commontest.NewTestUtils(kubeclient, nil)
 	commonTestUtils.CreateClusterPrerequisites(clusterName, containerRegistry)
 	os.Setenv(defaults.ActiveClusternameEnvironmentVariable, clusterName)
 
 	// controllerTestUtils is used for issuing HTTP request and processing responses
-	controllerTestUtils := controllertest.NewTestUtils(kubeclient, radixclient, NewApplicationController())
+	controllerTestUtils := controllertest.NewTestUtils(NewApplicationController())
 
-	return &commonTestUtils, &controllerTestUtils, kubeclient, radixclient
+	return &controllerTestUtils
 }
 
 func TestGetTotalCost_ApplicationExists(t *testing.T) {
-	_, controllerTestUtils, _, _ := setupTest()
+	controllerTestUtils := setupTest()
 
 	// Test
 	t.Run("matching repo", func(t *testing.T) {

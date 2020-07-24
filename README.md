@@ -30,12 +30,6 @@ The following env vars are needed. Useful default values in brackets.
 
 - `RADIX_CONTAINER_REGISTRY` - (`radixdev.azurecr.io`)
 
-You also probably want to start with the argument `--useOutClusterClient=false`. If this is set to `true` (the default) the program will connect to the K8S API host defined by the `K8S_API_HOST` env var and will require auth tokens in all client requests. Set to `false`, a service principal with superpowers is used to authorise the requests instead (**you still need to send** a `bearer whatever` auth header with the requests, but its value is ignored).
-
-When `useOutClusterClient` is `false`, the Radix API will connect to the currently-configured `kubectl` context.
-
-If you are using VSCode, there is a convenient launch configuration in `.vscode`.
-
 #### Common errors running locally
 
 - **Problem**: `panic: statik/fs: no zip data registered`

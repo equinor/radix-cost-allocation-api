@@ -28,7 +28,7 @@ type Server struct {
 }
 
 // NewServer Constructor function
-func NewServer(clusterName string, kubeUtil utils.KubeUtil, controllers ...models.Controller) http.Handler {
+func NewServer(clusterName string, controllers ...models.Controller) http.Handler {
 	router := mux.NewRouter().StrictSlash(true)
 
 	statikFS, err := fs.New()
@@ -40,7 +40,7 @@ func NewServer(clusterName string, kubeUtil utils.KubeUtil, controllers ...model
 	sh := http.StripPrefix("/swaggerui/", staticServer)
 	router.PathPrefix("/swaggerui/").Handler(sh)
 
-	initializeAPIServer(kubeUtil, router, controllers)
+	initializeAPIServer(router, controllers)
 
 	initializeHealthEndpoint(router)
 
@@ -50,11 +50,11 @@ func NewServer(clusterName string, kubeUtil utils.KubeUtil, controllers ...model
 	))
 
 	serveMux.Handle("/api/", negroni.New(
-		negroni.HandlerFunc(utils.BearerTokenHeaderVerifyerMiddleware),
+		negroni.HandlerFunc(utils.BearerTokenHeaderVerifierMiddleware),
 		negroni.Wrap(router),
 	))
 
-	// TODO: We should maybe have oauth to stop any non-radix user from beeing
+	// TODO: We should maybe have oauth to stop any non-radix user from being
 	// able to see the API
 	serveMux.Handle("/swaggerui/", negroni.New(
 		negroni.Wrap(router),
@@ -114,10 +114,10 @@ func getHostName(componentName, namespace, clustername, radixDNSZone string) str
 	return fmt.Sprintf("https://%s-%s.%s.%s", componentName, namespace, clustername, radixDNSZone)
 }
 
-func initializeAPIServer(kubeUtil utils.KubeUtil, router *mux.Router, controllers []models.Controller) {
+func initializeAPIServer(router *mux.Router, controllers []models.Controller) {
 	for _, controller := range controllers {
 		for _, route := range controller.GetRoutes() {
-			addHandlerRoute(kubeUtil, router, route)
+			addHandlerRoute(router, route)
 		}
 	}
 }
@@ -128,8 +128,8 @@ func initializeHealthEndpoint(router *mux.Router) {
 	}).Methods("GET")
 }
 
-func addHandlerRoute(kubeUtil utils.KubeUtil, router *mux.Router, route models.Route) {
+func addHandlerRoute(router *mux.Router, route models.Route) {
 	path := apiVersionRoute + route.Path
 	router.HandleFunc(path,
-		utils.NewRadixMiddleware(kubeUtil, path, route.Method, route.HandlerFunc).Handle).Methods(route.Method)
+		utils.NewRadixMiddleware(path, route.Method, route.HandlerFunc).Handle).Methods(route.Method)
 }

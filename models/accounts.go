@@ -3,23 +3,15 @@ package models
 import (
 	"fmt"
 	jwt "github.com/dgrijalva/jwt-go"
-	radixclient "github.com/equinor/radix-operator/pkg/client/clientset/versioned"
-	"k8s.io/client-go/kubernetes"
 	"net/http"
 )
 
 // NewAccounts creates a new Accounts struct
 func NewAccounts(
-	client kubernetes.Interface,
-	radixClient radixclient.Interface,
 	token string,
 	impersonation Impersonation) Accounts {
 
 	return Accounts{
-		UserAccount: Account{
-			Client:      client,
-			RadixClient: radixClient,
-		},
 		token:         token,
 		impersonation: impersonation,
 	}

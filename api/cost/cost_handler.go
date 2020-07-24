@@ -16,22 +16,18 @@ import (
 
 // CostHandler Instance variables
 type Handler struct {
-	accounts models.Accounts
+	token string
 }
 
 // Init Constructor
-func Init(accounts models.Accounts) Handler {
+func Init(accounts string) Handler {
 	return Handler{
-		accounts: accounts,
+		token: accounts,
 	}
 }
 
-func (costHandler Handler) getUserAccount() models.Account {
-	return costHandler.accounts.UserAccount
-}
-
 func (costHandler Handler) getToken() string {
-	return costHandler.accounts.GetToken()
+	return costHandler.token
 }
 
 // todo! create write only connection string? dont need read/admin access

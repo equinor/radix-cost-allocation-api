@@ -6,27 +6,21 @@ import (
 	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	"github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/equinor/radix-cost-allocation-api/router"
-	radixclient "github.com/equinor/radix-operator/pkg/client/clientset/versioned"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
-	kubernetes "k8s.io/client-go/kubernetes"
 	"net/http"
 	"net/http/httptest"
 )
 
 // Utils Instance variables
 type Utils struct {
-	client      kubernetes.Interface
-	radixclient radixclient.Interface
 	controllers []models.Controller
 }
 
 // NewTestUtils Constructor
-func NewTestUtils(client kubernetes.Interface, radixclient radixclient.Interface, controllers ...models.Controller) Utils {
+func NewTestUtils(controllers ...models.Controller) Utils {
 	return Utils{
-		client,
-		radixclient,
 		controllers,
 	}
 }
@@ -52,7 +46,7 @@ func (tu *Utils) ExecuteRequestWithParameters(method, endpoint string, parameter
 	response := make(chan *httptest.ResponseRecorder)
 	go func() {
 		rr := httptest.NewRecorder()
-		router.NewServer("anyClusterName", NewKubeUtilMock(tu.client, tu.radixclient), tu.controllers...).ServeHTTP(rr, req)
+		router.NewServer("anyClusterName", tu.controllers...).ServeHTTP(rr, req)
 		response <- rr
 		close(response)
 	}()
@@ -79,32 +73,4 @@ func GetResponseBody(response *httptest.ResponseRecorder, target interface{}) er
 	log.Infof(string(body))
 
 	return json.Unmarshal(body, target)
-}
-
-type kubeUtilMock struct {
-	kubeFake  kubernetes.Interface
-	radixFake radixclient.Interface
-}
-
-// NewKubeUtilMock Constructor
-func NewKubeUtilMock(client kubernetes.Interface, radixclient radixclient.Interface) utils.KubeUtil {
-	return &kubeUtilMock{
-		client,
-		radixclient,
-	}
-}
-
-// GetOutClusterKubernetesClient Gets a kubefake client using the bearer token from the radix api client
-func (ku *kubeUtilMock) GetOutClusterKubernetesClient(token string) (kubernetes.Interface, radixclient.Interface) {
-	return ku.kubeFake, ku.radixFake
-}
-
-// GetOutClusterKubernetesClient Gets a kubefake client
-func (ku *kubeUtilMock) GetOutClusterKubernetesClientWithImpersonation(token string, impersonation models.Impersonation) (kubernetes.Interface, radixclient.Interface) {
-	return ku.kubeFake, ku.radixFake
-}
-
-// GetInClusterKubernetesClient Gets a kubefake client using the config of the running pod
-func (ku *kubeUtilMock) GetInClusterKubernetesClient() (kubernetes.Interface, radixclient.Interface) {
-	return ku.kubeFake, ku.radixFake
 }
