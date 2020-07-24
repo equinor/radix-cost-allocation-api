@@ -39,5 +39,5 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-s -w" -a -installsuffix cgo -o 
 FROM scratch
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /usr/local/bin/radix-cost-allocation-api /usr/local/bin/radix-cost-allocation-api
-EXPOSE 3001
+EXPOSE 3003
 ENTRYPOINT ["/usr/local/bin/radix-cost-allocation-api"]
