@@ -27,7 +27,7 @@ spec:
       replicas: 1
       horizontalScaling:
         minReplicas: 1
-        maxReplicas: 2
+        maxReplicas: 1
       monitoring: true
       resources:
         requests:
@@ -41,7 +41,7 @@ spec:
         SQL_SERVER: "sql-radix-cost-allocation-dev.database.windows.net"
         SQL_DATABASE: "sqldb-radix-cost-allocation"
     - environment: prod
-      replicas: 2
+      replicas: 1
       monitoring: true
       resources:
         requests:
