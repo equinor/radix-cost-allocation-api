@@ -2,7 +2,7 @@ FROM golang:alpine3.10 as builder
 ENV GO111MODULE=on
 
 RUN apk update && \
-    apk add bash jq alpine-sdk sed gawk git ca-certificates curl && \
+    apk add bash jq alpine-sdk sed gawk git ca-certificates curl mc && \
     apk add --no-cache gcc musl-dev && \
     go get -u golang.org/x/lint/golint && \
     go get -u github.com/rakyll/statik && \
@@ -36,8 +36,8 @@ RUN golint `go list ./...` && \
 # Build radix api go project
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-s -w" -a -installsuffix cgo -o /usr/local/bin/radix-cost-allocation-api
 
-FROM scratch
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=builder /usr/local/bin/radix-cost-allocation-api /usr/local/bin/radix-cost-allocation-api
+#FROM scratch
+#COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+#COPY --from=builder /usr/local/bin/radix-cost-allocation-api /usr/local/bin/radix-cost-allocation-api
 EXPOSE 3003
 ENTRYPOINT ["/usr/local/bin/radix-cost-allocation-api"]
