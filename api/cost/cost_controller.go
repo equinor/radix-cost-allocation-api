@@ -164,10 +164,12 @@ func getTimeFromRequest(r *http.Request, argName string) (*time.Time, error) {
 	if strings.EqualFold(strings.TrimSpace(timeString), "") {
 		return nil, fmt.Errorf("missed argument %s", argName)
 	}
-	if len(timeString) == 10 {
-	}
 	var err error
-	timeValue, err = utils.ParseTimestampBy("2006-01-02", timeString)
+	if len(timeString) == 10 {
+		timeValue, err = utils.ParseTimestampBy("2006-01-02", timeString)
+	} else {
+		timeValue, err = utils.ParseTimestamp(timeString)
+	}
 	if err != nil {
 		return nil, err
 	}

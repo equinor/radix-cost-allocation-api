@@ -60,8 +60,12 @@ func (costHandler Handler) GetTotalCost(fromTime, toTime *time.Time, appName *st
 		cost.ApplicationCosts = costHandler.filterApplicationCostsBy(appName, &cost)
 	}
 
-	radixApi := radix_api.GetForToken(context, cluster, apiEnvironment, costHandler.getToken())
-	err = costHandler.setApplicationProperties(&cost.ApplicationCosts, radixApi, appName)
+	radixApiClient := radix_api.GetForToken(context, cluster, apiEnvironment, costHandler.getToken())
+	rrMap, err := costHandler.getRadixRegistrationMap(radixApiClient, appName)
+	if err != nil {
+		return nil, err
+	}
+	err = costHandler.setApplicationProperties(&cost.ApplicationCosts, rrMap)
 	if err != nil {
 		return nil, err
 	}
@@ -78,11 +82,7 @@ func (costHandler Handler) filterApplicationCostsBy(appName *string, cost *costM
 	return []costModels.ApplicationCost{}
 }
 
-func (costHandler Handler) setApplicationProperties(applicationCosts *[]costModels.ApplicationCost, radixApi *client.Radixapi, appName *string) error {
-	rrMap, err := costHandler.getRadixRegistrationMap(radixApi, appName)
-	if err != nil {
-		return err
-	}
+func (costHandler Handler) setApplicationProperties(applicationCosts *[]costModels.ApplicationCost, rrMap *map[string]*radixApplication) error {
 	for idx := range *applicationCosts {
 		radixApp, rrExists := (*rrMap)[(*applicationCosts)[idx].Name]
 		if !rrExists {
