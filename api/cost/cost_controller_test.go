@@ -39,8 +39,8 @@ func TestGetTotalCost_ApplicationExists(t *testing.T) {
 		responseChannel := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/totalcost/%s", "app-name"))
 		response := <-responseChannel
 
-		cost := costModels.Cost{}
-		controllertest.GetResponseBody(response, &cost)
-		assert.NotNil(t, cost)
+		applicationCostSet := costModels.ApplicationCostSet{}
+		controllertest.GetResponseBody(response, &applicationCostSet)
+		assert.NotNil(t, applicationCostSet)
 	})
 }

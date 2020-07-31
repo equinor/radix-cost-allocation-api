@@ -71,7 +71,7 @@ func (costController *costController) GetTotalCosts(accounts models.Accounts, w 
 	//   "200":
 	//     description: "Successful get cost"
 	//     schema:
-	//        "$ref": "#/definitions/Cost"
+	//        "$ref": "#/definitions/ApplicationCostSet"
 	//   "401":
 	//     description: "Unauthorized"
 	//   "404":
@@ -116,7 +116,7 @@ func (costController *costController) GetTotalCost(accounts models.Accounts, w h
 	//   "200":
 	//     description: "Successful get cost"
 	//     schema:
-	//        "$ref": "#/definitions/Cost"
+	//        "$ref": "#/definitions/ApplicationCostSet"
 	//   "401":
 	//     description: "Unauthorized"
 	//   "404":

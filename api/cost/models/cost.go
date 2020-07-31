@@ -2,47 +2,49 @@ package cost_models
 
 import "time"
 
-// Cost details of cost
-// swagger:model Cost
-type Cost struct {
+// ApplicationCostSet details of application cost set
+// swagger:model ApplicationCostSet
+type ApplicationCostSet struct {
 
-	// Cost period started From
+	// ApplicationCostSet period started From
 	//
 	// required: true
-	From time.Time
+	From time.Time `json:"from"`
 
-	// Cost period continued To
+	// ApplicationCostSet period continued To
 	//
 	// required: true
-	To time.Time
+	To time.Time `json:"to"`
 
 	// ApplicationCosts with costs.
 	//
 	// required: true
-	ApplicationCosts []ApplicationCost
+	ApplicationCosts []ApplicationCost `json:"applicationCosts"`
 
 	// Runs of ApplicationCosts.
 	//
 	// required: true
-	runs []Run
+	runs []Run `json:"runs"`
 
 	// TotalRequestedCPU within the period.
 	//
 	// required: true
-	TotalRequestedCPU int
+	TotalRequestedCPU int `json:"totalRequestedCpu"`
 
 	// TotalRequestedMemory within the period.
 	//
 	// required: true
-	TotalRequestedMemory int
+	TotalRequestedMemory int `json:"totalRequestedMemory"`
 }
 
+// ApplicationCost details of one application cost
+// swagger:model ApplicationCost
 type ApplicationCost struct {
 	// Name of the application
 	//
 	// required: true
 	// example: radix-canary-golang
-	Name string
+	Name string `json:"name"`
 	// Owner of the application (email). Can be a single person or a shared group email.
 	//
 	// required: false
@@ -56,28 +58,28 @@ type ApplicationCost struct {
 	// WBS for the application.
 	//
 	// required: false
-	WBS string
+	WBS string `json:"wbs"`
 
 	// CostPercentageByCPU is cost percentage by CPU for the application.
 	//
 	// required: true
-	CostPercentageByCPU float64
+	CostPercentageByCPU float64 `json:"costPercentageByCpu"`
 
 	// CostPercentageByMemory is cost percentage by memory for the application
 	//
 	// required: true
-	CostPercentageByMemory float64
+	CostPercentageByMemory float64 `json:"costPercentageByMemory"`
 
 	// Comment regarding cost
 	//
 	// required: false
-	Comment string
+	Comment string `json:"comment"`
 }
 
-// NewCost aggregate cost over a time period for applications
-func NewCost(from, to time.Time, runs []Run) Cost {
+// NewApplicationCostSet aggregate cost over a time period for applications
+func NewApplicationCostSet(from, to time.Time, runs []Run) ApplicationCostSet {
 	applicationCosts, totalRequestedCPU, totalRequestedMemory := aggregateCostBetweenDatesOnApplications(runs)
-	cost := Cost{
+	cost := ApplicationCostSet{
 		From:                 from,
 		To:                   to,
 		ApplicationCosts:     applicationCosts,
@@ -89,7 +91,7 @@ func NewCost(from, to time.Time, runs []Run) Cost {
 }
 
 // GetCostBy returns application by appName
-func (cost Cost) GetCostBy(appName string) *ApplicationCost {
+func (cost ApplicationCostSet) GetCostBy(appName string) *ApplicationCost {
 	for _, app := range cost.ApplicationCosts {
 		if app.Name == appName {
 			return &app

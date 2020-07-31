@@ -34,7 +34,7 @@ func (costHandler Handler) getToken() string {
 const port = 1433
 
 // GetTotalCost handler for GetTotalCost
-func (costHandler Handler) GetTotalCost(fromTime, toTime *time.Time, appName *string) (*costModels.Cost, error) {
+func (costHandler Handler) GetTotalCost(fromTime, toTime *time.Time, appName *string) (*costModels.ApplicationCostSet, error) {
 	var (
 		sqlServer   = os.Getenv("SQL_SERVER")
 		sqlDatabase = os.Getenv("SQL_DATABASE")
@@ -55,9 +55,9 @@ func (costHandler Handler) GetTotalCost(fromTime, toTime *time.Time, appName *st
 		return nil, err
 	}
 
-	cost := costModels.NewCost(*fromTime, *toTime, runs)
+	applicationCostSet := costModels.NewApplicationCostSet(*fromTime, *toTime, runs)
 	if appName != nil && !strings.EqualFold(*appName, "") {
-		cost.ApplicationCosts = costHandler.filterApplicationCostsBy(appName, &cost)
+		applicationCostSet.ApplicationCosts = costHandler.filterApplicationCostsBy(appName, &applicationCostSet)
 	}
 
 	radixApiClient := radix_api.GetForToken(context, cluster, apiEnvironment, costHandler.getToken())
@@ -65,15 +65,15 @@ func (costHandler Handler) GetTotalCost(fromTime, toTime *time.Time, appName *st
 	if err != nil {
 		return nil, err
 	}
-	err = costHandler.setApplicationProperties(&cost.ApplicationCosts, rrMap)
+	err = costHandler.setApplicationProperties(&applicationCostSet.ApplicationCosts, rrMap)
 	if err != nil {
 		return nil, err
 	}
 
-	return &cost, nil
+	return &applicationCostSet, nil
 }
 
-func (costHandler Handler) filterApplicationCostsBy(appName *string, cost *costModels.Cost) []costModels.ApplicationCost {
+func (costHandler Handler) filterApplicationCostsBy(appName *string, cost *costModels.ApplicationCostSet) []costModels.ApplicationCost {
 	for _, applicationCost := range (*cost).ApplicationCosts {
 		if applicationCost.Name == *appName {
 			return []costModels.ApplicationCost{applicationCost}
