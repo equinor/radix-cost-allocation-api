@@ -14,6 +14,7 @@ import (
 const clusternameEnvironmentVariable = "RADIX_CLUSTERNAME"
 
 func main() {
+	log.SetLevel(log.DebugLevel)
 	fs := initializeFlagSet()
 
 	var (
