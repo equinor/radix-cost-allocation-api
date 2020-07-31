@@ -21,11 +21,6 @@ type ApplicationCostSet struct {
 	// required: true
 	ApplicationCosts []ApplicationCost `json:"applicationCosts"`
 
-	// Runs of ApplicationCosts.
-	//
-	// required: true
-	runs []Run `json:"runs"`
-
 	// TotalRequestedCPU within the period.
 	//
 	// required: true
@@ -85,7 +80,6 @@ func NewApplicationCostSet(from, to time.Time, runs []Run) ApplicationCostSet {
 		ApplicationCosts:     applicationCosts,
 		TotalRequestedCPU:    totalRequestedCPU,
 		TotalRequestedMemory: totalRequestedMemory,
-		runs:                 runs,
 	}
 	return cost
 }
