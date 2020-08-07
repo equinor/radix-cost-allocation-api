@@ -10,7 +10,7 @@ import (
 
 func Test_cost_all_app_equal_requested(t *testing.T) {
 	runs := getTestRuns()
-	cost := cost_models.NewApplicationCostSet(time.Now().Add(-1), time.Now(), runs)
+	cost := cost_models.NewApplicationCostSet(time.Now().Add(-1), time.Now(), runs, 0)
 
 	assert.Equal(t, cost.ApplicationCosts[0].CostPercentageByCPU, cost.ApplicationCosts[1].CostPercentageByCPU)
 	assert.Equal(t, cost.ApplicationCosts[1].CostPercentageByCPU, cost.ApplicationCosts[2].CostPercentageByCPU)
@@ -29,7 +29,7 @@ func Test_cost_one_app_double_requested(t *testing.T) {
 	runs[0].Resources[0].Replicas = 4
 	runs[1].Resources[0].Replicas = 4
 	runs[2].Resources[0].Replicas = 4
-	cost := cost_models.NewApplicationCostSet(time.Now().Add(-1), time.Now(), runs)
+	cost := cost_models.NewApplicationCostSet(time.Now().Add(-1), time.Now(), runs, 0)
 
 	assert.Equal(t, 0.4, cost.GetCostBy("app-1").CostPercentageByCPU)
 	assert.Equal(t, 0.2, cost.GetCostBy("app-2").CostPercentageByCPU)
@@ -47,7 +47,7 @@ func Test_cost_one_app_no_requested(t *testing.T) {
 	runs[0].Resources[0].Replicas = 0
 	runs[1].Resources[0].Replicas = 0
 	runs[2].Resources[0].Replicas = 0
-	cost := cost_models.NewApplicationCostSet(time.Now().Add(-1), time.Now(), runs)
+	cost := cost_models.NewApplicationCostSet(time.Now().Add(-1), time.Now(), runs, 0)
 
 	oneThird := float64(1.0) / float64(3.0)
 	assert.Equal(t, 0.0, cost.GetCostBy("app-1").CostPercentageByCPU)

@@ -40,6 +40,7 @@ spec:
         PIPELINE_IMG_TAG: "master-latest"
         SQL_SERVER: "sql-radix-cost-allocation-dev.database.windows.net"
         SQL_DATABASE: "sqldb-radix-cost-allocation"
+        SUBSCRIPTION_COST: "80000"
     - environment: prod
       replicas: 1
       monitoring: true

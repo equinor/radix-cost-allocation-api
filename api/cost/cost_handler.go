@@ -10,6 +10,7 @@ import (
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/application"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/platform"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -45,17 +46,21 @@ func (costHandler Handler) GetTotalCost(fromTime, toTime *time.Time, appName *st
 	defer sqlClient.Close()
 
 	var (
-		context        = os.Getenv("RADIX_CLUSTER_TYPE")
-		apiEnvironment = os.Getenv("RADIX_ENVIRONMENT")
-		cluster        = os.Getenv("RADIX_CLUSTER_NAME")
+		context             = os.Getenv("RADIX_CLUSTER_TYPE")
+		apiEnvironment      = os.Getenv("RADIX_ENVIRONMENT")
+		cluster             = os.Getenv("RADIX_CLUSTER_NAME")
+		subscriptionCostEnv = os.Getenv("SUBSCRIPTION_COST")
 	)
-
+	subscriptionCost, er := strconv.ParseFloat(subscriptionCostEnv, 64)
+	if er != nil {
+		subscriptionCost = 0.0
+	}
 	runs, err := sqlClient.GetRunsBetweenTimes(fromTime, toTime)
 	if err != nil {
 		return nil, err
 	}
 
-	applicationCostSet := costModels.NewApplicationCostSet(*fromTime, *toTime, runs)
+	applicationCostSet := costModels.NewApplicationCostSet(*fromTime, *toTime, runs, subscriptionCost)
 	if appName != nil && !strings.EqualFold(*appName, "") {
 		applicationCostSet.ApplicationCosts = costHandler.filterApplicationCostsBy(appName, &applicationCostSet)
 	}
