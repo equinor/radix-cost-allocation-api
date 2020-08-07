@@ -1,7 +1,6 @@
 package cost_models
 
 import (
-	"strconv"
 	"time"
 )
 
@@ -76,7 +75,7 @@ type ApplicationCost struct {
 	// Cost
 	//
 	// required: true
-	Cost string `json:"cost"`
+	Cost float64 `json:"cost"`
 
 	// Cost currency
 	//
@@ -126,7 +125,7 @@ func aggregateCostBetweenDatesOnApplications(runs []Run, subscriptionCost float6
 	for appName, cpu := range cpuPercentages {
 		applications = append(applications, ApplicationCost{
 			Name:                   appName,
-			Cost:                   strconv.FormatFloat(cpu*subscriptionCost, 'f', 2, 64),
+			Cost:                   cpu * subscriptionCost,
 			Currency:               "NOK",
 			CostPercentageByCPU:    cpu,
 			CostPercentageByMemory: memoryPercentage[appName],
