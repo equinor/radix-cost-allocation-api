@@ -4,52 +4,53 @@ metadata:
   name: radix-cost-allocation-api
 spec:
   environments:
-  - name: prod
-    build:
-      from: release
-  - name: qa
-    build:
-      from: master
-  - name: dev
+    - name: prod
+      build:
+        from: release
+    - name: qa
+      build:
+        from: master
+    - name: dev
   components:
-  - name: "server"
-    src: "."
-    dockerfileName: "Dockerfile"
-    ports:
-    - name: http
-      port: 3003
-    public: true
-    secrets:
-      - SQL_USER
-      - SQL_PASSWORD
-    environmentConfig:
-    - environment: qa
-      replicas: 1
-      horizontalScaling:
-        minReplicas: 1
-        maxReplicas: 1
-      monitoring: true
-      resources:
-        requests:
-          memory: "100M"
-          cpu: "50m"
-        limits:
-          memory: "100M"
-          cpu: "50m"
-      variables:
-        PIPELINE_IMG_TAG: "master-latest"
-        SQL_SERVER: "sql-radix-cost-allocation-dev.database.windows.net"
-        SQL_DATABASE: "sqldb-radix-cost-allocation"
-        SUBSCRIPTION_COST: "80000"
-    - environment: prod
-      replicas: 1
-      monitoring: true
-      resources:
-        requests:
-          memory: "200M"
-          cpu: "100m"
-        limits:
-          memory: "200M"
-          cpu: "100m"
-      variables:
-        PIPELINE_IMG_TAG: "release-latest"
+    - name: "server"
+      src: "."
+      dockerfileName: "Dockerfile"
+      ports:
+        - name: http
+          port: 3003
+      public: true
+      secrets:
+        - SQL_SERVER
+        - SQL_DATABASE
+        - SQL_USER
+        - SQL_PASSWORD
+        - SUBSCRIPTION_COST
+        - SUBSCRIPTION_COST_CURRENCY
+      environmentConfig:
+        - environment: qa
+          replicas: 1
+          horizontalScaling:
+            minReplicas: 1
+            maxReplicas: 1
+          monitoring: true
+          resources:
+            requests:
+              memory: "100M"
+              cpu: "50m"
+            limits:
+              memory: "100M"
+              cpu: "50m"
+          variables:
+            PIPELINE_IMG_TAG: "master-latest"
+        - environment: prod
+          replicas: 1
+          monitoring: true
+          resources:
+            requests:
+              memory: "200M"
+              cpu: "100m"
+            limits:
+              memory: "200M"
+              cpu: "100m"
+          variables:
+            PIPELINE_IMG_TAG: "release-latest"

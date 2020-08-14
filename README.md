@@ -62,3 +62,66 @@ If radix-operator is updated to a new tag, `go.mod` should be updated as follows
    
     github.com/equinor/radix-operator <NEW_OPERATOR_TAG>
 ```
+To install with `install_base_components.sh`, mentioned above - add RadixRegistration values and application secrets to Azure KeyVault:
+1. If using a terminal - login to an Azure and switch to an Azure subscription:
+    ```
+    az login
+    az account set -s "<SUBSCRIPTION-NAME>"
+    ```
+2. Create a file `radix-cost-allocation-api-radixregistration-values.yaml` with a content:
+    ```
+    repository: https://github.com/<GIT-USER>/<GIT-REPOSITORY>
+    cloneURL: git@github.com:<GIT-USER>@<GIT-REPOSITORY>.git
+    adGroups:
+      - <AD-GROUP-IF-USED>
+    deployKey: |
+        -----BEGIN RSA PRIVATE KEY-----
+        <YOUR-PRIVATE-KEY>
+        -----END RSA PRIVATE KEY-----
+    deployKeyPublic: ssh-rsa <YOUR-PUBLIC-KEY>
+    sharedSecret: <SOME-RANDOM-TEXT>
+    ```
+3. Set the secret with following command or with Azure portal (`Key vault`/`Secrets`):
+    ```
+    az keyvault secret set  \
+    -f radix-cost-allocation-api-radixregistration-values.yaml \
+    -n radix-cost-allocation-api-radixregistration-values \
+    --vault-name "<KEYVAULT>"
+    ```
+4. To check - run following command and read the created file `...-check.yaml` or with Azure portal (`Key vault`/`Secrets`):
+    ```
+    az keyvault secret download \
+    -f radix-cost-allocation-api-radixregistration-values-check.yaml \
+    -n radix-cost-allocation-api-radixregistration-values \
+    --vault-name "<KEYVAULT>" 
+    ```
+5. Create a file `radix-cost-allocation-api-secrets.json` with content:
+    ```
+    {
+      "db": {
+        "server":"<SERVER>",
+        "database":"<DATABASE>",
+        "user":"<USER>",
+        "password":"<PASSWORD>"
+      },
+      "subscriptionCost": {
+        "value": "<COST-VALUE>",
+        "currency": "<COST-CURRENCY>"
+      }
+    }
+    ```
+6. Set the secret with following command or with Azure portal (`Key vault`/`Secrets`):
+    ```
+    az keyvault secret set \
+    -f radix-cost-allocation-api-secrets.json \
+    -n radix-cost-allocation-api-secrets \
+    --vault-name "<KEYVAULT>"
+    ```
+7. To check - run following command and read the created file `...-check.json` or with Azure portal (`Key vault`/`Secrets`):
+    ```
+    az keyvault secret download \
+    -f radix-cost-allocation-api-secrets-check.json \
+    -n radix-cost-allocation-api-secrets \
+    --vault-name "<KEYVAULT>" 
+    ```
+ 

@@ -84,8 +84,8 @@ type ApplicationCost struct {
 }
 
 // NewApplicationCostSet aggregate cost over a time period for applications
-func NewApplicationCostSet(from, to time.Time, runs []Run, subscriptionCost float64) ApplicationCostSet {
-	applicationCosts, totalRequestedCPU, totalRequestedMemory := aggregateCostBetweenDatesOnApplications(runs, subscriptionCost)
+func NewApplicationCostSet(from, to time.Time, runs []Run, subscriptionCost float64, subscriptionCostCurrency string) ApplicationCostSet {
+	applicationCosts, totalRequestedCPU, totalRequestedMemory := aggregateCostBetweenDatesOnApplications(runs, subscriptionCost, subscriptionCostCurrency)
 	cost := ApplicationCostSet{
 		From:                 from,
 		To:                   to,
@@ -107,7 +107,7 @@ func (cost ApplicationCostSet) GetCostBy(appName string) *ApplicationCost {
 }
 
 // aggregateCostBetweenDatesOnApplications calculates cost for an application
-func aggregateCostBetweenDatesOnApplications(runs []Run, subscriptionCost float64) ([]ApplicationCost, int, int) {
+func aggregateCostBetweenDatesOnApplications(runs []Run, subscriptionCost float64, subscriptionCostCurrency string) ([]ApplicationCost, int, int) {
 	totalRequestedCPU := totalRequestedCPU(runs)
 	totalRequestedMemory := totalRequestedMemoryMegaBytes(runs)
 	cpuPercentages := map[string]float64{}
@@ -126,7 +126,7 @@ func aggregateCostBetweenDatesOnApplications(runs []Run, subscriptionCost float6
 		applications = append(applications, ApplicationCost{
 			Name:                   appName,
 			Cost:                   cpu * subscriptionCost,
-			Currency:               "NOK",
+			Currency:               subscriptionCostCurrency,
 			CostPercentageByCPU:    cpu,
 			CostPercentageByMemory: memoryPercentage[appName],
 		})
