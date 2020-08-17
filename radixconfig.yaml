@@ -24,7 +24,7 @@ spec:
         - SQL_DATABASE
         - SQL_USER
         - SQL_PASSWORD
-        - SUBSCRIPTION_COST
+        - SUBSCRIPTION_COST_VALUE
         - SUBSCRIPTION_COST_CURRENCY
       environmentConfig:
         - environment: qa
