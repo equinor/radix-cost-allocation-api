@@ -26,7 +26,13 @@ Go modules are used for dependency management. See [link](https://blog.golang.or
 
 ### Running locally
 
-The following env vars are needed. Useful default values in brackets.
+Run once after cloning of the GitHub repository:
+
+1. `go mod download`
+1. `make swagger`
+2. `make generate-radix-api-client`
+
+The following env var is needed. Useful default values in brackets.
 
 - `RADIX_CONTAINER_REGISTRY` - (`radixdev.azurecr.io`)
 
