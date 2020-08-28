@@ -52,7 +52,7 @@ The following env var is needed. Useful default values in brackets.
 
 #### Process
 
-1. Update version in `doc/docs.go` of swagger version in `main.go` so that you can see that the version in the environment corresponds with what you wanted
+1. Update version in `docs/docs.go` of swagger version in `main.go` so that you can see that the version in the environment corresponds with what you wanted
 2. Execute `draft up` to install to dev environment of radix-cost-allocation-api
 3. Wait for pods to start
 4. Go to `https://server-radix-cost-allocation-api-dev.<cluster name>.dev.radix.equinor.com/swaggerui/` to see if the version in the swagger corresponds with the version you set in the header.
