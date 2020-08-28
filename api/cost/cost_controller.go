@@ -50,13 +50,13 @@ func (costController *costController) GetTotalCosts(accounts models.Accounts, w 
 	//   description: Get cost from fromTime (example 2020-03-18 or 2020-03-18T07:20:41+01:00)
 	//   type: string
 	//   format: date-time
-	//   required: false
+	//   required: true
 	// - name: toTime
 	//   in: query
 	//   description: Get cost to toTime (example 2020-09-18 or 2020-09-18T07:20:41+01:00)
 	//   type: string
 	//   format: date-time
-	//   required: false
+	//   required: true
 	// - name: Impersonate-User
 	//   in: header
 	//   description: Works only with custom setup of cluster. Allow impersonation of test users (Required if Impersonate-Group is set)
@@ -95,13 +95,13 @@ func (costController *costController) GetTotalCost(accounts models.Accounts, w h
 	//   description: Get cost from fromTime (example 2020-03-18 or 2020-03-18T07:20:41+01:00)
 	//   type: string
 	//   format: date-time
-	//   required: false
+	//   required: true
 	// - name: toTime
 	//   in: query
 	//   description: Get cost to toTime (example 2020-09-18 or 2020-09-18T07:20:41+01:00)
 	//   type: string
 	//   format: date-time
-	//   required: false
+	//   required: true
 	// - name: Impersonate-User
 	//   in: header
 	//   description: Works only with custom setup of cluster. Allow impersonation of test users (Required if Impersonate-Group is set)
