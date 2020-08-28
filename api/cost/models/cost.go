@@ -112,12 +112,14 @@ func aggregateCostBetweenDatesOnApplications(runs []Run, subscriptionCost float6
 	totalRequestedMemory := totalRequestedMemoryMegaBytes(runs)
 	cpuPercentages := map[string]float64{}
 	memoryPercentage := map[string]float64{}
+	wbsCodes := map[string]string{}
 
-	for _, runs := range runs {
-		applications := runs.GetApplicationsRequiredResource()
+	for _, run := range runs {
+		applications := run.GetApplicationsRequiredResource()
 		for _, application := range applications {
-			cpuPercentages[application.Name] += runs.CPUWeightInPeriod(totalRequestedCPU) * application.RequestedCPUPercentageOfRun
-			memoryPercentage[application.Name] += runs.MemoryWeightInPeriod(totalRequestedMemory) * application.RequestedMemoryPercentageOfRun
+			wbsCodes[application.Name] = application.WBS
+			cpuPercentages[application.Name] += run.CPUWeightInPeriod(totalRequestedCPU) * application.RequestedCPUPercentageOfRun
+			memoryPercentage[application.Name] += run.MemoryWeightInPeriod(totalRequestedMemory) * application.RequestedMemoryPercentageOfRun
 		}
 	}
 
@@ -125,6 +127,7 @@ func aggregateCostBetweenDatesOnApplications(runs []Run, subscriptionCost float6
 	for appName, cpu := range cpuPercentages {
 		applications = append(applications, ApplicationCost{
 			Name:                   appName,
+			WBS:                    wbsCodes[appName],
 			Cost:                   cpu * subscriptionCost,
 			Currency:               subscriptionCostCurrency,
 			CostPercentageByCPU:    cpu,
