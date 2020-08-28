@@ -25,6 +25,7 @@ type RequiredResources struct {
 
 type Application struct {
 	Name                           string
+	WBS                            string
 	RequestedCPUMillicore          int
 	RequestedMemoryMegaByte        int
 	RequestedCPUPercentageOfRun    float64
@@ -74,18 +75,21 @@ func (run Run) GetApplicationsRequiredResource() []Application {
 
 	requiredCPU := map[string]int{}
 	requiredMemory := map[string]int{}
+	wbsCodes := map[string]string{}
 	for _, resource := range run.Resources {
 		requiredCPU[resource.Application] += resource.CPUMillicore * resource.Replicas
 		requiredMemory[resource.Application] += resource.MemoryMegaBytes * resource.Replicas
+		wbsCodes[resource.Application] += resource.WBS
 	}
 	var applications []Application
-	for key, val := range requiredCPU {
+	for appName, val := range requiredCPU {
 		applications = append(applications, Application{
-			Name:                           key,
+			Name:                           appName,
+			WBS:                            wbsCodes[appName],
 			RequestedCPUMillicore:          val,
-			RequestedMemoryMegaByte:        requiredMemory[key],
+			RequestedMemoryMegaByte:        requiredMemory[appName],
 			RequestedCPUPercentageOfRun:    float64(val) / totalCPURequestedForRun,
-			RequestedMemoryPercentageOfRun: float64(requiredMemory[key]) / totalMemoryRequestedForRun,
+			RequestedMemoryPercentageOfRun: float64(requiredMemory[appName]) / totalMemoryRequestedForRun,
 		})
 	}
 	return applications

@@ -1,14 +1,9 @@
 package cost
 
 import (
-	"fmt"
 	_ "github.com/denisenkom/go-mssqldb"
 	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
 	"github.com/equinor/radix-cost-allocation-api/models"
-	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
-	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client"
-	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/application"
-	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/platform"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"strconv"
@@ -47,9 +42,6 @@ func (costHandler Handler) GetTotalCost(fromTime, toTime *time.Time, appName *st
 	defer sqlClient.Close()
 
 	var (
-		context                     = os.Getenv("RADIX_CLUSTER_TYPE")
-		apiEnvironment              = os.Getenv("RADIX_ENVIRONMENT")
-		cluster                     = os.Getenv("RADIX_CLUSTER_NAME")
 		subscriptionCostEnv         = os.Getenv("SUBSCRIPTION_COST_VALUE")
 		subscriptionCostCurrencyEnv = os.Getenv("SUBSCRIPTION_COST_CURRENCY")
 	)
@@ -71,16 +63,6 @@ func (costHandler Handler) GetTotalCost(fromTime, toTime *time.Time, appName *st
 		applicationCostSet.ApplicationCosts = costHandler.filterApplicationCostsBy(appName, &applicationCostSet)
 	}
 
-	radixApiClient := radix_api.GetForToken(context, cluster, apiEnvironment, costHandler.getToken())
-	rrMap, err := costHandler.getRadixRegistrationMap(radixApiClient, appName)
-	if err != nil {
-		return nil, err
-	}
-	err = costHandler.setApplicationProperties(&applicationCostSet.ApplicationCosts, rrMap)
-	if err != nil {
-		return nil, err
-	}
-
 	return &applicationCostSet, nil
 }
 
@@ -91,66 +73,4 @@ func (costHandler Handler) filterApplicationCostsBy(appName *string, cost *costM
 		}
 	}
 	return []costModels.ApplicationCost{}
-}
-
-func (costHandler Handler) setApplicationProperties(applicationCosts *[]costModels.ApplicationCost, rrMap *map[string]*radixApplication) error {
-	for idx := range *applicationCosts {
-		radixApp, rrExists := (*rrMap)[(*applicationCosts)[idx].Name]
-		if !rrExists {
-			(*applicationCosts)[idx].Comment = fmt.Sprintf("RadixApplication not found by application name %s.", (*applicationCosts)[idx].Name)
-			continue
-		}
-		(*applicationCosts)[idx].Creator = radixApp.Creator
-		(*applicationCosts)[idx].Owner = radixApp.Owner
-		(*applicationCosts)[idx].WBS = radixApp.WBS
-	}
-	return nil
-}
-
-type radixApplication struct {
-	Name    string
-	Creator string
-	Owner   string
-	WBS     string
-}
-
-func (costHandler Handler) getRadixRegistrationMap(radixApiClient *client.Radixapi, appName *string) (*map[string]*radixApplication, error) {
-	if appName != nil && !strings.EqualFold(*appName, "") {
-		app, err := costHandler.getRadixApplicationDetails(radixApiClient, appName)
-		if err != nil {
-			return nil, err
-		}
-		return &map[string]*radixApplication{app.Name: app}, nil
-	}
-
-	showApplicationParams := platform.NewShowApplicationsParams()
-	resp, err := radixApiClient.Platform.ShowApplications(showApplicationParams, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	radixAppMap := make(map[string]*radixApplication)
-	for _, appSummary := range resp.Payload {
-		name := appSummary.Name
-		radixAppMap[name] = &radixApplication{
-			Name: name,
-		}
-	}
-	return &radixAppMap, err
-}
-
-func (costHandler Handler) getRadixApplicationDetails(radixApiClient *client.Radixapi, appName *string) (*radixApplication, error) {
-	getApplicationParams := application.NewGetApplicationParams()
-	getApplicationParams.SetAppName(*appName)
-	resp, err := radixApiClient.Application.GetApplication(getApplicationParams, nil)
-	if err != nil || resp == nil {
-		return nil, err
-	}
-	ar := resp.Payload.Registration
-	return &radixApplication{
-		Name:    *ar.Name,
-		Creator: *ar.Creator,
-		Owner:   *ar.Owner,
-		WBS:     ar.WBS,
-	}, nil
 }

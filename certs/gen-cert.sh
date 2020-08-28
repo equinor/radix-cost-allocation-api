@@ -6,7 +6,7 @@
 # - register an admission controller using public key from cert and endpoint "/admissioncontrollers/applications" 
 # last step should be moved somewhere else, so that it can be used to register admission controller for 
 # different crds as RadixRegistration, RadixApplication and RadixDeployment
-title="radix-api-prod"
+title="radix-cost-allocation-api-prod"
 kubectl create namespace ${title} || true
 
 csrName=${title}.${title}
@@ -104,6 +104,6 @@ webhooks:
     caBundle: $(cat ${tmpdir}/server-cert.pem | base64)
     service:
        name: server
-       namespace: radix-api-prod
+       namespace: radix-cost-allocation-api-prod
        path: "/admissioncontrollers/applications"
 EOF
