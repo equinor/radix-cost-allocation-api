@@ -29,7 +29,7 @@ Go modules are used for dependency management. See [link](https://blog.golang.or
 Run once after cloning of the GitHub repository:
 
 1. `go mod download`
-1. `make swagger`
+2. `make swagger`
 
 The following env var is needed. Useful default values in brackets.
 
