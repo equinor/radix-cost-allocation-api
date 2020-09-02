@@ -1,0 +1,10 @@
+[environments]
+  [environments.development]
+    name = "radix-cost-allocation-api-dev"
+    namespace = "radix-cost-allocation-api-dev"
+    wait = true
+    watch = false
+    watch-delay = 2
+    auto-connect = false
+    dockerfile = "Dockerfile"
+    chart = ""
