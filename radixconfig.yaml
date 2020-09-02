@@ -52,7 +52,7 @@ spec:
               cpu: "40m"
             limits:
               memory: "300M"
-              cpu: "400m"
+              cpu: "1000m"
           variables:
             PIPELINE_IMG_TAG: "release-latest"
             LOG_LEVEL: INFO
