@@ -27,11 +27,14 @@ func main() {
 		clusterName = os.Getenv(clusternameEnvironmentVariable)
 	)
 
+	log.Debugf("Port: %s\n", *port)
+	log.Debugf("Cluster: %s\n", clusterName)
+
 	parseFlagsFromArgs(fs)
 
 	errs := make(chan error)
 	go func() {
-		log.Infof("Api is serving on port %s", *port)
+		log.Infof("API is serving on port %s", *port)
 		err := http.ListenAndServe(fmt.Sprintf(":%s", *port), router.NewServer(clusterName, getControllers()...))
 		errs <- err
 	}()
