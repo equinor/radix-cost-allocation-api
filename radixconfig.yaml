@@ -35,11 +35,11 @@ spec:
           monitoring: true
           resources:
             requests:
-              memory: "300M"
-              cpu: "100m"
+              memory: "100M"
+              cpu: "2000m"
             limits:
-              memory: "300M"
-              cpu: "100m"
+              memory: "100M"
+              cpu: "20m"
           variables:
             PIPELINE_IMG_TAG: "master-latest"
             LOG_LEVEL: INFO
@@ -48,11 +48,11 @@ spec:
           monitoring: true
           resources:
             requests:
-              memory: "300M"
-              cpu: "40m"
+              memory: "100M"
+              cpu: "2000m"
             limits:
-              memory: "300M"
-              cpu: "1000m"
+              memory: "100M"
+              cpu: "20m"
           variables:
             PIPELINE_IMG_TAG: "release-latest"
             LOG_LEVEL: INFO
