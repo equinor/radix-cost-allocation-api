@@ -18,6 +18,13 @@ spec:
       ports:
         - name: http
           port: 3003
+      resources:
+        requests:
+          memory: "100M"
+          cpu: "20m"
+        limits:
+          memory: "100M"
+          cpu: "1000m"
       public: true
       secrets:
         - SQL_SERVER
@@ -33,26 +40,12 @@ spec:
             minReplicas: 1
             maxReplicas: 1
           monitoring: true
-          resources:
-            requests:
-              memory: "300M"
-              cpu: "100m"
-            limits:
-              memory: "300M"
-              cpu: "100m"
           variables:
             PIPELINE_IMG_TAG: "master-latest"
             LOG_LEVEL: INFO
         - environment: prod
           replicas: 1
           monitoring: true
-          resources:
-            requests:
-              memory: "300M"
-              cpu: "40m"
-            limits:
-              memory: "300M"
-              cpu: "1000m"
           variables:
             PIPELINE_IMG_TAG: "release-latest"
             LOG_LEVEL: INFO
