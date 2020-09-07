@@ -20,7 +20,7 @@ spec:
           port: 3003
       resources:
         requests:
-          memory: "100M"
+          memory: "130M"
           cpu: "20m"
         limits:
           memory: "100M"
