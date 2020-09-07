@@ -23,7 +23,7 @@ spec:
           memory: "130M"
           cpu: "20m"
         limits:
-          memory: "100M"
+          memory: "130M"
           cpu: "1000m"
       public: true
       secrets:
