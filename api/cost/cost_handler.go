@@ -1,14 +1,15 @@
 package cost
 
 import (
-	_ "github.com/denisenkom/go-mssqldb"
-	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
-	"github.com/equinor/radix-cost-allocation-api/models"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	_ "github.com/denisenkom/go-mssqldb"
+	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
+	"github.com/equinor/radix-cost-allocation-api/models"
+	log "github.com/sirupsen/logrus"
 )
 
 // CostHandler Instance variables
@@ -64,6 +65,38 @@ func (costHandler Handler) GetTotalCost(fromTime, toTime *time.Time, appName *st
 	}
 
 	return &applicationCostSet, nil
+}
+
+// GetFutureCost estimates cost for the next 30 days based on last run
+func (costHandler Handler) GetFutureCost(appName string) (int, error) {
+
+	// select * from cost.required_resources where run_id in (select max(run_id) from cost.required_resources)
+
+	var (
+		sqlServer   = os.Getenv("SQL_SERVER")
+		sqlDatabase = os.Getenv("SQL_DATABASE")
+		sqlUser     = os.Getenv("SQL_USER")
+		sqlPassword = os.Getenv("SQL_PASSWORD")
+	)
+	sqlClient := models.NewSQLClient(sqlServer, sqlDatabase, port, sqlUser, sqlPassword)
+	defer sqlClient.Close()
+
+	var (
+		subscriptionCostEnv         = os.Getenv("SUBSCRIPTION_COST_VALUE")
+		subscriptionCostCurrencyEnv = os.Getenv("SUBSCRIPTION_COST_CURRENCY")
+	)
+	subscriptionCost, er := strconv.ParseFloat(subscriptionCostEnv, 64)
+	if er != nil {
+		subscriptionCost = 0.0
+		log.Info("Subscription Cost is invalid or is not set.")
+	}
+	if len(subscriptionCostCurrencyEnv) == 0 {
+		log.Info("Subscription Cost currency is not set.")
+	}
+	runs, err := sqlClient.GetRunsBetweenTimes(fromTime, toTime)
+	if err != nil {
+		return nil, err
+	}
 }
 
 func (costHandler Handler) filterApplicationCostsBy(appName *string, cost *costModels.ApplicationCostSet) []costModels.ApplicationCost {

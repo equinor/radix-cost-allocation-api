@@ -2,12 +2,13 @@ package cost
 
 import (
 	"fmt"
-	"github.com/equinor/radix-cost-allocation-api/api/utils"
-	models "github.com/equinor/radix-cost-allocation-api/models"
-	"github.com/gorilla/mux"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/equinor/radix-cost-allocation-api/api/utils"
+	models "github.com/equinor/radix-cost-allocation-api/models"
+	"github.com/gorilla/mux"
 )
 
 const rootPath = ""
@@ -33,6 +34,11 @@ func (costController *costController) GetRoutes() models.Routes {
 			Path:        rootPath + "/totalcost/{appName}",
 			Method:      "GET",
 			HandlerFunc: costController.GetTotalCost,
+		},
+		models.Route{
+			Path:        rootPath + "/futurecost/{appName}",
+			Method:      "GET",
+			HandlerFunc: costController.EstimateFutureCost,
 		},
 	}
 
@@ -123,6 +129,23 @@ func (costController *costController) GetTotalCost(accounts models.Accounts, w h
 	//     description: "Not found"
 	appName := mux.Vars(r)["appName"]
 	costController.getTotalCosts(accounts, w, r, &appName)
+}
+
+func (costController *costController) EstimateFutureCost(accounts models.Accounts, w http.ResponseWriter, r *http.Request) {
+	appName := mux.Vars(r)["appName"]
+	costController.estimateFutureCost(accounts, w, r, appName)
+}
+
+func (costController *costController) estimateFutureCost(accounts models.Accounts, w http.ResponseWriter, r *http.Request, appName string) {
+	handler := Init(accounts.GetToken())
+	cost, err := handler.GetFutureCost(appName)
+
+	if err != nil {
+		utils.ErrorResponse(w, r, err)
+		return
+	}
+
+	utils.JSONResponse(w, r, cost)
 }
 
 func (costController *costController) getTotalCosts(accounts models.Accounts, w http.ResponseWriter, r *http.Request, appName *string) {

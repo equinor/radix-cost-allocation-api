@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
 	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
 
 	"log"
@@ -32,6 +33,43 @@ func NewSQLClient(server, database string, port int, userID, password string) SQ
 	}
 	sqlClient.db = sqlClient.setupDBConnection()
 	return sqlClient
+}
+
+func (sqlClient SQLClient) GetLatestRun() ([]costModels.Run, error) {
+	var latestRun []costModels.RequiredResources
+
+	ctx, err := sqlClient.verifyConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	query := "SELECT * FROM [cost].[required_resources] WHERE run_id IN (SELECT MAX(run_id) FROM [cost].[required_resources])"
+	rows, err := sqlClient.db.QueryContext(ctx, query)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var application, environment, component string
+		var cpu_millicores, memory_mega_bytes, replicas int
+
+		err := rows.Scan(
+			&application,
+			&environment,
+			&component,
+			&cpu_millicores,
+			&memory_mega_bytes,
+			&replicas,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
 }
 
 // GetRunsBetweenTimes get all runs with its resources between from and to time
