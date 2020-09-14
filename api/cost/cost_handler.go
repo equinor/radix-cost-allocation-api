@@ -68,7 +68,7 @@ func (costHandler Handler) GetTotalCost(fromTime, toTime *time.Time, appName *st
 }
 
 // GetFutureCost estimates cost for the next 30 days based on last run
-func (costHandler Handler) GetFutureCost(appName string) (int, error) {
+func (costHandler Handler) GetFutureCost(appName string) (*costModels.ApplicationCost, error) {
 
 	// select * from cost.required_resources where run_id in (select max(run_id) from cost.required_resources)
 
@@ -93,10 +93,14 @@ func (costHandler Handler) GetFutureCost(appName string) (int, error) {
 	if len(subscriptionCostCurrencyEnv) == 0 {
 		log.Info("Subscription Cost currency is not set.")
 	}
-	runs, err := sqlClient.GetRunsBetweenTimes(fromTime, toTime)
+	run, err := sqlClient.GetLatestRun()
 	if err != nil {
-		return nil, err
+		log.Info("Could not fetch latest run")
 	}
+
+	cost := costModels.NewFutureCostEstimate(appName, run, subscriptionCost, subscriptionCostCurrencyEnv)
+
+	return &cost, nil
 }
 
 func (costHandler Handler) filterApplicationCostsBy(appName *string, cost *costModels.ApplicationCostSet) []costModels.ApplicationCost {

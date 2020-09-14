@@ -35,40 +35,70 @@ func NewSQLClient(server, database string, port int, userID, password string) SQ
 	return sqlClient
 }
 
-func (sqlClient SQLClient) GetLatestRun() ([]costModels.Run, error) {
-	var latestRun []costModels.RequiredResources
+// GetLatestRun fetches the last run and joins them with resources logged for that run
+func (sqlClient SQLClient) GetLatestRun() (costModels.Run, error) {
+	var requiredResources []costModels.RequiredResources
+	var lastRun costModels.Run
 
 	ctx, err := sqlClient.verifyConnection()
 	if err != nil {
-		return nil, err
+		return costModels.Run{}, err
 	}
 
-	query := "SELECT * FROM [cost].[required_resources] WHERE run_id IN (SELECT MAX(run_id) FROM [cost].[required_resources])"
+	query :=
+		" WITH temptable AS " +
+			" (SELECT [run_id],[wbs],[application],[cpu_millicores],[memory_mega_bytes],[replicas] " +
+			" FROM [cost].[required_resources] " +
+			" WHERE [run_id] IN ( SELECT MAX(run_id) FROM [cost].[required_resources] )) " +
+			" SELECT rr.application, rr.cpu_millicores, rr.memory_mega_bytes, rr.wbs, rr.replicas, r.cluster_cpu_millicores, r.cluster_memory_mega_bytes, r.measured_time_utc FROM [cost].[runs] r " +
+			" INNER JOIN temptable rr ON r.[id] = rr.[run_id] "
+
 	rows, err := sqlClient.db.QueryContext(ctx, query)
 
 	if err != nil {
-		return nil, err
+		return costModels.Run{}, err
 	}
 
 	defer rows.Close()
 
 	for rows.Next() {
-		var application, environment, component string
-		var cpu_millicores, memory_mega_bytes, replicas int
+		var application, environment, component, wbs string
+		var cpuMillicores, memoryMegaBytes, replicas, clusterCPUMillicore, clusterMemoryMegabyte int
 
 		err := rows.Scan(
 			&application,
 			&environment,
 			&component,
-			&cpu_millicores,
-			&memory_mega_bytes,
+			&cpuMillicores,
+			&memoryMegaBytes,
 			&replicas,
+			&clusterCPUMillicore,
+			&clusterMemoryMegabyte,
 		)
 
 		if err != nil {
-			return nil, err
+			return costModels.Run{}, err
 		}
+
+		resource := costModels.RequiredResources{
+			Application:     application,
+			Environment:     environment,
+			Component:       component,
+			CPUMillicore:    cpuMillicores,
+			MemoryMegaBytes: memoryMegaBytes,
+			Replicas:        replicas,
+			WBS:             wbs,
+		}
+
+		lastRun.ClusterCPUMillicore = clusterCPUMillicore
+		lastRun.ClusterMemoryMegaByte = clusterMemoryMegabyte
+
+		requiredResources = append(requiredResources, resource)
 	}
+
+	lastRun.Resources = requiredResources
+
+	return lastRun, nil
 
 }
 

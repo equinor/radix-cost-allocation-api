@@ -96,6 +96,12 @@ func NewApplicationCostSet(from, to time.Time, runs []Run, subscriptionCost floa
 	return cost
 }
 
+// NewFutureCostEstimate aggregate cost data for the last recorded run
+func NewFutureCostEstimate(appName string, run Run, subscriptionCost float64, subscriptionCostCurrency string) ApplicationCost {
+	appCost := aggregateCostForSingleRun(run, subscriptionCost, subscriptionCostCurrency, appName)
+	return appCost
+}
+
 // GetCostBy returns application by appName
 func (cost ApplicationCostSet) GetCostBy(appName string) *ApplicationCost {
 	for _, app := range cost.ApplicationCosts {
@@ -135,6 +141,37 @@ func aggregateCostBetweenDatesOnApplications(runs []Run, subscriptionCost float6
 		})
 	}
 	return applications, totalRequestedCPU, totalRequestedMemory
+}
+
+func aggregateCostForSingleRun(run Run, subscriptionCost float64, subscriptionCostCurrency string, appName string) ApplicationCost {
+	var totalRequestedCPU int
+	var totalRequestedMemory int
+
+	for _, applicationResources := range run.Resources {
+		if applicationResources.Application != appName {
+			continue
+		}
+
+		totalRequestedCPU += applicationResources.CPUMillicore * applicationResources.Replicas
+		totalRequestedMemory += applicationResources.MemoryMegaBytes * applicationResources.Replicas
+
+	}
+
+	cpuWeight := run.CPUWeightInPeriod(totalRequestedCPU)
+	memoryWeight := run.MemoryWeightInPeriod(totalRequestedMemory)
+
+	cpuPercentage := cpuWeight * float64(run.ClusterCPUMillicore)
+	memoryPercentage := memoryWeight * float64(run.ClusterMemoryMegaByte)
+
+	costWeight := (cpuPercentage + memoryPercentage) / 2
+	cost := costWeight * subscriptionCost
+
+	return ApplicationCost{
+		Cost:     cost,
+		Name:     appName,
+		Currency: subscriptionCostCurrency,
+	}
+
 }
 
 func totalRequestedMemoryMegaBytes(runs []Run) int {
