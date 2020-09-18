@@ -64,16 +64,17 @@ func (sqlClient SQLClient) GetLatestRun() (costModels.Run, error) {
 	for rows.Next() {
 		var application, environment, component, wbs string
 		var cpuMillicores, memoryMegaBytes, replicas, clusterCPUMillicore, clusterMemoryMegabyte int
+		var measuredTime time.Time
 
 		err := rows.Scan(
 			&application,
-			&environment,
-			&component,
 			&cpuMillicores,
 			&memoryMegaBytes,
+			&wbs,
 			&replicas,
 			&clusterCPUMillicore,
 			&clusterMemoryMegabyte,
+			&measuredTime,
 		)
 
 		if err != nil {

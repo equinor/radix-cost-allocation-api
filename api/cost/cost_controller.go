@@ -38,7 +38,7 @@ func (costController *costController) GetRoutes() models.Routes {
 		models.Route{
 			Path:        rootPath + "/futurecost/{appName}",
 			Method:      "GET",
-			HandlerFunc: costController.EstimateFutureCost,
+			HandlerFunc: costController.GetFutureCost,
 		},
 	}
 
@@ -131,12 +131,40 @@ func (costController *costController) GetTotalCost(accounts models.Accounts, w h
 	costController.getTotalCosts(accounts, w, r, &appName)
 }
 
-func (costController *costController) EstimateFutureCost(accounts models.Accounts, w http.ResponseWriter, r *http.Request) {
+func (costController *costController) GetFutureCost(accounts models.Accounts, w http.ResponseWriter, r *http.Request) {
+	// swagger:operation GET /futurecost/{appName} cost getFutureCost
+	// ---
+	// summary: Gets the estimated future cost for an application
+	// parameters:
+	// - name: appName
+	//   in: path
+	//   description: Name of application
+	//   type: string
+	//   required: false
+	// - name: Impersonate-User
+	//   in: header
+	//   description: Works only with custom setup of cluster. Allow impersonation of test users (Required if Impersonate-Group is set)
+	//   type: string
+	//   required: false
+	// - name: Impersonate-Group
+	//   in: header
+	//   description: Works only with custom setup of cluster. Allow impersonation of test group (Required if Impersonate-User is set)
+	//   type: string
+	//   required: false
+	// responses:
+	//   "200":
+	//     description: "Successful get cost"
+	//     schema:
+	//        "$ref": "#/definitions/ApplicationCost"
+	//   "401":
+	//     description: "Unauthorized"
+	//   "404":
+	//     description: "Not found"
 	appName := mux.Vars(r)["appName"]
-	costController.estimateFutureCost(accounts, w, r, appName)
+	costController.getFutureCost(accounts, w, r, appName)
 }
 
-func (costController *costController) estimateFutureCost(accounts models.Accounts, w http.ResponseWriter, r *http.Request, appName string) {
+func (costController *costController) getFutureCost(accounts models.Accounts, w http.ResponseWriter, r *http.Request, appName string) {
 	handler := Init(accounts.GetToken())
 	cost, err := handler.GetFutureCost(appName)
 
