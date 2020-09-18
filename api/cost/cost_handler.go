@@ -1,6 +1,7 @@
 package cost
 
 import (
+	"errors"
 	"os"
 	"strconv"
 	"strings"
@@ -96,6 +97,15 @@ func (costHandler Handler) GetFutureCost(appName string) (*costModels.Applicatio
 	run, err := sqlClient.GetLatestRun()
 	if err != nil {
 		log.Info("Could not fetch latest run")
+		return nil, errors.New("Failed to fetch resource usage")
+	}
+	if run.ClusterCPUMillicore == 0 {
+		log.Info("Cluster CPU resources are 0")
+		return nil, errors.New("Avaliable CPU resources are 0. A cost estimate can not be made")
+	}
+	if run.ClusterMemoryMegaByte == 0 {
+		log.Info("Cluster memory resources are 0")
+		return nil, errors.New("Avaliable memory resources are 0. A cost estimate can not be made")
 	}
 
 	cost := costModels.NewFutureCostEstimate(appName, run, subscriptionCost, subscriptionCostCurrencyEnv)

@@ -140,7 +140,7 @@ func (costController *costController) GetFutureCost(accounts models.Accounts, w 
 	//   in: path
 	//   description: Name of application
 	//   type: string
-	//   required: false
+	//   required: true
 	// - name: Impersonate-User
 	//   in: header
 	//   description: Works only with custom setup of cluster. Allow impersonation of test users (Required if Impersonate-Group is set)
