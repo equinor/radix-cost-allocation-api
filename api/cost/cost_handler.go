@@ -35,6 +35,9 @@ type costCalculationHelper struct {
 	SubscriptionCurrency string
 }
 
+// todo! create write only connection string? dont need read/admin access
+const port = 1433
+
 func initCostCalculationHelpers() costCalculationHelper {
 	var (
 		sqlServer   = os.Getenv("SQL_SERVER")
@@ -63,9 +66,6 @@ func initCostCalculationHelpers() costCalculationHelper {
 		SubscriptionCurrency: subscriptionCostCurrencyEnv,
 	}
 }
-
-// todo! create write only connection string? dont need read/admin access
-const port = 1433
 
 // GetTotalCost handler for GetTotalCost
 func (costHandler Handler) GetTotalCost(fromTime, toTime *time.Time, appName *string) (*costModels.ApplicationCostSet, error) {
