@@ -36,7 +36,7 @@ func NewSQLClient(server, database string, port int, userID, password string) SQ
 }
 
 // GetLatestRun fetches the last run and joins them with resources logged for that run
-func (sqlClient SQLClient) GetLatestRun() (costModels.Run, error) {
+func (sqlClient SQLClient) GetLatestRun(appName string) (costModels.Run, error) {
 	var requiredResources []costModels.RequiredResources
 	var lastRun costModels.Run
 
@@ -49,11 +49,11 @@ func (sqlClient SQLClient) GetLatestRun() (costModels.Run, error) {
 		" WITH temptable AS " +
 			" (SELECT [run_id],[wbs],[application],[cpu_millicores],[memory_mega_bytes],[replicas] " +
 			" FROM [cost].[required_resources] " +
-			" WHERE [run_id] IN ( SELECT MAX(run_id) FROM [cost].[required_resources] )) " +
+			" WHERE [run_id] IN ( SELECT MAX(run_id) FROM [cost].[required_resources] ) AND [application] = @appName) " +
 			" SELECT rr.application, rr.cpu_millicores, rr.memory_mega_bytes, rr.wbs, rr.replicas, r.cluster_cpu_millicores, r.cluster_memory_mega_bytes, r.measured_time_utc FROM [cost].[runs] r " +
 			" INNER JOIN temptable rr ON r.[id] = rr.[run_id] "
 
-	rows, err := sqlClient.db.QueryContext(ctx, query)
+	rows, err := sqlClient.db.QueryContext(ctx, query, sql.Named("appName", appName))
 
 	if err != nil {
 		return costModels.Run{}, err

@@ -29,11 +29,13 @@ func (costHandler Handler) getToken() string {
 	return costHandler.token
 }
 
-// todo! create write only connection string? dont need read/admin access
-const port = 1433
+type costCalculationHelper struct {
+	Client               *models.SQLClient
+	SubscriptionCost     float64
+	SubscriptionCurrency string
+}
 
-// GetTotalCost handler for GetTotalCost
-func (costHandler Handler) GetTotalCost(fromTime, toTime *time.Time, appName *string) (*costModels.ApplicationCostSet, error) {
+func initCostCalculationHelpers() costCalculationHelper {
 	var (
 		sqlServer   = os.Getenv("SQL_SERVER")
 		sqlDatabase = os.Getenv("SQL_DATABASE")
@@ -41,7 +43,6 @@ func (costHandler Handler) GetTotalCost(fromTime, toTime *time.Time, appName *st
 		sqlPassword = os.Getenv("SQL_PASSWORD")
 	)
 	sqlClient := models.NewSQLClient(sqlServer, sqlDatabase, port, sqlUser, sqlPassword)
-	defer sqlClient.Close()
 
 	var (
 		subscriptionCostEnv         = os.Getenv("SUBSCRIPTION_COST_VALUE")
@@ -55,12 +56,28 @@ func (costHandler Handler) GetTotalCost(fromTime, toTime *time.Time, appName *st
 	if len(subscriptionCostCurrencyEnv) == 0 {
 		log.Info("Subscription Cost currency is not set.")
 	}
-	runs, err := sqlClient.GetRunsBetweenTimes(fromTime, toTime)
+
+	return costCalculationHelper{
+		Client:               &sqlClient,
+		SubscriptionCost:     subscriptionCost,
+		SubscriptionCurrency: subscriptionCostCurrencyEnv,
+	}
+}
+
+// todo! create write only connection string? dont need read/admin access
+const port = 1433
+
+// GetTotalCost handler for GetTotalCost
+func (costHandler Handler) GetTotalCost(fromTime, toTime *time.Time, appName *string) (*costModels.ApplicationCostSet, error) {
+	helper := initCostCalculationHelpers()
+	defer helper.Client.Close()
+
+	runs, err := helper.Client.GetRunsBetweenTimes(fromTime, toTime)
 	if err != nil {
 		return nil, err
 	}
 
-	applicationCostSet := costModels.NewApplicationCostSet(*fromTime, *toTime, runs, subscriptionCost, subscriptionCostCurrencyEnv)
+	applicationCostSet := costModels.NewApplicationCostSet(*fromTime, *toTime, runs, helper.SubscriptionCost, helper.SubscriptionCurrency)
 	if appName != nil && !strings.EqualFold(*appName, "") {
 		applicationCostSet.ApplicationCosts = costHandler.filterApplicationCostsBy(appName, &applicationCostSet)
 	}
@@ -70,31 +87,10 @@ func (costHandler Handler) GetTotalCost(fromTime, toTime *time.Time, appName *st
 
 // GetFutureCost estimates cost for the next 30 days based on last run
 func (costHandler Handler) GetFutureCost(appName string) (*costModels.ApplicationCost, error) {
+	helper := initCostCalculationHelpers()
+	defer helper.Client.Close()
 
-	// select * from cost.required_resources where run_id in (select max(run_id) from cost.required_resources)
-
-	var (
-		sqlServer   = os.Getenv("SQL_SERVER")
-		sqlDatabase = os.Getenv("SQL_DATABASE")
-		sqlUser     = os.Getenv("SQL_USER")
-		sqlPassword = os.Getenv("SQL_PASSWORD")
-	)
-	sqlClient := models.NewSQLClient(sqlServer, sqlDatabase, port, sqlUser, sqlPassword)
-	defer sqlClient.Close()
-
-	var (
-		subscriptionCostEnv         = os.Getenv("SUBSCRIPTION_COST_VALUE")
-		subscriptionCostCurrencyEnv = os.Getenv("SUBSCRIPTION_COST_CURRENCY")
-	)
-	subscriptionCost, er := strconv.ParseFloat(subscriptionCostEnv, 64)
-	if er != nil {
-		subscriptionCost = 0.0
-		log.Info("Subscription Cost is invalid or is not set.")
-	}
-	if len(subscriptionCostCurrencyEnv) == 0 {
-		log.Info("Subscription Cost currency is not set.")
-	}
-	run, err := sqlClient.GetLatestRun()
+	run, err := helper.Client.GetLatestRun(appName)
 	if err != nil {
 		log.Info("Could not fetch latest run")
 		return nil, errors.New("Failed to fetch resource usage")
@@ -108,7 +104,11 @@ func (costHandler Handler) GetFutureCost(appName string) (*costModels.Applicatio
 		return nil, errors.New("Avaliable memory resources are 0. A cost estimate can not be made")
 	}
 
-	cost := costModels.NewFutureCostEstimate(appName, run, subscriptionCost, subscriptionCostCurrencyEnv)
+	cost, err := costModels.NewFutureCostEstimate(appName, run, helper.SubscriptionCost, helper.SubscriptionCurrency)
+
+	if err != nil {
+		return nil, err
+	}
 
 	return &cost, nil
 }
