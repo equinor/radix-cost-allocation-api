@@ -1,6 +1,7 @@
 package cost_models
 
 import (
+	"errors"
 	"time"
 )
 
@@ -96,6 +97,18 @@ func NewApplicationCostSet(from, to time.Time, runs []Run, subscriptionCost floa
 	return cost
 }
 
+// NewFutureCostEstimate aggregate cost data for the last recorded run
+func NewFutureCostEstimate(appName string, run Run, subscriptionCost float64, subscriptionCostCurrency string) (*ApplicationCost, error) {
+	appCost, err := aggregateCostForSingleRun(run, subscriptionCost, subscriptionCostCurrency, appName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	appCost.AddWBS(run)
+	return appCost, nil
+}
+
 // GetCostBy returns application by appName
 func (cost ApplicationCostSet) GetCostBy(appName string) *ApplicationCost {
 	for _, app := range cost.ApplicationCosts {
@@ -104,6 +117,15 @@ func (cost ApplicationCostSet) GetCostBy(appName string) *ApplicationCost {
 		}
 	}
 	return nil
+}
+
+// AddWBS set WBS to application cost from the run
+func (appCost ApplicationCost) AddWBS(run Run) {
+	for _, resource := range run.Resources {
+		if resource.Application == appCost.Name {
+			appCost.WBS = resource.WBS
+		}
+	}
 }
 
 // aggregateCostBetweenDatesOnApplications calculates cost for an application
@@ -135,6 +157,43 @@ func aggregateCostBetweenDatesOnApplications(runs []Run, subscriptionCost float6
 		})
 	}
 	return applications, totalRequestedCPU, totalRequestedMemory
+}
+
+func aggregateCostForSingleRun(run Run, subscriptionCost float64, subscriptionCostCurrency string, appName string) (*ApplicationCost, error) {
+	var totalRequestedCPU int
+	var totalRequestedMemory int
+
+	for _, applicationResources := range run.Resources {
+		totalRequestedCPU += applicationResources.CPUMillicore * applicationResources.Replicas
+		totalRequestedMemory += applicationResources.MemoryMegaBytes * applicationResources.Replicas
+	}
+
+	if run.ClusterCPUMillicore <= 0 {
+		return nil, errors.New("Avaliable CPU resources are 0. A cost estimate can not be made")
+	}
+
+	if run.ClusterMemoryMegaByte <= 0 {
+		return nil, errors.New("Avaliable memory resources are 0. A cost estimate can not be made")
+	}
+
+	cpuPercentage := float64(totalRequestedCPU) / float64(run.ClusterCPUMillicore)
+	memoryPercentage := float64(totalRequestedMemory) / float64(run.ClusterMemoryMegaByte)
+
+	totalPercentage := (cpuPercentage + memoryPercentage) / 2
+
+	// Get cost distrubtion for this application times 31 to estimate the next months cost
+	cost := (totalPercentage * subscriptionCost) * 31
+
+	appCost := ApplicationCost{
+		Cost:                   cost,
+		Name:                   appName,
+		Currency:               subscriptionCostCurrency,
+		CostPercentageByCPU:    cpuPercentage,
+		CostPercentageByMemory: memoryPercentage,
+	}
+
+	return &appCost, nil
+
 }
 
 func totalRequestedMemoryMegaBytes(runs []Run) int {

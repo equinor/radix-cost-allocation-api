@@ -2,12 +2,13 @@ package cost
 
 import (
 	"fmt"
-	"github.com/equinor/radix-cost-allocation-api/api/utils"
-	models "github.com/equinor/radix-cost-allocation-api/models"
-	"github.com/gorilla/mux"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/equinor/radix-cost-allocation-api/api/utils"
+	models "github.com/equinor/radix-cost-allocation-api/models"
+	"github.com/gorilla/mux"
 )
 
 const rootPath = ""
@@ -33,6 +34,11 @@ func (costController *costController) GetRoutes() models.Routes {
 			Path:        rootPath + "/totalcost/{appName}",
 			Method:      "GET",
 			HandlerFunc: costController.GetTotalCost,
+		},
+		models.Route{
+			Path:        rootPath + "/futurecost/{appName}",
+			Method:      "GET",
+			HandlerFunc: costController.GetFutureCost,
 		},
 	}
 
@@ -123,6 +129,51 @@ func (costController *costController) GetTotalCost(accounts models.Accounts, w h
 	//     description: "Not found"
 	appName := mux.Vars(r)["appName"]
 	costController.getTotalCosts(accounts, w, r, &appName)
+}
+
+func (costController *costController) GetFutureCost(accounts models.Accounts, w http.ResponseWriter, r *http.Request) {
+	// swagger:operation GET /futurecost/{appName} cost getFutureCost
+	// ---
+	// summary: Gets the estimated future cost for an application
+	// parameters:
+	// - name: appName
+	//   in: path
+	//   description: Name of application
+	//   type: string
+	//   required: true
+	// - name: Impersonate-User
+	//   in: header
+	//   description: Works only with custom setup of cluster. Allow impersonation of test users (Required if Impersonate-Group is set)
+	//   type: string
+	//   required: false
+	// - name: Impersonate-Group
+	//   in: header
+	//   description: Works only with custom setup of cluster. Allow impersonation of test group (Required if Impersonate-User is set)
+	//   type: string
+	//   required: false
+	// responses:
+	//   "200":
+	//     description: "Successful get cost"
+	//     schema:
+	//        "$ref": "#/definitions/ApplicationCost"
+	//   "401":
+	//     description: "Unauthorized"
+	//   "404":
+	//     description: "Not found"
+	appName := mux.Vars(r)["appName"]
+	costController.getFutureCost(accounts, w, r, appName)
+}
+
+func (costController *costController) getFutureCost(accounts models.Accounts, w http.ResponseWriter, r *http.Request, appName string) {
+	handler := Init(accounts.GetToken())
+	cost, err := handler.GetFutureCost(appName)
+
+	if err != nil {
+		utils.ErrorResponse(w, r, err)
+		return
+	}
+
+	utils.JSONResponse(w, r, &cost)
 }
 
 func (costController *costController) getTotalCosts(accounts models.Accounts, w http.ResponseWriter, r *http.Request, appName *string) {
