@@ -98,11 +98,11 @@ func NewApplicationCostSet(from, to time.Time, runs []Run, subscriptionCost floa
 }
 
 // NewFutureCostEstimate aggregate cost data for the last recorded run
-func NewFutureCostEstimate(appName string, run Run, subscriptionCost float64, subscriptionCostCurrency string) (ApplicationCost, error) {
+func NewFutureCostEstimate(appName string, run Run, subscriptionCost float64, subscriptionCostCurrency string) (*ApplicationCost, error) {
 	appCost, err := aggregateCostForSingleRun(run, subscriptionCost, subscriptionCostCurrency, appName)
 
 	if err != nil {
-		return appCost, err
+		return nil, err
 	}
 
 	appCost.AddWBS(run)
@@ -159,7 +159,7 @@ func aggregateCostBetweenDatesOnApplications(runs []Run, subscriptionCost float6
 	return applications, totalRequestedCPU, totalRequestedMemory
 }
 
-func aggregateCostForSingleRun(run Run, subscriptionCost float64, subscriptionCostCurrency string, appName string) (ApplicationCost, error) {
+func aggregateCostForSingleRun(run Run, subscriptionCost float64, subscriptionCostCurrency string, appName string) (*ApplicationCost, error) {
 	var totalRequestedCPU int
 	var totalRequestedMemory int
 
@@ -169,11 +169,11 @@ func aggregateCostForSingleRun(run Run, subscriptionCost float64, subscriptionCo
 	}
 
 	if run.ClusterCPUMillicore <= 0 {
-		return ApplicationCost{}, errors.New("Avaliable CPU resources are 0. A cost estimate can not be made")
+		return nil, errors.New("Avaliable CPU resources are 0. A cost estimate can not be made")
 	}
 
 	if run.ClusterMemoryMegaByte <= 0 {
-		return ApplicationCost{}, errors.New("Avaliable memory resources are 0. A cost estimate can not be made")
+		return nil, errors.New("Avaliable memory resources are 0. A cost estimate can not be made")
 	}
 
 	cpuPercentage := float64(totalRequestedCPU) / float64(run.ClusterCPUMillicore)
@@ -184,13 +184,15 @@ func aggregateCostForSingleRun(run Run, subscriptionCost float64, subscriptionCo
 	// Get cost distrubtion for this application times 31 to estimate the next months cost
 	cost := (totalPercentage * subscriptionCost) * 31
 
-	return ApplicationCost{
+	appCost := ApplicationCost{
 		Cost:                   cost,
 		Name:                   appName,
 		Currency:               subscriptionCostCurrency,
 		CostPercentageByCPU:    cpuPercentage,
 		CostPercentageByMemory: memoryPercentage,
-	}, nil
+	}
+
+	return &appCost, nil
 
 }
 

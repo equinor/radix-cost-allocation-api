@@ -173,7 +173,7 @@ func (costController *costController) getFutureCost(accounts models.Accounts, w 
 		return
 	}
 
-	utils.JSONResponse(w, r, cost)
+	utils.JSONResponse(w, r, &cost)
 }
 
 func (costController *costController) getTotalCosts(accounts models.Accounts, w http.ResponseWriter, r *http.Request, appName *string) {

@@ -110,7 +110,7 @@ func (costHandler Handler) GetFutureCost(appName string) (*costModels.Applicatio
 		return nil, err
 	}
 
-	return &cost, nil
+	return cost, nil
 }
 
 func (costHandler Handler) filterApplicationCostsBy(appName *string, cost *costModels.ApplicationCostSet) []costModels.ApplicationCost {
