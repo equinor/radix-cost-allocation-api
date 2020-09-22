@@ -181,8 +181,8 @@ func aggregateCostForSingleRun(run Run, subscriptionCost float64, subscriptionCo
 
 	totalPercentage := (cpuPercentage + memoryPercentage) / 2
 
-	// Get cost distrubtion for this application times 31 to estimate the next months cost
-	cost := (totalPercentage * subscriptionCost) * 31
+	// Get cost distrubtion for this application. SubscriptionCost is monthly, given us an estimate for the next month
+	cost := totalPercentage * subscriptionCost
 
 	appCost := ApplicationCost{
 		Cost:                   cost,
