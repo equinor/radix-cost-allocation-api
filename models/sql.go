@@ -53,7 +53,7 @@ func (sqlClient SQLClient) GetLatestRun() (costModels.Run, error) {
 			" SELECT rr.application, rr.cpu_millicores, rr.memory_mega_bytes, rr.wbs, rr.replicas, r.cluster_cpu_millicores, r.cluster_memory_mega_bytes, r.measured_time_utc FROM [cost].[runs] r " +
 			" INNER JOIN temptable rr ON r.[id] = rr.[run_id] "
 
-	rows, err := sqlClient.db.QueryContext(ctx, query))
+	rows, err := sqlClient.db.QueryContext(ctx, query)
 
 	if err != nil {
 		return costModels.Run{}, err
