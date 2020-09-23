@@ -175,13 +175,14 @@ func aggregateCostForSingleRun(run Run, subscriptionCost float64, subscriptionCo
 
 	for _, applicationResources := range run.Resources {
 
-		if applicationResources.Application == appName {
-			cpuPercentage += float64(applicationResources.CPUMillicore*applicationResources.Replicas) / float64(run.ClusterCPUMillicore)
-			memoryPercentage += float64(applicationResources.MemoryMegaBytes*applicationResources.Replicas) / float64(run.ClusterMemoryMegaByte)
-		}
-
 		cpuFraction := float64(applicationResources.CPUMillicore*applicationResources.Replicas) / float64(run.ClusterCPUMillicore)
 		memFraction := float64(applicationResources.MemoryMegaBytes*applicationResources.Replicas) / float64(run.ClusterMemoryMegaByte)
+
+		if applicationResources.Application == appName {
+			cpuPercentage += cpuFraction
+			memoryPercentage += memFraction
+		}
+
 		combined := (cpuFraction + memFraction) / 2
 		costDistribution[applicationResources.Application] += combined
 		costCoverage += combined
