@@ -1,12 +1,17 @@
 package cost_models_test
 
 import (
-	"github.com/equinor/radix-cost-allocation-api/api/cost/models"
+	"sort"
 	"testing"
 	"time"
 
+	cost_models "github.com/equinor/radix-cost-allocation-api/api/cost/models"
+
 	"github.com/stretchr/testify/assert"
 )
+
+const subscriptionCost = 100000
+const subscriptionCostCurrency = "NOK"
 
 func Test_cost_all_app_equal_requested(t *testing.T) {
 	runs := getTestRuns()
@@ -59,6 +64,39 @@ func Test_cost_one_app_no_requested(t *testing.T) {
 	assert.Equal(t, oneThird, cost.GetCostBy("app-2").CostPercentageByMemory)
 	assert.Equal(t, oneThird, cost.GetCostBy("app-3").CostPercentageByMemory)
 	assert.Equal(t, oneThird, cost.GetCostBy("app-4").CostPercentageByMemory)
+}
+
+func TestFutureCost_DistributedEqually(t *testing.T) {
+
+	run1 := getTestRunForSingleApp("app-1")
+	costApp1, _ := cost_models.NewFutureCostEstimate("app-1", run1, subscriptionCost, subscriptionCostCurrency)
+	assert.Equal(t, costApp1.Cost, float64(25000))
+
+	run2 := getTestRunForSingleApp("app-2")
+	costApp2, _ := cost_models.NewFutureCostEstimate("app-2", run2, subscriptionCost, subscriptionCostCurrency)
+	assert.Equal(t, costApp2.Cost, float64(25000))
+
+	run3 := getTestRunForSingleApp("app-3")
+	costApp3, _ := cost_models.NewFutureCostEstimate("app-3", run3, subscriptionCost, subscriptionCostCurrency)
+	assert.Equal(t, costApp3.Cost, float64(25000))
+
+	run4 := getTestRunForSingleApp("app-4")
+	costApp4, _ := cost_models.NewFutureCostEstimate("app-4", run4, subscriptionCost, subscriptionCostCurrency)
+	assert.Equal(t, costApp4.Cost, float64(25000))
+
+	// Check that the cost for all applications together covers the total subscription cost
+	assert.Equal(t, float64(costApp1.Cost+costApp2.Cost+costApp3.Cost+costApp4.Cost), float64(subscriptionCost))
+
+}
+
+func getTestRunForSingleApp(appName string) cost_models.Run {
+	runs := getTestRuns()
+
+	sort.Slice(runs, func(i, j int) bool {
+		return runs[i].ID < runs[j].ID
+	})
+
+	return runs[0]
 }
 
 func getTestRuns() []cost_models.Run {

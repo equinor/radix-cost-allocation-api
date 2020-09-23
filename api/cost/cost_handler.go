@@ -90,7 +90,7 @@ func (costHandler Handler) GetFutureCost(appName string) (*costModels.Applicatio
 	helper := initCostCalculationHelpers()
 	defer helper.Client.Close()
 
-	run, err := helper.Client.GetLatestRun(appName)
+	run, err := helper.Client.GetLatestRun()
 	if err != nil {
 		log.Info("Could not fetch latest run")
 		return nil, errors.New("Failed to fetch resource usage")

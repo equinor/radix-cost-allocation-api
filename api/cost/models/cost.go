@@ -159,14 +159,11 @@ func aggregateCostBetweenDatesOnApplications(runs []Run, subscriptionCost float6
 	return applications, totalRequestedCPU, totalRequestedMemory
 }
 
+// Distributes cost to applications for single run
 func aggregateCostForSingleRun(run Run, subscriptionCost float64, subscriptionCostCurrency string, appName string) (*ApplicationCost, error) {
-	var totalRequestedCPU int
-	var totalRequestedMemory int
-
-	for _, applicationResources := range run.Resources {
-		totalRequestedCPU += applicationResources.CPUMillicore * applicationResources.Replicas
-		totalRequestedMemory += applicationResources.MemoryMegaBytes * applicationResources.Replicas
-	}
+	var costCoverage float64
+	var cpuPercentage, memoryPercentage float64
+	costDistribution := map[string]float64{}
 
 	if run.ClusterCPUMillicore <= 0 {
 		return nil, errors.New("Avaliable CPU resources are 0. A cost estimate can not be made")
@@ -176,13 +173,31 @@ func aggregateCostForSingleRun(run Run, subscriptionCost float64, subscriptionCo
 		return nil, errors.New("Avaliable memory resources are 0. A cost estimate can not be made")
 	}
 
-	cpuPercentage := float64(totalRequestedCPU) / float64(run.ClusterCPUMillicore)
-	memoryPercentage := float64(totalRequestedMemory) / float64(run.ClusterMemoryMegaByte)
+	for _, applicationResources := range run.Resources {
 
-	totalPercentage := (cpuPercentage + memoryPercentage) / 2
+		cpuFraction := float64(applicationResources.CPUMillicore*applicationResources.Replicas) / float64(run.ClusterCPUMillicore)
+		memFraction := float64(applicationResources.MemoryMegaBytes*applicationResources.Replicas) / float64(run.ClusterMemoryMegaByte)
 
-	// Get cost distrubtion for this application times 31 to estimate the next months cost
-	cost := (totalPercentage * subscriptionCost) * 31
+		if applicationResources.Application == appName {
+			cpuPercentage += cpuFraction
+			memoryPercentage += memFraction
+		}
+
+		combined := (cpuFraction + memFraction) / 2
+		costDistribution[applicationResources.Application] += combined
+		costCoverage += combined
+	}
+
+	if costCoverage == 0 {
+		return nil, errors.New("No applications requesting resources")
+	}
+
+	// Subscriptioncost is not covered in total by the applications
+	if costCoverage < 1 {
+		costDistribution = scaleDistribution(costDistribution, costCoverage)
+	}
+
+	cost := costDistribution[appName] * subscriptionCost
 
 	appCost := ApplicationCost{
 		Cost:                   cost,
@@ -194,6 +209,16 @@ func aggregateCostForSingleRun(run Run, subscriptionCost float64, subscriptionCo
 
 	return &appCost, nil
 
+}
+
+// Scales the distributed cost up to 100%
+func scaleDistribution(distribution map[string]float64, costCoverage float64) map[string]float64 {
+	scaled := map[string]float64{}
+	for app, fraction := range distribution {
+		scaled[app] = fraction / costCoverage
+	}
+
+	return scaled
 }
 
 func totalRequestedMemoryMegaBytes(runs []Run) int {
