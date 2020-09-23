@@ -187,6 +187,10 @@ func aggregateCostForSingleRun(run Run, subscriptionCost float64, subscriptionCo
 		costCoverage += combined
 	}
 
+	if costCoverage == 0 {
+		return nil, errors.New("No applications requesting resources")
+	}
+
 	// Subscriptioncost is not covered in total by the applications
 	if costCoverage < 1 {
 		costDistribution = scaleDistribution(costDistribution, costCoverage)
