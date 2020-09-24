@@ -66,7 +66,7 @@ func Test_cost_one_app_no_requested(t *testing.T) {
 	assert.Equal(t, oneThird, cost.GetCostBy("app-4").CostPercentageByMemory)
 }
 
-func TestFutureCost_DistributedEqually(t *testing.T) {
+func Test_future_cost_distributed_equally(t *testing.T) {
 
 	run1 := getTestRunForSingleApp("app-1")
 	costApp1, _ := cost_models.NewFutureCostEstimate("app-1", run1, subscriptionCost, subscriptionCostCurrency)
@@ -86,7 +86,19 @@ func TestFutureCost_DistributedEqually(t *testing.T) {
 
 	// Check that the cost for all applications together covers the total subscription cost
 	assert.Equal(t, float64(costApp1.Cost+costApp2.Cost+costApp3.Cost+costApp4.Cost), float64(subscriptionCost))
+}
 
+func Test_total_cost_subscription_cost_covered(t *testing.T) {
+	runs := getTestRuns()
+
+	cost := cost_models.NewApplicationCostSet(time.Now().Add(-30), time.Now(), runs, subscriptionCost, subscriptionCostCurrency)
+
+	totalCost := float64(0)
+	for _, c := range cost.ApplicationCosts {
+		totalCost += c.Cost
+	}
+
+	assert.Equal(t, totalCost, float64(subscriptionCost))
 }
 
 func getTestRunForSingleApp(appName string) cost_models.Run {
