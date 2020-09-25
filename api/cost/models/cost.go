@@ -150,7 +150,7 @@ func aggregateCostBetweenDatesOnApplications(runs []Run, subscriptionCost float6
 		applications = append(applications, ApplicationCost{
 			Name:                   appName,
 			WBS:                    wbsCodes[appName],
-			Cost:                   cpu * subscriptionCost,
+			Cost:                   (cpu + memoryPercentage[appName]) / 2 * subscriptionCost,
 			Currency:               subscriptionCostCurrency,
 			CostPercentageByCPU:    cpu,
 			CostPercentageByMemory: memoryPercentage[appName],

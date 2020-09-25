@@ -1,7 +1,9 @@
 package cost_models_test
 
 import (
+	"math"
 	"sort"
+	"strconv"
 	"testing"
 	"time"
 
@@ -66,7 +68,7 @@ func Test_cost_one_app_no_requested(t *testing.T) {
 	assert.Equal(t, oneThird, cost.GetCostBy("app-4").CostPercentageByMemory)
 }
 
-func TestFutureCost_DistributedEqually(t *testing.T) {
+func Test_future_cost_distributed_equally(t *testing.T) {
 
 	run1 := getTestRunForSingleApp("app-1")
 	costApp1, _ := cost_models.NewFutureCostEstimate("app-1", run1, subscriptionCost, subscriptionCostCurrency)
@@ -86,6 +88,38 @@ func TestFutureCost_DistributedEqually(t *testing.T) {
 
 	// Check that the cost for all applications together covers the total subscription cost
 	assert.Equal(t, float64(costApp1.Cost+costApp2.Cost+costApp3.Cost+costApp4.Cost), float64(subscriptionCost))
+}
+
+func Test_total_cost_subscription_cost_covered(t *testing.T) {
+	runs := getTestRuns()
+
+	cost := cost_models.NewApplicationCostSet(time.Now().Add(-30), time.Now(), runs, subscriptionCost, subscriptionCostCurrency)
+
+	totalCost := float64(0)
+	for _, c := range cost.ApplicationCosts {
+		totalCost += c.Cost
+	}
+
+	assert.Equal(t, totalCost, float64(subscriptionCost))
+}
+
+func Test_total_cost_distributed_equally(t *testing.T) {
+	runs := getTestRunsWithUnequallyDistributedResources()
+
+	cost := cost_models.NewApplicationCostSet(time.Now().Add(-30), time.Now(), runs, subscriptionCost, subscriptionCostCurrency)
+
+	totalRequestPercentage := float64(0)
+	for _, a := range cost.ApplicationCosts {
+		parsedPercentage, _ := strconv.ParseFloat(a.Name[6:], 64)
+		totalRequestPercentage += parsedPercentage
+	}
+
+	for _, appCost := range cost.ApplicationCosts {
+		percentageOfTotalCost, _ := strconv.ParseFloat(appCost.Name[6:], 64)
+		diffPercentage := percentageOfTotalCost / totalRequestPercentage
+		expectedCost := diffPercentage * subscriptionCost
+		assert.Equal(t, math.Round(expectedCost), math.Round(appCost.Cost))
+	}
 
 }
 
@@ -97,6 +131,50 @@ func getTestRunForSingleApp(appName string) cost_models.Run {
 	})
 
 	return runs[0]
+}
+
+func getTestRunsWithUnequallyDistributedResources() []cost_models.Run {
+	return []cost_models.Run{
+		{
+			ID:                    1,
+			ClusterCPUMillicore:   20000,
+			ClusterMemoryMegaByte: 30000,
+			Resources: []cost_models.RequiredResources{
+				{
+					Application:     "app-1-0.5",
+					Environment:     "env-1",
+					Component:       "comp-1",
+					CPUMillicore:    5000,
+					MemoryMegaBytes: 7500,
+					Replicas:        2,
+				},
+				{
+					Application:     "app-2-0.2",
+					Environment:     "env-1",
+					Component:       "comp-1",
+					CPUMillicore:    4000,
+					MemoryMegaBytes: 6000,
+					Replicas:        1,
+				},
+				{
+					Application:     "app-3-0.1",
+					Environment:     "env-1",
+					Component:       "comp-1",
+					CPUMillicore:    1000,
+					MemoryMegaBytes: 1500,
+					Replicas:        2,
+				},
+				{
+					Application:     "app-4-0.05",
+					Environment:     "env-1",
+					Component:       "comp-1",
+					CPUMillicore:    500,
+					MemoryMegaBytes: 750,
+					Replicas:        2,
+				},
+			},
+		},
+	}
 }
 
 func getTestRuns() []cost_models.Run {
