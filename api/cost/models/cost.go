@@ -84,6 +84,14 @@ type ApplicationCost struct {
 	Currency string `json:"currency"`
 }
 
+// Whitelist contains list of apps that should not be part of cost distribution
+type Whitelist struct {
+	// List is the list of apps
+	//
+	// required: true
+	List []string `json:"whiteList"`
+}
+
 // NewApplicationCostSet aggregate cost over a time period for applications
 func NewApplicationCostSet(from, to time.Time, runs []Run, subscriptionCost float64, subscriptionCostCurrency string) ApplicationCostSet {
 	applicationCosts, totalRequestedCPU, totalRequestedMemory := aggregateCostBetweenDatesOnApplications(runs, subscriptionCost, subscriptionCostCurrency)
