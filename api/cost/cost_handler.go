@@ -1,7 +1,9 @@
 package cost
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -13,7 +15,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// CostHandler Instance variables
+// Handler Instance variables
 type Handler struct {
 	token string
 }
@@ -77,7 +79,13 @@ func (costHandler Handler) GetTotalCost(fromTime, toTime *time.Time, appName *st
 		return nil, err
 	}
 
-	applicationCostSet := costModels.NewApplicationCostSet(*fromTime, *toTime, runs, helper.SubscriptionCost, helper.SubscriptionCurrency)
+	filteredRuns, err := costHandler.removeWhitelistedAppsFromRun(runs)
+
+	if err != nil {
+		return nil, err
+	}
+
+	applicationCostSet := costModels.NewApplicationCostSet(*fromTime, *toTime, filteredRuns, helper.SubscriptionCost, helper.SubscriptionCurrency)
 	if appName != nil && !strings.EqualFold(*appName, "") {
 		applicationCostSet.ApplicationCosts = costHandler.filterApplicationCostsBy(appName, &applicationCostSet)
 	}
@@ -104,6 +112,18 @@ func (costHandler Handler) GetFutureCost(appName string) (*costModels.Applicatio
 		return nil, errors.New("Avaliable memory resources are 0. A cost estimate can not be made")
 	}
 
+	filteredRun, err := costHandler.removeWhitelistedAppsFromRun([]costModels.Run{run})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(filteredRun) == 0 {
+		return nil, fmt.Errorf("Filtering run for application %s returned empty array", appName)
+	}
+
+	run = filteredRun[0]
+
 	cost, err := costModels.NewFutureCostEstimate(appName, run, helper.SubscriptionCost, helper.SubscriptionCurrency)
 
 	if err != nil {
@@ -111,6 +131,55 @@ func (costHandler Handler) GetFutureCost(appName string) (*costModels.Applicatio
 	}
 
 	return cost, nil
+}
+
+// Whitelist contains list of apps that are not included in cost distribution
+
+func (costHandler Handler) removeWhitelistedAppsFromRun(runs []costModels.Run) ([]costModels.Run, error) {
+	whiteList := os.Getenv("WHITELIST")
+
+	list := &costModels.Whitelist{}
+	err := json.Unmarshal([]byte(whiteList), list)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, run := range runs {
+		for _, whiteListedApp := range list.List {
+			cleanedRun := cleanResources(run, whiteListedApp)
+			run.Resources = cleanedRun.Resources
+		}
+	}
+
+	return runs, nil
+}
+
+func cleanResources(run costModels.Run, app string) costModels.Run {
+
+	for index, resource := range run.Resources {
+		if resource.Application == app {
+			run.Resources = remove(run.Resources, index)
+			return cleanResources(run, app)
+		}
+	}
+
+	return run
+}
+
+func find(list []string, val string) bool {
+	for _, item := range list {
+		if val == item {
+			return true
+		}
+	}
+
+	return false
+}
+
+func remove(s []costModels.RequiredResources, i int) []costModels.RequiredResources {
+	s[i] = s[len(s)-1]
+	return s[:len(s)-1]
 }
 
 func (costHandler Handler) filterApplicationCostsBy(appName *string, cost *costModels.ApplicationCostSet) []costModels.ApplicationCost {
