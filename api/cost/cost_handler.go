@@ -158,7 +158,7 @@ func (costHandler Handler) removeWhitelistedAppsFromRun(runs []costModels.Run) (
 func cleanResources(run costModels.Run, app string) costModels.Run {
 
 	for index, resource := range run.Resources {
-		if resource.Application == app {
+		if strings.EqualFold(resource.Application, app) {
 			run.Resources = remove(run.Resources, index)
 			return cleanResources(run, app)
 		}
@@ -169,7 +169,7 @@ func cleanResources(run costModels.Run, app string) costModels.Run {
 
 func find(list []string, val string) bool {
 	for _, item := range list {
-		if val == item {
+		if strings.EqualFold(val, item) {
 			return true
 		}
 	}
