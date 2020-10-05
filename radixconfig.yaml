@@ -33,6 +33,7 @@ spec:
         - SQL_PASSWORD
         - SUBSCRIPTION_COST_VALUE
         - SUBSCRIPTION_COST_CURRENCY
+        - WHITELIST
       environmentConfig:
         - environment: qa
           replicas: 1

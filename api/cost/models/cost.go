@@ -1,6 +1,8 @@
 package cost_models
 
 import (
+	"errors"
+	"strings"
 	"time"
 )
 
@@ -83,6 +85,14 @@ type ApplicationCost struct {
 	Currency string `json:"currency"`
 }
 
+// Whitelist contains list of apps that should not be part of cost distribution
+type Whitelist struct {
+	// List is the list of apps
+	//
+	// required: true
+	List []string `json:"whiteList"`
+}
+
 // NewApplicationCostSet aggregate cost over a time period for applications
 func NewApplicationCostSet(from, to time.Time, runs []Run, subscriptionCost float64, subscriptionCostCurrency string) ApplicationCostSet {
 	applicationCosts, totalRequestedCPU, totalRequestedMemory := aggregateCostBetweenDatesOnApplications(runs, subscriptionCost, subscriptionCostCurrency)
@@ -96,6 +106,18 @@ func NewApplicationCostSet(from, to time.Time, runs []Run, subscriptionCost floa
 	return cost
 }
 
+// NewFutureCostEstimate aggregate cost data for the last recorded run
+func NewFutureCostEstimate(appName string, run Run, subscriptionCost float64, subscriptionCostCurrency string) (*ApplicationCost, error) {
+	appCost, err := aggregateCostForSingleRun(run, subscriptionCost, subscriptionCostCurrency, appName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	appCost.AddWBS(run)
+	return appCost, nil
+}
+
 // GetCostBy returns application by appName
 func (cost ApplicationCostSet) GetCostBy(appName string) *ApplicationCost {
 	for _, app := range cost.ApplicationCosts {
@@ -104,6 +126,15 @@ func (cost ApplicationCostSet) GetCostBy(appName string) *ApplicationCost {
 		}
 	}
 	return nil
+}
+
+// AddWBS set WBS to application cost from the run
+func (appCost ApplicationCost) AddWBS(run Run) {
+	for _, resource := range run.Resources {
+		if resource.Application == appCost.Name {
+			appCost.WBS = resource.WBS
+		}
+	}
 }
 
 // aggregateCostBetweenDatesOnApplications calculates cost for an application
@@ -128,13 +159,75 @@ func aggregateCostBetweenDatesOnApplications(runs []Run, subscriptionCost float6
 		applications = append(applications, ApplicationCost{
 			Name:                   appName,
 			WBS:                    wbsCodes[appName],
-			Cost:                   cpu * subscriptionCost,
+			Cost:                   (cpu + memoryPercentage[appName]) / 2 * subscriptionCost,
 			Currency:               subscriptionCostCurrency,
 			CostPercentageByCPU:    cpu,
 			CostPercentageByMemory: memoryPercentage[appName],
 		})
 	}
 	return applications, totalRequestedCPU, totalRequestedMemory
+}
+
+// Distributes cost to applications for single run
+func aggregateCostForSingleRun(run Run, subscriptionCost float64, subscriptionCostCurrency string, appName string) (*ApplicationCost, error) {
+	var costCoverage float64
+	var cpuPercentage, memoryPercentage float64
+	costDistribution := map[string]float64{}
+
+	if run.ClusterCPUMillicore <= 0 {
+		return nil, errors.New("Avaliable CPU resources are 0. A cost estimate can not be made")
+	}
+
+	if run.ClusterMemoryMegaByte <= 0 {
+		return nil, errors.New("Avaliable memory resources are 0. A cost estimate can not be made")
+	}
+
+	for _, applicationResources := range run.Resources {
+
+		cpuFraction := float64(applicationResources.CPUMillicore*applicationResources.Replicas) / float64(run.ClusterCPUMillicore)
+		memFraction := float64(applicationResources.MemoryMegaBytes*applicationResources.Replicas) / float64(run.ClusterMemoryMegaByte)
+
+		if strings.EqualFold(applicationResources.Application, appName) {
+			cpuPercentage += cpuFraction
+			memoryPercentage += memFraction
+		}
+
+		combined := (cpuFraction + memFraction) / 2
+		costDistribution[applicationResources.Application] += combined
+		costCoverage += combined
+	}
+
+	if costCoverage == 0 {
+		return nil, errors.New("No applications requesting resources")
+	}
+
+	// Subscriptioncost is not covered in total by the applications
+	if costCoverage < 1 {
+		costDistribution = scaleDistribution(costDistribution, costCoverage)
+	}
+
+	cost := costDistribution[appName] * subscriptionCost
+
+	appCost := ApplicationCost{
+		Cost:                   cost,
+		Name:                   appName,
+		Currency:               subscriptionCostCurrency,
+		CostPercentageByCPU:    cpuPercentage,
+		CostPercentageByMemory: memoryPercentage,
+	}
+
+	return &appCost, nil
+
+}
+
+// Scales the distributed cost up to 100%
+func scaleDistribution(distribution map[string]float64, costCoverage float64) map[string]float64 {
+	scaled := map[string]float64{}
+	for app, fraction := range distribution {
+		scaled[app] = fraction / costCoverage
+	}
+
+	return scaled
 }
 
 func totalRequestedMemoryMegaBytes(runs []Run) int {
