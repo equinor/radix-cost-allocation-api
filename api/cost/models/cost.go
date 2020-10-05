@@ -2,6 +2,7 @@ package cost_models
 
 import (
 	"errors"
+	"strings"
 	"time"
 )
 
@@ -186,7 +187,7 @@ func aggregateCostForSingleRun(run Run, subscriptionCost float64, subscriptionCo
 		cpuFraction := float64(applicationResources.CPUMillicore*applicationResources.Replicas) / float64(run.ClusterCPUMillicore)
 		memFraction := float64(applicationResources.MemoryMegaBytes*applicationResources.Replicas) / float64(run.ClusterMemoryMegaByte)
 
-		if applicationResources.Application == appName {
+		if strings.EqualFold(applicationResources.Application, appName) {
 			cpuPercentage += cpuFraction
 			memoryPercentage += memFraction
 		}

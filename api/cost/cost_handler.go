@@ -137,6 +137,7 @@ func (costHandler Handler) GetFutureCost(appName string) (*costModels.Applicatio
 
 func (costHandler Handler) removeWhitelistedAppsFromRun(runs []costModels.Run) ([]costModels.Run, error) {
 	whiteList := os.Getenv("WHITELIST")
+	cleanedRuns := runs
 
 	list := &costModels.Whitelist{}
 	err := json.Unmarshal([]byte(whiteList), list)
@@ -145,14 +146,14 @@ func (costHandler Handler) removeWhitelistedAppsFromRun(runs []costModels.Run) (
 		return nil, err
 	}
 
-	for _, run := range runs {
+	for index, run := range runs {
 		for _, whiteListedApp := range list.List {
 			cleanedRun := cleanResources(run, whiteListedApp)
-			run.Resources = cleanedRun.Resources
+			cleanedRuns[index].Resources = cleanedRun.Resources
 		}
 	}
 
-	return runs, nil
+	return cleanedRuns, nil
 }
 
 func cleanResources(run costModels.Run, app string) costModels.Run {
