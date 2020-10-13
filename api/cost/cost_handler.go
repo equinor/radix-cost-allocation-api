@@ -15,20 +15,19 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Client interface
+type Client interface {
+	GetTotalCost(fromTime, toTime *time.Time, appName *string) (*costModels.ApplicationCostSet, error)
+	GetFutureCost(appName string) (*costModels.ApplicationCost, error)
+}
+
 // Handler Instance variables
 type Handler struct {
-	token string
 }
 
 // Init Constructor
-func Init(accounts string) Handler {
-	return Handler{
-		token: accounts,
-	}
-}
-
-func (costHandler Handler) getToken() string {
-	return costHandler.token
+func Init() Handler {
+	return Handler{}
 }
 
 type costCalculationHelper struct {

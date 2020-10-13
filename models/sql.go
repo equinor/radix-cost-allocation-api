@@ -12,14 +12,21 @@ import (
 	"time"
 )
 
+// CostRepository interface
+type CostRepository interface {
+	GetLatestRun() (costModels.Run, error)
+	GetRunsBetweenTimes(from, to *time.Time) ([]costModels.Run, error)
+}
+
 // SQLClient used to perform sql queries
 type SQLClient struct {
-	Server   string
-	Port     int
-	Database string
-	UserID   string
-	Password string
-	db       *sql.DB
+	Server     string
+	Port       int
+	Database   string
+	UserID     string
+	Password   string
+	db         *sql.DB
+	repository CostRepository
 }
 
 // NewSQLClient create sqlclient and setup the db connection
