@@ -3,19 +3,37 @@ package test
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/equinor/radix-cost-allocation-api/api/utils"
-	"github.com/equinor/radix-cost-allocation-api/models"
-	"github.com/equinor/radix-cost-allocation-api/router"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
+
+	"github.com/equinor/radix-cost-allocation-api/api/utils"
+	"github.com/equinor/radix-cost-allocation-api/models"
+	"github.com/equinor/radix-cost-allocation-api/router"
+	log "github.com/sirupsen/logrus"
 )
+
+const reportName = "report.csv"
 
 // Utils Instance variables
 type Utils struct {
 	controllers []models.Controller
+}
+
+// ReportUtils Instance variables
+type ReportUtils struct {
+	File *os.File
+}
+
+// NewReportTestUtils Constructor
+func NewReportTestUtils() ReportUtils {
+	file, _ := os.Create(reportName)
+
+	return ReportUtils{
+		file,
+	}
 }
 
 // NewTestUtils Constructor

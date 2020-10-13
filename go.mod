@@ -10,6 +10,7 @@ require (
 	github.com/go-openapi/swag v0.19.9 // indirect
 	github.com/golang/gddo v0.0.0-20200611223618-a4829ef13274
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
+	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e
 	github.com/gorilla/mux v1.7.0
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mailru/easyjson v0.7.1 // indirect
