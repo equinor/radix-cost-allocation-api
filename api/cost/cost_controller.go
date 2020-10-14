@@ -15,11 +15,12 @@ const rootPath = ""
 
 type costController struct {
 	*models.DefaultController
+	repo *models.Repository
 }
 
-// NewApplicationController Constructor
-func NewApplicationController() models.Controller {
-	return &costController{}
+// NewCostController Constructor
+func NewCostController(repo *models.Repository) models.Controller {
+	return &costController{repo: repo}
 }
 
 // GetRoutes List the supported routes of this controller
@@ -46,7 +47,7 @@ func (costController *costController) GetRoutes() models.Routes {
 }
 
 // GetTotalCosts for all applications for period
-func (costController *costController) GetTotalCosts(accounts models.Accounts, w http.ResponseWriter, r *http.Request) {
+func (costController *costController) GetTotalCosts(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation GET /totalcosts/ cost getTotalCosts
 	// ---
 	// summary: Gets the total cost for an application
@@ -82,11 +83,11 @@ func (costController *costController) GetTotalCosts(accounts models.Accounts, w 
 	//     description: "Unauthorized"
 	//   "404":
 	//     description: "Not found"
-	costController.getTotalCosts(accounts, w, r, nil)
+	costController.getTotalCosts(costController.repo, w, r, nil)
 }
 
 // GetTotalCost for an application for period
-func (costController *costController) GetTotalCost(accounts models.Accounts, w http.ResponseWriter, r *http.Request) {
+func (costController *costController) GetTotalCost(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation GET /totalcost/{appName} cost getTotalCost
 	// ---
 	// summary: Gets the total cost for an application
@@ -128,10 +129,10 @@ func (costController *costController) GetTotalCost(accounts models.Accounts, w h
 	//   "404":
 	//     description: "Not found"
 	appName := mux.Vars(r)["appName"]
-	costController.getTotalCosts(accounts, w, r, &appName)
+	costController.getTotalCosts(costController.repo, w, r, &appName)
 }
 
-func (costController *costController) GetFutureCost(accounts models.Accounts, w http.ResponseWriter, r *http.Request) {
+func (costController *costController) GetFutureCost(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation GET /futurecost/{appName} cost getFutureCost
 	// ---
 	// summary: Gets the estimated future cost for an application
@@ -161,11 +162,11 @@ func (costController *costController) GetFutureCost(accounts models.Accounts, w 
 	//   "404":
 	//     description: "Not found"
 	appName := mux.Vars(r)["appName"]
-	costController.getFutureCost(accounts, w, r, appName)
+	costController.getFutureCost(costController.repo, w, r, appName)
 }
 
-func (costController *costController) getFutureCost(accounts models.Accounts, w http.ResponseWriter, r *http.Request, appName string) {
-	handler := Init(accounts.GetToken())
+func (costController *costController) getFutureCost(costRepo *models.Repository, w http.ResponseWriter, r *http.Request, appName string) {
+	handler := Init(costRepo)
 	cost, err := handler.GetFutureCost(appName)
 
 	if err != nil {
@@ -176,14 +177,14 @@ func (costController *costController) getFutureCost(accounts models.Accounts, w 
 	utils.JSONResponse(w, r, &cost)
 }
 
-func (costController *costController) getTotalCosts(accounts models.Accounts, w http.ResponseWriter, r *http.Request, appName *string) {
+func (costController *costController) getTotalCosts(costRepo *models.Repository, w http.ResponseWriter, r *http.Request, appName *string) {
 	fromTime, toTime, err := getCostPeriod(w, r)
 	if err != nil {
 		utils.ErrorResponse(w, r, err)
 		return
 	}
 
-	handler := Init(accounts.GetToken())
+	handler := Init(costRepo)
 	cost, err := handler.GetTotalCost(fromTime, toTime, appName)
 	if err != nil {
 		utils.ErrorResponse(w, r, err)

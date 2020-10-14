@@ -7,6 +7,7 @@ import (
 
 	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
 	controllertest "github.com/equinor/radix-cost-allocation-api/api/test"
+	mock "github.com/equinor/radix-cost-allocation-api/api/test"
 	"github.com/equinor/radix-operator/pkg/apis/defaults"
 	commontest "github.com/equinor/radix-operator/pkg/apis/test"
 	"github.com/stretchr/testify/assert"
@@ -25,8 +26,11 @@ func setupTest() *controllertest.Utils {
 	commonTestUtils.CreateClusterPrerequisites(clusterName, containerRegistry)
 	os.Setenv(defaults.ActiveClusternameEnvironmentVariable, clusterName)
 
+	fakeCostRepo := mock.NewFakeCostRepository()
+	fakeRepo := fakeCostRepo.Repo
+
 	// controllerTestUtils is used for issuing HTTP request and processing responses
-	controllerTestUtils := controllertest.NewTestUtils(NewApplicationController())
+	controllerTestUtils := controllertest.NewTestUtils(NewCostController(&fakeRepo))
 
 	return &controllerTestUtils
 }
