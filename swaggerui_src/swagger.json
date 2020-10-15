@@ -1,14 +1,40 @@
 {
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "schemes": [
+    "http",
+    "https"
+  ],
   "swagger": "2.0",
+  "info": {
+    "description": "This is the Cost allocation API Server for the Radix platform.",
+    "title": "classification Radix API.",
+    "contact": {
+      "url": "https://equinor.slack.com/messages/CBKM6N2JY"
+    },
+    "version": "1.1.0"
+  },
+  "basePath": "/api/v1",
   "paths": {
-    "/totalcost/{appName}": {
+    "/futurecost/{appName}": {
       "get": {
         "tags": [
-          "application"
+          "cost"
         ],
-        "summary": "Total cost for an application.",
-        "operationId": "getTotalCost",
+        "summary": "Gets the estimated future cost for an application",
+        "operationId": "getFutureCost",
         "parameters": [
+          {
+            "type": "string",
+            "description": "Name of application",
+            "name": "appName",
+            "in": "path",
+            "required": true
+          },
           {
             "type": "string",
             "description": "Works only with custom setup of cluster. Allow impersonation of test users (Required if Impersonate-Group is set)",
@@ -24,9 +50,121 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful operation",
+            "description": "Successful get cost",
             "schema": {
-              "$ref": "#/definitions/Cost"
+              "$ref": "#/definitions/ApplicationCost"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/totalcost/{appName}": {
+      "get": {
+        "tags": [
+          "cost"
+        ],
+        "summary": "Gets the total cost for an application",
+        "operationId": "getTotalCost",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Name of application",
+            "name": "appName",
+            "in": "path"
+          },
+          {
+            "type": "string",
+            "format": "date-time",
+            "description": "Get cost from fromTime (example 2020-03-18 or 2020-03-18T07:20:41+01:00)",
+            "name": "fromTime",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "format": "date-time",
+            "description": "Get cost to toTime (example 2020-09-18 or 2020-09-18T07:20:41+01:00)",
+            "name": "toTime",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Works only with custom setup of cluster. Allow impersonation of test users (Required if Impersonate-Group is set)",
+            "name": "Impersonate-User",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "Works only with custom setup of cluster. Allow impersonation of test group (Required if Impersonate-User is set)",
+            "name": "Impersonate-Group",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful get cost",
+            "schema": {
+              "$ref": "#/definitions/ApplicationCostSet"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/totalcosts/": {
+      "get": {
+        "tags": [
+          "cost"
+        ],
+        "summary": "Gets the total cost for an application",
+        "operationId": "getTotalCosts",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "date-time",
+            "description": "Get cost from fromTime (example 2020-03-18 or 2020-03-18T07:20:41+01:00)",
+            "name": "fromTime",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "format": "date-time",
+            "description": "Get cost to toTime (example 2020-09-18 or 2020-09-18T07:20:41+01:00)",
+            "name": "toTime",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Works only with custom setup of cluster. Allow impersonation of test users (Required if Impersonate-Group is set)",
+            "name": "Impersonate-User",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "Works only with custom setup of cluster. Allow impersonation of test group (Required if Impersonate-User is set)",
+            "name": "Impersonate-Group",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful get cost",
+            "schema": {
+              "$ref": "#/definitions/ApplicationCostSet"
             }
           },
           "401": {
@@ -40,75 +178,126 @@
     }
   },
   "definitions": {
-    "ApplicationRegistration": {
-      "description": "ApplicationRegistration describe an application",
+    "ApplicationCost": {
+      "description": "ApplicationCost details of one application cost",
       "type": "object",
       "required": [
         "name",
-        "repository",
-        "sharedSecret",
-        "adGroups",
-        "owner",
-        "creator"
+        "costPercentageByCpu",
+        "costPercentageByMemory",
+        "cost",
+        "currency"
       ],
       "properties": {
-        "adGroups": {
-          "description": "AdGroups the groups that should be able to access the application",
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "AdGroups"
+        "comment": {
+          "description": "Comment regarding cost",
+          "type": "string",
+          "x-go-name": "Comment"
+        },
+        "cost": {
+          "description": "Cost",
+          "type": "number",
+          "format": "double",
+          "x-go-name": "Cost"
+        },
+        "costPercentageByCpu": {
+          "description": "CostPercentageByCPU is cost percentage by CPU for the application.",
+          "type": "number",
+          "format": "double",
+          "x-go-name": "CostPercentageByCPU"
+        },
+        "costPercentageByMemory": {
+          "description": "CostPercentageByMemory is cost percentage by memory for the application",
+          "type": "number",
+          "format": "double",
+          "x-go-name": "CostPercentageByMemory"
         },
         "creator": {
-          "description": "ApplicationOwner of the application (email). Can be a single person or a shared group email",
+          "description": "Creator of the application.",
           "type": "string",
           "x-go-name": "Creator"
         },
-        "machineUser": {
-          "description": "MachineUser is on/off toggler of machine user for the application",
-          "type": "boolean",
-          "x-go-name": "MachineUser"
+        "currency": {
+          "description": "Cost currency",
+          "type": "string",
+          "x-go-name": "Currency"
         },
         "name": {
-          "description": "ApplicationName the unique name of the Radix application",
+          "description": "Name of the application",
           "type": "string",
           "x-go-name": "Name",
           "example": "radix-canary-golang"
         },
         "owner": {
-          "description": "ApplicationOwner of the application (email). Can be a single person or a shared group email",
+          "description": "Owner of the application (email). Can be a single person or a shared group email.",
           "type": "string",
           "x-go-name": "Owner"
         },
-        "privateKey": {
-          "description": "PrivateKey the private part of the deploy key set or returned\nafter successful application",
-          "type": "string",
-          "x-go-name": "PrivateKey"
-        },
-        "publicKey": {
-          "description": "PublicKey the public part of the deploy key set or returned\nafter successful application",
-          "type": "string",
-          "x-go-name": "PublicKey"
-        },
-        "repository": {
-          "description": "Repository the github repository",
-          "type": "string",
-          "x-go-name": "Repository",
-          "example": "https://github.com/equinor/radix-canary-golang"
-        },
-        "sharedSecret": {
-          "description": "SharedSecret the shared secret of the webhook",
-          "type": "string",
-          "x-go-name": "SharedSecret"
-        },
         "wbs": {
-          "description": "WBS information",
+          "description": "WBS for the application.",
           "type": "string",
           "x-go-name": "WBS"
         }
       },
       "x-go-package": "github.com/equinor/radix-cost-allocation-api/api/cost/models"
+    },
+    "ApplicationCostSet": {
+      "description": "ApplicationCostSet details of application cost set",
+      "type": "object",
+      "required": [
+        "from",
+        "to",
+        "applicationCosts",
+        "totalRequestedCpu",
+        "totalRequestedMemory"
+      ],
+      "properties": {
+        "applicationCosts": {
+          "description": "ApplicationCosts with costs.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ApplicationCost"
+          },
+          "x-go-name": "ApplicationCosts"
+        },
+        "from": {
+          "description": "ApplicationCostSet period started From",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "From"
+        },
+        "to": {
+          "description": "ApplicationCostSet period continued To",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "To"
+        },
+        "totalRequestedCpu": {
+          "description": "TotalRequestedCPU within the period.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "TotalRequestedCPU"
+        },
+        "totalRequestedMemory": {
+          "description": "TotalRequestedMemory within the period.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "TotalRequestedMemory"
+        }
+      },
+      "x-go-package": "github.com/equinor/radix-cost-allocation-api/api/cost/models"
     }
-  }
+  },
+  "securityDefinitions": {
+    "bearer": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "bearer": []
+    }
+  ]
 }
