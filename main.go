@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/equinor/radix-cost-allocation-api/api/cost"
 	models "github.com/equinor/radix-cost-allocation-api/models"
@@ -84,11 +85,19 @@ func parseFlagsFromArgs(fs *pflag.FlagSet) {
 }
 
 func getDBCredentials() *models.DBCredentials {
+	portEnv := os.Getenv("PORT")
+	port := 1433
+
+	if p, err := strconv.Atoi(portEnv); err == nil {
+		port = p
+	}
+
 	return &models.DBCredentials{
 		Server:   os.Getenv("SQL_SERVER"),
 		Database: os.Getenv("SQL_DATABASE"),
 		UserID:   os.Getenv("SQL_USER"),
 		Password: os.Getenv("SQL_PASSWORD"),
+		Port:     port,
 	}
 }
 
