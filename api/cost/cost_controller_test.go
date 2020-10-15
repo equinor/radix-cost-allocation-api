@@ -1,16 +1,12 @@
 package cost
 
 import (
-	"fmt"
 	"os"
-	"testing"
 
-	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
 	controllertest "github.com/equinor/radix-cost-allocation-api/api/test"
 	mock "github.com/equinor/radix-cost-allocation-api/api/test"
 	"github.com/equinor/radix-operator/pkg/apis/defaults"
 	commontest "github.com/equinor/radix-operator/pkg/apis/test"
-	"github.com/stretchr/testify/assert"
 	kubefake "k8s.io/client-go/kubernetes/fake"
 )
 
@@ -35,16 +31,16 @@ func setupTest() *controllertest.Utils {
 	return &controllerTestUtils
 }
 
-func TestGetTotalCost_ApplicationExists(t *testing.T) {
-	controllerTestUtils := setupTest()
+// func TestGetTotalCost_ApplicationExists(t *testing.T) {
+// 	controllerTestUtils := setupTest()
 
-	// Test
-	t.Run("matching repo", func(t *testing.T) {
-		responseChannel := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/totalcost/%s", "app-name"))
-		response := <-responseChannel
+// 	// Test
+// 	t.Run("matching repo", func(t *testing.T) {
+// 		responseChannel := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/totalcost/%s", "app-name"))
+// 		response := <-responseChannel
 
-		applicationCostSet := costModels.ApplicationCostSet{}
-		controllertest.GetResponseBody(response, &applicationCostSet)
-		assert.NotNil(t, applicationCostSet)
-	})
-}
+// 		applicationCostSet := costModels.ApplicationCostSet{}
+// 		controllertest.GetResponseBody(response, &applicationCostSet)
+// 		assert.NotNil(t, applicationCostSet)
+// 	})
+// }
