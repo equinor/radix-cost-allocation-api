@@ -119,7 +119,7 @@ func (costHandler *Handler) GetFutureCost(appName string) (*costModels.Applicati
 
 // Whitelist contains list of apps that are not included in cost distribution
 
-func (costHandler Handler) removeWhitelistedAppsFromRun(runs []costModels.Run) ([]costModels.Run, error) {
+func (costHandler *Handler) removeWhitelistedAppsFromRun(runs []costModels.Run) ([]costModels.Run, error) {
 	whiteList := os.Getenv("WHITELIST")
 	cleanedRuns := runs
 
@@ -167,7 +167,7 @@ func remove(s []costModels.RequiredResources, i int) []costModels.RequiredResour
 	return s[:len(s)-1]
 }
 
-func (costHandler Handler) filterApplicationCostsBy(appName *string, cost *costModels.ApplicationCostSet) []costModels.ApplicationCost {
+func (costHandler *Handler) filterApplicationCostsBy(appName *string, cost *costModels.ApplicationCostSet) []costModels.ApplicationCost {
 	for _, applicationCost := range (*cost).ApplicationCosts {
 		if applicationCost.Name == *appName {
 			return []costModels.ApplicationCost{applicationCost}
