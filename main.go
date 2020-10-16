@@ -2,13 +2,16 @@ package main
 
 import (
 	"fmt"
-	"github.com/equinor/radix-cost-allocation-api/api/cost"
-	"github.com/equinor/radix-cost-allocation-api/models"
-	"github.com/equinor/radix-cost-allocation-api/router"
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/pflag"
 	"net/http"
 	"os"
+	"strconv"
+
+	"github.com/equinor/radix-cost-allocation-api/api/cost"
+	models "github.com/equinor/radix-cost-allocation-api/models"
+	"github.com/equinor/radix-cost-allocation-api/router"
+
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/pflag"
 )
 
 const clusternameEnvironmentVariable = "RADIX_CLUSTERNAME"
@@ -33,9 +36,14 @@ func main() {
 	parseFlagsFromArgs(fs)
 
 	errs := make(chan error)
+
+	creds := getDBCredentials()
+	costRepository := models.NewCostRepository(creds)
+	defer costRepository.Repo.CloseDB()
+
 	go func() {
 		log.Infof("API is serving on port %s", *port)
-		err := http.ListenAndServe(fmt.Sprintf(":%s", *port), router.NewServer(clusterName, getControllers()...))
+		err := http.ListenAndServe(fmt.Sprintf(":%s", *port), router.NewServer(clusterName, getControllers(&costRepository.Repo)...))
 		errs <- err
 	}()
 
@@ -45,9 +53,9 @@ func main() {
 	}
 }
 
-func getControllers() []models.Controller {
+func getControllers(repo *models.Repository) []models.Controller {
 	return []models.Controller{
-		cost.NewApplicationController(),
+		cost.NewCostController(repo),
 	}
 }
 
@@ -73,6 +81,23 @@ func parseFlagsFromArgs(fs *pflag.FlagSet) {
 		fmt.Fprintf(os.Stderr, "Error: %s\n\n", err.Error())
 		fs.Usage()
 		os.Exit(2)
+	}
+}
+
+func getDBCredentials() *models.DBCredentials {
+	portEnv := os.Getenv("PORT")
+	port := 1433
+
+	if p, err := strconv.Atoi(portEnv); err == nil {
+		port = p
+	}
+
+	return &models.DBCredentials{
+		Server:   os.Getenv("SQL_SERVER"),
+		Database: os.Getenv("SQL_DATABASE"),
+		UserID:   os.Getenv("SQL_USER"),
+		Password: os.Getenv("SQL_PASSWORD"),
+		Port:     port,
 	}
 }
 

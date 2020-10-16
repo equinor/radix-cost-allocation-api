@@ -2,8 +2,9 @@ package models
 
 import (
 	"fmt"
-	jwt "github.com/dgrijalva/jwt-go"
 	"net/http"
+
+	jwt "github.com/dgrijalva/jwt-go"
 )
 
 // NewAccounts creates a new Accounts struct
@@ -25,7 +26,7 @@ type Accounts struct {
 }
 
 // RadixHandlerFunc Pattern for handler functions
-type RadixHandlerFunc func(Accounts, http.ResponseWriter, *http.Request)
+type RadixHandlerFunc func(http.ResponseWriter, *http.Request)
 
 // Controller Pattern of an rest/stream controller
 type Controller interface {

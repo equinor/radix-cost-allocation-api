@@ -2,6 +2,7 @@ package cost_models
 
 import (
 	"errors"
+	"strings"
 	"time"
 )
 
@@ -82,6 +83,14 @@ type ApplicationCost struct {
 	//
 	// required: true
 	Currency string `json:"currency"`
+}
+
+// Whitelist contains list of apps that should not be part of cost distribution
+type Whitelist struct {
+	// List is the list of apps
+	//
+	// required: true
+	List []string `json:"whiteList"`
 }
 
 // NewApplicationCostSet aggregate cost over a time period for applications
@@ -178,7 +187,7 @@ func aggregateCostForSingleRun(run Run, subscriptionCost float64, subscriptionCo
 		cpuFraction := float64(applicationResources.CPUMillicore*applicationResources.Replicas) / float64(run.ClusterCPUMillicore)
 		memFraction := float64(applicationResources.MemoryMegaBytes*applicationResources.Replicas) / float64(run.ClusterMemoryMegaByte)
 
-		if applicationResources.Application == appName {
+		if strings.EqualFold(applicationResources.Application, appName) {
 			cpuPercentage += cpuFraction
 			memoryPercentage += memFraction
 		}
