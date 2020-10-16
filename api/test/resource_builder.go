@@ -48,17 +48,6 @@ func (rbl *ResourceBuilderListStruct) WithBuilders(builders []ResourceBuilder) R
 	return rbl
 }
 
-// BuildResources builds all resources in builders list
-func (rbl *ResourceBuilderListStruct) BuildResources() []costModels.RequiredResources {
-	var resources []costModels.RequiredResources
-
-	for _, rr := range rbl.builders {
-		resources = append(resources, *rr.BuildResource())
-	}
-
-	return resources
-}
-
 // GetResourcesCPUMillicore finds the total requested cpu for all required resources in list
 func (rbl *ResourceBuilderListStruct) GetResourcesCPUMillicore() int {
 	totalCPU := 0
@@ -155,6 +144,18 @@ func (rb *ResourceBuilderStruct) BuildResource() *costModels.RequiredResources {
 	return resource
 }
 
+// BuildResources builds all resources in builders list
+func (rbl *ResourceBuilderListStruct) BuildResources() []costModels.RequiredResources {
+	var resources []costModels.RequiredResources
+
+	for _, rr := range rbl.builders {
+		resources = append(resources, *rr.BuildResource())
+	}
+
+	return resources
+}
+
+// NewResourceBuilderList constructor for resource builder list
 func NewResourceBuilderList() ResourceBuilderList {
 	return &ResourceBuilderListStruct{}
 }
