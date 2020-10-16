@@ -1,53 +1,61 @@
 package report
 
 import (
+	"os"
 	"time"
 
-	cost_handler "github.com/equinor/radix-cost-allocation-api/api/cost"
+	cost "github.com/equinor/radix-cost-allocation-api/api/cost"
+	reportModels "github.com/equinor/radix-cost-allocation-api/api/report/models"
+	models "github.com/equinor/radix-cost-allocation-api/models"
 )
 
-type CostClient interface {
-	GetCost() float64
+const (
+	companyCode          = 1200
+	generalLedgerAccount = 6541001
+	documentHeader       = "Omnia Radix"
+)
+
+// ReportHandler instance variables
+type ReportHandler struct {
+	repo        *models.Repository
+	costHandler cost.CostHandler
 }
 
-type costClient struct {
-	sqlClient string
-}
-
-type mockCostClient struct {
-	data []float64
-}
-
-func NewMockCostClient(data []float64) mockCostClient {
-	return mockCostClient{data}
-}
-
-func NewCostClient(sqlClient string) costClient {
-	return costClient{sqlClient}
-}
-
-func (costClient *costClient) GetCost() float64 {
-	return 0
-}
-
-type Handler struct {
-	token      string
-	costClient CostClient
-}
-
-func Init(account string) Handler {
-	return Handler{
-		token: account,
+// Init constructor
+func Init(repo *models.Repository) ReportHandler {
+	costHandler := cost.Init(repo)
+	return ReportHandler{
+		repo:        repo,
+		costHandler: costHandler,
 	}
 }
 
-func (rh Handler) getToken() string {
-	return rh.token
+// GetCostReport creates a CostReport
+func (rh *ReportHandler) GetCostReport() (*os.File, error) {
+	from, to := getPeriod()
+	applicationCosts, err := rh.costHandler.GetTotalCost(from, to, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	report := reportModels.NewCostReport()
+	reportFile, err := os.Create("report.csv")
+	if err != nil {
+		return nil, err
+	}
+
+	costReport, err := report.Create(reportFile)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return costReport, nil
+
 }
 
-func (rh Handler) GetCostReport() error {
-	costHandler := cost_handler.Init(rh.getToken())
-	rh.costClient.ge
+func getPeriod() (*time.Time, *time.Time) {
 	now := time.Now()
 	currentYear, currentMonth, _ := now.Date()
 	currentLocation := now.Location()
@@ -55,6 +63,6 @@ func (rh Handler) GetCostReport() error {
 	firstOfMonth := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, currentLocation)
 	firstOfLastMonth := firstOfMonth.AddDate(0, -1, +1)
 	lastOfLastMonth := firstOfLastMonth.AddDate(0, 1, -1)
-	appName := "ole-test"
-	cost, err := costHandler.GetTotalCost(&firstOfLastMonth, &lastOfLastMonth, &appName)
+
+	return &firstOfLastMonth, &lastOfLastMonth
 }

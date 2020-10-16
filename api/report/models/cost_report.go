@@ -2,7 +2,11 @@ package reportmodels
 
 import (
 	"encoding/csv"
+	"fmt"
 	"os"
+	"time"
+
+	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
 )
 
 // CostReport contains information to be exported to a CSV report
@@ -14,6 +18,11 @@ type CostReport struct {
 	generalLedgerAccount []string
 	amount               []string
 	lineText             []string
+}
+
+// NewCostReport constructor
+func NewCostReport() *CostReport {
+	return &CostReport{}
 }
 
 // Create takes the CostReport object and creates a CSV report according to specification
@@ -45,6 +54,17 @@ func (cr *CostReport) Create(file *os.File) (*os.File, error) {
 	}
 
 	return file, nil
+}
+
+// Aggregate ApplicationCostSet data and construct a CostReport
+func (cr *CostReport) Aggregate(appCostSet costModels.ApplicationCostSet) *CostReport {
+	costReport := NewCostReport()
+
+	for _, appCost := range appCostSet.ApplicationCosts {
+		costReport.postingDate = append(costReport.postingDate, time.Now().Format("2006-01-02"))
+		costReport.amount = append(costReport.amount, fmt.Sprintf("%f", appCost.Cost))
+
+	}
 }
 
 func (cr *CostReport) organiseData(numberOfRows int, params ...[]string) [][]string {

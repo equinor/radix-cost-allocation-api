@@ -10,11 +10,12 @@ const rootPath = ""
 
 type reportController struct {
 	*models.DefaultController
+	repo *models.Repository
 }
 
 // NewApplicationController constructor
-func NewApplicationController() models.Controller {
-	return &reportController{}
+func NewReportController(repo *models.Repository) models.Controller {
+	return &reportController{repo: repo}
 }
 
 func (rc *reportController) GetRoutes() models.Routes {
@@ -28,8 +29,6 @@ func (rc *reportController) GetRoutes() models.Routes {
 	return routes
 }
 
-func (rc *reportController) GetCostReport(accounts models.Accounts, w http.ResponseWriter, r *http.Request) {
-	handler := Init(accounts.GetToken())
-
-	err := handler.GetCostReport()
+func (rc *reportController) GetCostReport(w http.ResponseWriter, r *http.Request) {
+	handler := Init(rc.repo)
 }
