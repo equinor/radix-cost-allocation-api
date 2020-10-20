@@ -22,16 +22,16 @@ type Env struct {
 	Whitelist            *costModels.Whitelist
 }
 
-// CostHandler Instance variables
-type CostHandler struct {
+// Handler Instance variables
+type Handler struct {
 	repo *models.Repository
 	env  Env
 }
 
 // Init Constructor
-func Init(repo *models.Repository) CostHandler {
+func Init(repo *models.Repository) Handler {
 	env := initEnv()
-	return CostHandler{
+	return Handler{
 		repo: repo,
 		env:  *env,
 	}
@@ -69,7 +69,7 @@ func initEnv() *Env {
 }
 
 // GetTotalCost handler for GetTotalCost
-func (costHandler *CostHandler) GetTotalCost(fromTime, toTime *time.Time, appName *string) (*costModels.ApplicationCostSet, error) {
+func (costHandler *Handler) GetTotalCost(fromTime, toTime *time.Time, appName *string) (*costModels.ApplicationCostSet, error) {
 	runs, err := (*costHandler.repo).GetRunsBetweenTimes(fromTime, toTime)
 	if err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ func (costHandler *CostHandler) GetTotalCost(fromTime, toTime *time.Time, appNam
 }
 
 // GetFutureCost estimates cost for the next 30 days based on last run
-func (costHandler *CostHandler) GetFutureCost(appName string) (*costModels.ApplicationCost, error) {
+func (costHandler *Handler) GetFutureCost(appName string) (*costModels.ApplicationCost, error) {
 
 	run, err := (*costHandler.repo).GetLatestRun()
 	if err != nil {
@@ -129,7 +129,7 @@ func (costHandler *CostHandler) GetFutureCost(appName string) (*costModels.Appli
 
 // Whitelist contains list of apps that are not included in cost distribution
 
-func (costHandler *CostHandler) removeWhitelistedAppsFromRun(runs []costModels.Run) ([]costModels.Run, error) {
+func (costHandler *Handler) removeWhitelistedAppsFromRun(runs []costModels.Run) ([]costModels.Run, error) {
 	cleanedRuns := runs
 	for index, run := range runs {
 		cleanedRun := cleanResources(run, costHandler.env.Whitelist)
@@ -165,7 +165,7 @@ func remove(s []costModels.RequiredResources, i int) []costModels.RequiredResour
 	return s[:len(s)-1]
 }
 
-func (costHandler *CostHandler) filterApplicationCostsBy(appName *string, cost *costModels.ApplicationCostSet) []costModels.ApplicationCost {
+func (costHandler *Handler) filterApplicationCostsBy(appName *string, cost *costModels.ApplicationCostSet) []costModels.ApplicationCost {
 	for _, applicationCost := range (*cost).ApplicationCosts {
 		if applicationCost.Name == *appName {
 			return []costModels.ApplicationCost{applicationCost}
