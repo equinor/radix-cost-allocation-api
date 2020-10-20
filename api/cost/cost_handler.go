@@ -140,13 +140,13 @@ func (costHandler *Handler) removeWhitelistedAppsFromRun(runs []costModels.Run) 
 }
 
 func cleanResources(run costModels.Run, whiteList *costModels.Whitelist) costModels.Run {
-	for index, resource := range run.Resources {
-		if find(whiteList.List, resource.Application) {
-			run.Resources = remove(run.Resources, index)
-			return cleanResources(run, whiteList)
+	cleanedResources := make([]costModels.RequiredResources, 0)
+	for _, resource := range run.Resources {
+		if !find(whiteList.List, resource.Application) {
+			cleanedResources = append(cleanedResources, resource)
 		}
 	}
-
+	run.Resources = cleanedResources
 	return run
 }
 
