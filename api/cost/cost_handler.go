@@ -19,6 +19,7 @@ import (
 type Env struct {
 	SubscriptionCost     float64
 	SubscriptionCurrency string
+	Whitelist            *costModels.Whitelist
 }
 
 // Handler Instance variables
@@ -41,6 +42,7 @@ func initEnv() *Env {
 	var (
 		subCost     = os.Getenv("SUBSCRIPTION_COST_VALUE")
 		subCurrency = os.Getenv("SUBSCRIPTION_COST_CURRENCY")
+		whiteList   = os.Getenv("WHITELIST")
 	)
 
 	subscriptionCost, er := strconv.ParseFloat(subCost, 64)
@@ -52,9 +54,17 @@ func initEnv() *Env {
 		log.Info("Subscription Cost currency is not set.")
 	}
 
+	list := &costModels.Whitelist{}
+	err := json.Unmarshal([]byte(whiteList), list)
+
+	if err != nil {
+		log.Info("Whitelist is not set")
+	}
+
 	return &Env{
 		SubscriptionCost:     subscriptionCost,
 		SubscriptionCurrency: subCurrency,
+		Whitelist:            list,
 	}
 }
 
@@ -119,36 +129,24 @@ func (costHandler *Handler) GetFutureCost(appName string) (*costModels.Applicati
 
 // Whitelist contains list of apps that are not included in cost distribution
 
-func (costHandler Handler) removeWhitelistedAppsFromRun(runs []costModels.Run) ([]costModels.Run, error) {
-	whiteList := os.Getenv("WHITELIST")
+func (costHandler *Handler) removeWhitelistedAppsFromRun(runs []costModels.Run) ([]costModels.Run, error) {
 	cleanedRuns := runs
-
-	list := &costModels.Whitelist{}
-	err := json.Unmarshal([]byte(whiteList), list)
-
-	if err != nil {
-		return nil, err
-	}
-
 	for index, run := range runs {
-		for _, whiteListedApp := range list.List {
-			cleanedRun := cleanResources(run, whiteListedApp)
-			cleanedRuns[index].Resources = cleanedRun.Resources
-		}
+		cleanedRun := cleanResources(run, costHandler.env.Whitelist)
+		cleanedRuns[index].Resources = cleanedRun.Resources
 	}
 
 	return cleanedRuns, nil
 }
 
-func cleanResources(run costModels.Run, app string) costModels.Run {
-
-	for index, resource := range run.Resources {
-		if strings.EqualFold(resource.Application, app) {
-			run.Resources = remove(run.Resources, index)
-			return cleanResources(run, app)
+func cleanResources(run costModels.Run, whiteList *costModels.Whitelist) costModels.Run {
+	cleanedResources := make([]costModels.RequiredResources, 0)
+	for _, resource := range run.Resources {
+		if !find(whiteList.List, resource.Application) {
+			cleanedResources = append(cleanedResources, resource)
 		}
 	}
-
+	run.Resources = cleanedResources
 	return run
 }
 
@@ -167,7 +165,7 @@ func remove(s []costModels.RequiredResources, i int) []costModels.RequiredResour
 	return s[:len(s)-1]
 }
 
-func (costHandler Handler) filterApplicationCostsBy(appName *string, cost *costModels.ApplicationCostSet) []costModels.ApplicationCost {
+func (costHandler *Handler) filterApplicationCostsBy(appName *string, cost *costModels.ApplicationCostSet) []costModels.ApplicationCost {
 	for _, applicationCost := range (*cost).ApplicationCosts {
 		if applicationCost.Name == *appName {
 			return []costModels.ApplicationCost{applicationCost}
