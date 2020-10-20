@@ -9,6 +9,12 @@ import (
 	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
 )
 
+const (
+	companyCode          = "1200"
+	generalLedgerAccount = "6541001"
+	documentHeader       = "Omnia Radix"
+)
+
 // CostReport contains information to be exported to a CSV report
 type CostReport struct {
 	postingDate          []string
@@ -57,19 +63,21 @@ func (cr *CostReport) Create(file *os.File) (*os.File, error) {
 }
 
 // Aggregate ApplicationCostSet data and construct a CostReport
-func (cr *CostReport) Aggregate(appCostSet costModels.ApplicationCostSet) *CostReport {
-	costReport := NewCostReport()
-
+func (cr *CostReport) Aggregate(appCostSet costModels.ApplicationCostSet) {
 	for _, appCost := range appCostSet.ApplicationCosts {
-		costReport.postingDate = append(costReport.postingDate, time.Now().Format("2006-01-02"))
-		costReport.amount = append(costReport.amount, fmt.Sprintf("%f", appCost.Cost))
-
+		cr.postingDate = append(cr.postingDate, time.Now().Format("2006-01-02"))
+		cr.amount = append(cr.amount, fmt.Sprintf("%f", appCost.Cost))
+		cr.companyCode = append(cr.companyCode, companyCode)
+		cr.documentHeader = append(cr.documentHeader, documentHeader)
+		cr.generalLedgerAccount = append(cr.generalLedgerAccount, generalLedgerAccount)
+		cr.lineText = append(cr.lineText, appCost.Name)
+		cr.wbs = append(cr.wbs, appCost.WBS)
 	}
 }
 
 func (cr *CostReport) organiseData(numberOfRows int, params ...[]string) [][]string {
 	numberOfCols := len(params)
-	data := make([][]string, numberOfCols)
+	data := make([][]string, numberOfRows)
 	for i := 0; i < numberOfRows; i++ {
 		for j := 0; j < numberOfCols; j++ {
 			data[i] = append(data[i], params[j][i])

@@ -1,18 +1,13 @@
 package report
 
 import (
+	"fmt"
 	"os"
 	"time"
 
 	cost "github.com/equinor/radix-cost-allocation-api/api/cost"
 	reportModels "github.com/equinor/radix-cost-allocation-api/api/report/models"
 	models "github.com/equinor/radix-cost-allocation-api/models"
-)
-
-const (
-	companyCode          = 1200
-	generalLedgerAccount = 6541001
-	documentHeader       = "Omnia Radix"
 )
 
 // ReportHandler instance variables
@@ -40,6 +35,7 @@ func (rh *ReportHandler) GetCostReport() (*os.File, error) {
 	}
 
 	report := reportModels.NewCostReport()
+	report.Aggregate(*applicationCosts)
 	reportFile, err := os.Create("report.csv")
 	if err != nil {
 		return nil, err
@@ -61,8 +57,12 @@ func getPeriod() (*time.Time, *time.Time) {
 	currentLocation := now.Location()
 
 	firstOfMonth := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, currentLocation)
-	firstOfLastMonth := firstOfMonth.AddDate(0, -1, +1)
+	firstOfLastMonth := firstOfMonth.AddDate(0, -1, 0)
 	lastOfLastMonth := firstOfLastMonth.AddDate(0, 1, -1)
+	test := firstOfLastMonth.String()
+	test1 := lastOfLastMonth.String()
+
+	fmt.Println(test, test1)
 
 	return &firstOfLastMonth, &lastOfLastMonth
 }

@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/equinor/radix-cost-allocation-api/api/cost"
+	"github.com/equinor/radix-cost-allocation-api/api/report"
 	models "github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/equinor/radix-cost-allocation-api/router"
 
@@ -56,6 +57,7 @@ func main() {
 func getControllers(repo *models.Repository) []models.Controller {
 	return []models.Controller{
 		cost.NewCostController(repo),
+		report.NewReportController(repo),
 	}
 }
 

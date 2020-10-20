@@ -3,6 +3,7 @@ package report
 import (
 	"net/http"
 
+	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	models "github.com/equinor/radix-cost-allocation-api/models"
 )
 
@@ -21,7 +22,7 @@ func NewReportController(repo *models.Repository) models.Controller {
 func (rc *reportController) GetRoutes() models.Routes {
 	routes := models.Routes{
 		{
-			Path:        rootPath + "/",
+			Path:        rootPath + "/report",
 			Method:      "GET",
 			HandlerFunc: rc.GetCostReport,
 		},
@@ -31,4 +32,11 @@ func (rc *reportController) GetRoutes() models.Routes {
 
 func (rc *reportController) GetCostReport(w http.ResponseWriter, r *http.Request) {
 	handler := Init(rc.repo)
+	file, err := handler.GetCostReport()
+
+	if err != nil {
+		utils.ErrorResponse(w, r, err)
+	}
+
+	utils.FileResponse(w, r, file)
 }
