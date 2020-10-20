@@ -24,12 +24,12 @@ type Env struct {
 
 // Handler Instance variables
 type Handler struct {
-	repo models.CostRepository
+	repo *models.Repository
 	env  Env
 }
 
 // Init Constructor
-func Init(repo models.CostRepository) Handler {
+func Init(repo *models.Repository) Handler {
 	env := initEnv()
 	return Handler{
 		repo: repo,
@@ -70,7 +70,7 @@ func initEnv() *Env {
 
 // GetTotalCost handler for GetTotalCost
 func (costHandler *Handler) GetTotalCost(fromTime, toTime *time.Time, appName *string) (*costModels.ApplicationCostSet, error) {
-	runs, err := costHandler.repo.GetRunsBetweenTimes(fromTime, toTime)
+	runs, err := (*costHandler.repo).GetRunsBetweenTimes(fromTime, toTime)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (costHandler *Handler) GetTotalCost(fromTime, toTime *time.Time, appName *s
 // GetFutureCost estimates cost for the next 30 days based on last run
 func (costHandler *Handler) GetFutureCost(appName string) (*costModels.ApplicationCost, error) {
 
-	run, err := costHandler.repo.GetLatestRun()
+	run, err := (*costHandler.repo).GetLatestRun()
 	if err != nil {
 		log.Info("Could not fetch latest run")
 		return nil, errors.New("Failed to fetch resource usage")

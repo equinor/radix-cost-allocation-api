@@ -34,7 +34,7 @@ func newFakeDbCon() *FakeDatabase {
 }
 
 // NewFakeCostRepository creates mock CostRepository
-func NewFakeCostRepository() *models.CostUtil {
+func NewFakeCostRepository() *models.CostRepository {
 	fakeDbCon := newFakeDbCon()
-	return &models.CostUtil{Repo: fakeDbCon}
+	return &models.CostRepository{Repo: fakeDbCon}
 }

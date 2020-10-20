@@ -12,10 +12,11 @@ import (
 	"time"
 )
 
-// CostRepository interface
-type CostRepository interface {
+// Repository interface
+type Repository interface {
 	GetLatestRun() (costModels.Run, error)
 	GetRunsBetweenTimes(from, to *time.Time) ([]costModels.Run, error)
+	CloseDB()
 }
 
 // DBCredentials hold credentials for database
@@ -27,25 +28,36 @@ type DBCredentials struct {
 	Password string
 }
 
-// SQLCostRepository struct defines a connection to DB
-type SQLCostRepository struct {
+// CostRepository outward facing struct
+type CostRepository struct {
+	Repo Repository
+}
+
+// Database struct defines a connection to DB
+type Database struct {
 	db *sql.DB
 }
 
-// NewSQLCostRepository initializes new connection to database
-func NewSQLCostRepository(creds *DBCredentials) *SQLCostRepository {
+// NewCostRepository creates a new repository with provided DB Creds
+func NewCostRepository(creds *DBCredentials) *CostRepository {
+	dbCon := newDBConnector(creds)
+	return &CostRepository{dbCon}
+}
+
+// newDBConnector initializes new connection to database
+func newDBConnector(creds *DBCredentials) *Database {
 	dbConnection := creds.setupDBConnection()
-	return &SQLCostRepository{
+	return &Database{
 		dbConnection,
 	}
 }
 
 // GetLatestRun fetches the last run and joins them with resources logged for that run
-func (repo SQLCostRepository) GetLatestRun() (costModels.Run, error) {
+func (dbCon Database) GetLatestRun() (costModels.Run, error) {
 	var requiredResources []costModels.RequiredResources
 	var lastRun costModels.Run
 
-	ctx, err := repo.verifyConnection()
+	ctx, err := dbCon.verifyConnection()
 	if err != nil {
 		return costModels.Run{}, err
 	}
@@ -59,7 +71,7 @@ func (repo SQLCostRepository) GetLatestRun() (costModels.Run, error) {
 			" INNER JOIN temptable rr ON r.[id] = rr.[run_id] "
 
 	// Create new connection to database
-	connection, err := repo.db.Conn(ctx)
+	connection, err := dbCon.db.Conn(ctx)
 	if err != nil {
 		log.Fatal("Error creating connection to DB", err.Error())
 	}
@@ -116,7 +128,7 @@ func (repo SQLCostRepository) GetLatestRun() (costModels.Run, error) {
 }
 
 // GetRunsBetweenTimes get all runs with its resources between from and to time
-func (dbCon SQLCostRepository) GetRunsBetweenTimes(from, to *time.Time) ([]costModels.Run, error) {
+func (dbCon Database) GetRunsBetweenTimes(from, to *time.Time) ([]costModels.Run, error) {
 	runsResources := map[int64]*[]costModels.RequiredResources{}
 	runs := map[int64]costModels.Run{}
 	ctx, err := dbCon.verifyConnection()
@@ -213,7 +225,7 @@ func (dbCon SQLCostRepository) GetRunsBetweenTimes(from, to *time.Time) ([]costM
 }
 
 // CloseDB closes the underlying db connection - Only to be called when API exits
-func (dbCon SQLCostRepository) CloseDB() {
+func (dbCon Database) CloseDB() {
 	dbCon.db.Close()
 }
 
@@ -239,7 +251,7 @@ func (creds DBCredentials) setupDBConnection() *sql.DB {
 	return db
 }
 
-func (dbCon SQLCostRepository) verifyConnection() (context.Context, error) {
+func (dbCon Database) verifyConnection() (context.Context, error) {
 	ctx := context.Background()
 	var err error
 
