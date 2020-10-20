@@ -5,37 +5,38 @@
 package mock_models
 
 import (
-	cost_models "github.com/equinor/radix-cost-allocation-api/api/cost/models"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 	time "time"
+
+	cost_models "github.com/equinor/radix-cost-allocation-api/api/cost/models"
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockRepository is a mock of Repository interface
-type MockRepository struct {
+// MockCostRepository is a mock of CostRepository interface
+type MockCostRepository struct {
 	ctrl     *gomock.Controller
-	recorder *MockRepositoryMockRecorder
+	recorder *MockCostRepositoryMockRecorder
 }
 
-// MockRepositoryMockRecorder is the mock recorder for MockRepository
-type MockRepositoryMockRecorder struct {
-	mock *MockRepository
+// MockCostRepositoryMockRecorder is the mock recorder for MockCostRepository
+type MockCostRepositoryMockRecorder struct {
+	mock *MockCostRepository
 }
 
-// NewMockRepository creates a new mock instance
-func NewMockRepository(ctrl *gomock.Controller) *MockRepository {
-	mock := &MockRepository{ctrl: ctrl}
-	mock.recorder = &MockRepositoryMockRecorder{mock}
+// NewMockCostRepository creates a new mock instance
+func NewMockCostRepository(ctrl *gomock.Controller) *MockCostRepository {
+	mock := &MockCostRepository{ctrl: ctrl}
+	mock.recorder = &MockCostRepositoryMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockRepository) EXPECT() *MockRepositoryMockRecorder {
+func (m *MockCostRepository) EXPECT() *MockCostRepositoryMockRecorder {
 	return m.recorder
 }
 
 // GetLatestRun mocks base method
-func (m *MockRepository) GetLatestRun() (cost_models.Run, error) {
+func (m *MockCostRepository) GetLatestRun() (cost_models.Run, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLatestRun")
 	ret0, _ := ret[0].(cost_models.Run)
@@ -44,13 +45,13 @@ func (m *MockRepository) GetLatestRun() (cost_models.Run, error) {
 }
 
 // GetLatestRun indicates an expected call of GetLatestRun
-func (mr *MockRepositoryMockRecorder) GetLatestRun() *gomock.Call {
+func (mr *MockCostRepositoryMockRecorder) GetLatestRun() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRun", reflect.TypeOf((*MockRepository)(nil).GetLatestRun))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRun", reflect.TypeOf((*MockCostRepository)(nil).GetLatestRun))
 }
 
 // GetRunsBetweenTimes mocks base method
-func (m *MockRepository) GetRunsBetweenTimes(from, to *time.Time) ([]cost_models.Run, error) {
+func (m *MockCostRepository) GetRunsBetweenTimes(from, to *time.Time) ([]cost_models.Run, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRunsBetweenTimes", from, to)
 	ret0, _ := ret[0].([]cost_models.Run)
@@ -59,19 +60,7 @@ func (m *MockRepository) GetRunsBetweenTimes(from, to *time.Time) ([]cost_models
 }
 
 // GetRunsBetweenTimes indicates an expected call of GetRunsBetweenTimes
-func (mr *MockRepositoryMockRecorder) GetRunsBetweenTimes(from, to interface{}) *gomock.Call {
+func (mr *MockCostRepositoryMockRecorder) GetRunsBetweenTimes(from, to interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRunsBetweenTimes", reflect.TypeOf((*MockRepository)(nil).GetRunsBetweenTimes), from, to)
-}
-
-// CloseDB mocks base method
-func (m *MockRepository) CloseDB() {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "CloseDB")
-}
-
-// CloseDB indicates an expected call of CloseDB
-func (mr *MockRepositoryMockRecorder) CloseDB() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseDB", reflect.TypeOf((*MockRepository)(nil).CloseDB))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRunsBetweenTimes", reflect.TypeOf((*MockCostRepository)(nil).GetRunsBetweenTimes), from, to)
 }

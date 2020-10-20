@@ -9,7 +9,6 @@ import (
 	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
 	controllertest "github.com/equinor/radix-cost-allocation-api/api/test"
 	mock "github.com/equinor/radix-cost-allocation-api/api/test/mock"
-	models "github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -30,7 +29,7 @@ func setupTest(t *testing.T) *controllertest.Utils {
 	defer ctrl.Finish()
 
 	// Creates a mock Repository
-	fakeCostRepo := mock.NewMockRepository(ctrl)
+	fakeCostRepo := mock.NewMockCostRepository(ctrl)
 
 	// Generate run with test data
 	run := controllertest.ARun().BuildRun()
@@ -58,14 +57,8 @@ func setupTest(t *testing.T) *controllertest.Utils {
 		Return(runs, nil).
 		AnyTimes()
 
-	// CloseDB() returns nothing and is not applicable for controller testing
-	fakeCostRepo.EXPECT().CloseDB().Return().AnyTimes()
-
-	// Assign mock Repository to a CostRepository struct
-	fakeRepo := models.CostRepository{Repo: fakeCostRepo}
-
 	// controllerTestUtils is used for issuing HTTP request and processing responses
-	controllerTestUtils := controllertest.NewTestUtils(NewCostController(&fakeRepo.Repo))
+	controllerTestUtils := controllertest.NewTestUtils(NewCostController(fakeCostRepo))
 
 	return &controllerTestUtils
 }
