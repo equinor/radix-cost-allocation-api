@@ -15,11 +15,11 @@ const rootPath = ""
 
 type costController struct {
 	*models.DefaultController
-	repo *models.Repository
+	repo models.CostRepository
 }
 
 // NewCostController Constructor
-func NewCostController(repo *models.Repository) models.Controller {
+func NewCostController(repo models.CostRepository) models.Controller {
 	return &costController{repo: repo}
 }
 
@@ -165,7 +165,7 @@ func (costController *costController) GetFutureCost(w http.ResponseWriter, r *ht
 	costController.getFutureCost(costController.repo, w, r, appName)
 }
 
-func (costController *costController) getFutureCost(costRepo *models.Repository, w http.ResponseWriter, r *http.Request, appName string) {
+func (costController *costController) getFutureCost(costRepo models.CostRepository, w http.ResponseWriter, r *http.Request, appName string) {
 	handler := Init(costRepo)
 	cost, err := handler.GetFutureCost(appName)
 
@@ -177,7 +177,7 @@ func (costController *costController) getFutureCost(costRepo *models.Repository,
 	utils.JSONResponse(w, r, &cost)
 }
 
-func (costController *costController) getTotalCosts(costRepo *models.Repository, w http.ResponseWriter, r *http.Request, appName *string) {
+func (costController *costController) getTotalCosts(costRepo models.CostRepository, w http.ResponseWriter, r *http.Request, appName *string) {
 	fromTime, toTime, err := getCostPeriod(w, r)
 	if err != nil {
 		utils.ErrorResponse(w, r, err)
