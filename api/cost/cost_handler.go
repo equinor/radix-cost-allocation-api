@@ -19,6 +19,7 @@ import (
 type Env struct {
 	SubscriptionCost     float64
 	SubscriptionCurrency string
+	Whitelist            *costModels.Whitelist
 }
 
 // CostHandler Instance variables
@@ -28,7 +29,7 @@ type CostHandler struct {
 }
 
 // Init Constructor
-func Init(repo *models.Repository) CostHandler {
+func Init(repo models.CostRepository) Handler {
 	env := initEnv()
 	return CostHandler{
 		repo: repo,
@@ -41,6 +42,7 @@ func initEnv() *Env {
 	var (
 		subCost     = os.Getenv("SUBSCRIPTION_COST_VALUE")
 		subCurrency = os.Getenv("SUBSCRIPTION_COST_CURRENCY")
+		whiteList   = os.Getenv("WHITELIST")
 	)
 
 	subscriptionCost, er := strconv.ParseFloat(subCost, 64)
@@ -52,15 +54,23 @@ func initEnv() *Env {
 		log.Info("Subscription Cost currency is not set.")
 	}
 
+	list := &costModels.Whitelist{}
+	err := json.Unmarshal([]byte(whiteList), list)
+
+	if err != nil {
+		log.Info("Whitelist is not set")
+	}
+
 	return &Env{
 		SubscriptionCost:     subscriptionCost,
 		SubscriptionCurrency: subCurrency,
+		Whitelist:            list,
 	}
 }
 
 // GetTotalCost handler for GetTotalCost
-func (costHandler *CostHandler) GetTotalCost(fromTime, toTime *time.Time, appName *string) (*costModels.ApplicationCostSet, error) {
-	runs, err := (*costHandler.repo).GetRunsBetweenTimes(fromTime, toTime)
+func (costHandler *Handler) GetTotalCost(fromTime, toTime *time.Time, appName *string) (*costModels.ApplicationCostSet, error) {
+	runs, err := costHandler.repo.GetRunsBetweenTimes(fromTime, toTime)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +92,7 @@ func (costHandler *CostHandler) GetTotalCost(fromTime, toTime *time.Time, appNam
 // GetFutureCost estimates cost for the next 30 days based on last run
 func (costHandler *CostHandler) GetFutureCost(appName string) (*costModels.ApplicationCost, error) {
 
-	run, err := (*costHandler.repo).GetLatestRun()
+	run, err := costHandler.repo.GetLatestRun()
 	if err != nil {
 		log.Info("Could not fetch latest run")
 		return nil, errors.New("Failed to fetch resource usage")
@@ -120,35 +130,23 @@ func (costHandler *CostHandler) GetFutureCost(appName string) (*costModels.Appli
 // Whitelist contains list of apps that are not included in cost distribution
 
 func (costHandler *CostHandler) removeWhitelistedAppsFromRun(runs []costModels.Run) ([]costModels.Run, error) {
-	whiteList := os.Getenv("WHITELIST")
 	cleanedRuns := runs
-
-	list := &costModels.Whitelist{}
-	err := json.Unmarshal([]byte(whiteList), list)
-
-	if err != nil {
-		return nil, err
-	}
-
 	for index, run := range runs {
-		for _, whiteListedApp := range list.List {
-			cleanedRun := cleanResources(run, whiteListedApp)
-			cleanedRuns[index].Resources = cleanedRun.Resources
-		}
+		cleanedRun := cleanResources(run, costHandler.env.Whitelist)
+		cleanedRuns[index].Resources = cleanedRun.Resources
 	}
 
 	return cleanedRuns, nil
 }
 
-func cleanResources(run costModels.Run, app string) costModels.Run {
-
-	for index, resource := range run.Resources {
-		if strings.EqualFold(resource.Application, app) {
-			run.Resources = remove(run.Resources, index)
-			return cleanResources(run, app)
+func cleanResources(run costModels.Run, whiteList *costModels.Whitelist) costModels.Run {
+	cleanedResources := make([]costModels.RequiredResources, 0)
+	for _, resource := range run.Resources {
+		if !find(whiteList.List, resource.Application) {
+			cleanedResources = append(cleanedResources, resource)
 		}
 	}
-
+	run.Resources = cleanedResources
 	return run
 }
 

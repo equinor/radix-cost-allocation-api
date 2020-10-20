@@ -39,12 +39,12 @@ func main() {
 	errs := make(chan error)
 
 	creds := getDBCredentials()
-	costRepository := models.NewCostRepository(creds)
-	defer costRepository.Repo.CloseDB()
+	costRepository := models.NewSQLCostRepository(creds)
+	defer costRepository.CloseDB()
 
 	go func() {
 		log.Infof("API is serving on port %s", *port)
-		err := http.ListenAndServe(fmt.Sprintf(":%s", *port), router.NewServer(clusterName, getControllers(&costRepository.Repo)...))
+		err := http.ListenAndServe(fmt.Sprintf(":%s", *port), router.NewServer(clusterName, getControllers(costRepository)...))
 		errs <- err
 	}()
 
@@ -54,7 +54,7 @@ func main() {
 	}
 }
 
-func getControllers(repo *models.Repository) []models.Controller {
+func getControllers(repo models.CostRepository) []models.Controller {
 	return []models.Controller{
 		cost.NewCostController(repo),
 		report.NewReportController(repo),
