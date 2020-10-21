@@ -24,12 +24,12 @@ type Env struct {
 
 // CostHandler Instance variables
 type CostHandler struct {
-	repo *models.Repository
+	repo models.CostRepository
 	env  Env
 }
 
 // Init Constructor
-func Init(repo models.CostRepository) Handler {
+func Init(repo models.CostRepository) CostHandler {
 	env := initEnv()
 	return CostHandler{
 		repo: repo,
@@ -69,7 +69,7 @@ func initEnv() *Env {
 }
 
 // GetTotalCost handler for GetTotalCost
-func (costHandler *Handler) GetTotalCost(fromTime, toTime *time.Time, appName *string) (*costModels.ApplicationCostSet, error) {
+func (costHandler *CostHandler) GetTotalCost(fromTime, toTime *time.Time, appName *string) (*costModels.ApplicationCostSet, error) {
 	runs, err := costHandler.repo.GetRunsBetweenTimes(fromTime, toTime)
 	if err != nil {
 		return nil, err

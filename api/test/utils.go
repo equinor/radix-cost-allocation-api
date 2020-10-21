@@ -92,3 +92,7 @@ func GetResponseBody(response *httptest.ResponseRecorder, target interface{}) er
 
 	return json.Unmarshal(body, target)
 }
+
+func GetFileResponse(response *httptest.ResponseRecorder, target io.Writer) {
+	io.Copy(target, response.Body)
+}

@@ -1,8 +1,7 @@
 package report
 
 import (
-	"fmt"
-	"os"
+	"io"
 	"time"
 
 	cost "github.com/equinor/radix-cost-allocation-api/api/cost"
@@ -12,12 +11,12 @@ import (
 
 // ReportHandler instance variables
 type ReportHandler struct {
-	repo        *models.Repository
+	repo        models.CostRepository
 	costHandler cost.CostHandler
 }
 
 // Init constructor
-func Init(repo *models.Repository) ReportHandler {
+func Init(repo models.CostRepository) ReportHandler {
 	costHandler := cost.Init(repo)
 	return ReportHandler{
 		repo:        repo,
@@ -26,28 +25,27 @@ func Init(repo *models.Repository) ReportHandler {
 }
 
 // GetCostReport creates a CostReport
-func (rh *ReportHandler) GetCostReport() (*os.File, error) {
+func (rh *ReportHandler) GetCostReport(out io.Writer) error {
 	from, to := getPeriod()
 	applicationCosts, err := rh.costHandler.GetTotalCost(from, to, nil)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	report := reportModels.NewCostReport()
 	report.Aggregate(*applicationCosts)
-	reportFile, err := os.Create("report.csv")
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	costReport, err := report.Create(reportFile)
+	err = report.Create(out)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return costReport, nil
+	return nil
 
 }
 
@@ -59,10 +57,6 @@ func getPeriod() (*time.Time, *time.Time) {
 	firstOfMonth := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, currentLocation)
 	firstOfLastMonth := firstOfMonth.AddDate(0, -1, 0)
 	lastOfLastMonth := firstOfLastMonth.AddDate(0, 1, -1)
-	test := firstOfLastMonth.String()
-	test1 := lastOfLastMonth.String()
-
-	fmt.Println(test, test1)
 
 	return &firstOfLastMonth, &lastOfLastMonth
 }

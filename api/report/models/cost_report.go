@@ -1,9 +1,10 @@
 package reportmodels
 
 import (
+	"bufio"
 	"encoding/csv"
 	"fmt"
-	"os"
+	"io"
 	"time"
 
 	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
@@ -32,16 +33,17 @@ func NewCostReport() *CostReport {
 }
 
 // Create takes the CostReport object and creates a CSV report according to specification
-func (cr *CostReport) Create(file *os.File) (*os.File, error) {
+func (cr *CostReport) Create(out io.Writer) error {
 	columns := []string{"Posting_Date", "Document_Header", "Company_Code", "WBS", "General_Ledger_Account", "Amount", "Line_Text"}
 
-	writer := csv.NewWriter(file)
+	writer := bufio.NewWriter(out)
+	csvWriter := csv.NewWriter(writer)
 	defer writer.Flush()
 
-	err := writer.Write(columns)
+	err := csvWriter.Write(columns)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	allData := cr.organiseData(len(cr.wbs),
@@ -53,13 +55,14 @@ func (cr *CostReport) Create(file *os.File) (*os.File, error) {
 		cr.amount,
 		cr.lineText)
 
-	err = writer.WriteAll(allData)
+	err = csvWriter.WriteAll(allData)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return file, nil
+	return nil
+
 }
 
 // Aggregate ApplicationCostSet data and construct a CostReport

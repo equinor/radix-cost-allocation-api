@@ -2,6 +2,7 @@ package report
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	models "github.com/equinor/radix-cost-allocation-api/models"
@@ -11,11 +12,11 @@ const rootPath = ""
 
 type reportController struct {
 	*models.DefaultController
-	repo *models.Repository
+	repo models.CostRepository
 }
 
-// NewApplicationController constructor
-func NewReportController(repo *models.Repository) models.Controller {
+// NewReportController constructor
+func NewReportController(repo models.CostRepository) models.Controller {
 	return &reportController{repo: repo}
 }
 
@@ -32,7 +33,14 @@ func (rc *reportController) GetRoutes() models.Routes {
 
 func (rc *reportController) GetCostReport(w http.ResponseWriter, r *http.Request) {
 	handler := Init(rc.repo)
-	file, err := handler.GetCostReport()
+	file, err := os.Create("cost-report.csv")
+	defer os.Remove(file.Name())
+
+	if err != nil {
+		utils.ErrorResponse(w, r, err)
+	}
+
+	err = handler.GetCostReport(file)
 
 	if err != nil {
 		utils.ErrorResponse(w, r, err)
