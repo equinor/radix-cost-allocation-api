@@ -3,25 +3,28 @@ package test
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/equinor/radix-cost-allocation-api/api/utils"
-	"github.com/equinor/radix-cost-allocation-api/models"
-	"github.com/equinor/radix-cost-allocation-api/router"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+
+	"github.com/equinor/radix-cost-allocation-api/api/utils"
+	"github.com/equinor/radix-cost-allocation-api/models"
+	"github.com/equinor/radix-cost-allocation-api/router"
+	log "github.com/sirupsen/logrus"
 )
 
 // Utils Instance variables
 type Utils struct {
-	controllers []models.Controller
+	controllers  []models.Controller
+	authProvider utils.AuthProvider
 }
 
 // NewTestUtils Constructor
-func NewTestUtils(controllers ...models.Controller) Utils {
+func NewTestUtils(authProvider utils.AuthProvider, controllers ...models.Controller) Utils {
 	return Utils{
 		controllers,
+		authProvider,
 	}
 }
 
@@ -46,7 +49,7 @@ func (tu *Utils) ExecuteRequestWithParameters(method, endpoint string, parameter
 	response := make(chan *httptest.ResponseRecorder)
 	go func() {
 		rr := httptest.NewRecorder()
-		router.NewServer("anyClusterName", tu.controllers...).ServeHTTP(rr, req)
+		router.NewServer("anyClusterName", tu.authProvider, tu.controllers...).ServeHTTP(rr, req)
 		response <- rr
 		close(response)
 	}()

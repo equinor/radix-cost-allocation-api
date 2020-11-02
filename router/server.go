@@ -4,12 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strings"
 
-	"github.com/coreos/go-oidc"
 	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	"github.com/equinor/radix-cost-allocation-api/models"
 	_ "github.com/equinor/radix-cost-allocation-api/swaggerui" // statik files
@@ -34,16 +32,13 @@ type Server struct {
 }
 
 // NewServer Constructor function
-func NewServer(clusterName string, controllers ...models.Controller) http.Handler {
+func NewServer(clusterName string, authProvider utils.AuthProvider, controllers ...models.Controller) http.Handler {
 	router := mux.NewRouter().StrictSlash(true)
 
 	statikFS, err := fs.New()
 	if err != nil {
 		panic(err)
 	}
-
-	ctx := context.Background()
-	tokenVerifier := getTokenVerifier(ctx)
 
 	staticServer := http.FileServer(statikFS)
 	sh := http.StripPrefix("/swaggerui/", staticServer)
@@ -58,8 +53,8 @@ func NewServer(clusterName string, controllers ...models.Controller) http.Handle
 		negroni.Wrap(router),
 	))
 
-	authenticationMiddleware := newAuthenticationMiddleware(tokenVerifier)
-	authorizationMiddleware := newADGroupAuthorizationMiddleware(os.Getenv("AD_REPORT_READERS"), tokenVerifier)
+	authenticationMiddleware := newAuthenticationMiddleware(authProvider)
+	authorizationMiddleware := newADGroupAuthorizationMiddleware(os.Getenv("AD_REPORT_READERS"), authProvider)
 
 	serveMux.Handle("/api/", negroni.New(
 		authenticationMiddleware,
@@ -153,24 +148,7 @@ func addHandlerRoute(router *mux.Router, route models.Route) {
 		utils.NewRadixMiddleware(path, route.Method, route.HandlerFunc).Handle).Methods(route.Method)
 }
 
-func getTokenVerifier(ctx context.Context) *oidc.IDTokenVerifier {
-
-	issuer := os.Getenv("TOKEN_ISSUER")
-
-	provider, err := oidc.NewProvider(ctx, issuer)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	oidcConfig := &oidc.Config{
-		SkipClientIDCheck: true,
-	}
-
-	return provider.Verifier(oidcConfig)
-}
-
-func newAuthenticationMiddleware(verifier *oidc.IDTokenVerifier) negroni.HandlerFunc {
+func newAuthenticationMiddleware(authProvider utils.AuthProvider) negroni.HandlerFunc {
 	ctx := context.Background()
 
 	return negroni.HandlerFunc(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
@@ -181,7 +159,7 @@ func newAuthenticationMiddleware(verifier *oidc.IDTokenVerifier) negroni.Handler
 			return
 		}
 
-		verified, err := verifier.Verify(ctx, token)
+		verified, err := authProvider.VerifyToken(ctx, token)
 
 		if err != nil || verified == nil {
 			w.WriteHeader(403)
@@ -192,7 +170,7 @@ func newAuthenticationMiddleware(verifier *oidc.IDTokenVerifier) negroni.Handler
 	})
 }
 
-func newADGroupAuthorizationMiddleware(allowedADGroups string, verifier *oidc.IDTokenVerifier) negroni.HandlerFunc {
+func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider utils.AuthProvider) negroni.HandlerFunc {
 	ctx := context.Background()
 
 	var allowedGroups struct {
@@ -209,8 +187,8 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, verifier *oidc.ID
 			return
 		}
 
-		var verified *oidc.IDToken
-		verified, err = verifier.Verify(ctx, token)
+		var verified utils.IDToken
+		verified, err = authProvider.VerifyToken(ctx, token)
 
 		if err != nil || verified == nil {
 			w.WriteHeader(403)
@@ -218,7 +196,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, verifier *oidc.ID
 
 		claims := &claims{}
 
-		err = verified.Claims(claims)
+		err = verified.GetClaims(claims)
 
 		if err != nil {
 			w.WriteHeader(403)

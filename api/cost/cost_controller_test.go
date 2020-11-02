@@ -8,7 +8,7 @@ import (
 
 	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
 	controllertest "github.com/equinor/radix-cost-allocation-api/api/test"
-	mock "github.com/equinor/radix-cost-allocation-api/api/test/mock"
+	"github.com/equinor/radix-cost-allocation-api/api/test/mock"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -27,6 +27,22 @@ func setupTest(t *testing.T) *controllertest.Utils {
 	// Mock setup
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
+	// Create mock auth provider
+	fakeAuthProvider := mock.NewMockAuthProvider(ctrl)
+
+	// Create mock idtoken
+	fakeIDToken := mock.NewMockIDToken(ctrl)
+
+	fakeIDToken.EXPECT().
+		GetClaims(gomock.Any()).
+		Return(nil).
+		AnyTimes()
+
+	fakeAuthProvider.EXPECT().
+		VerifyToken(gomock.Any(), gomock.Any()).
+		Return(fakeIDToken, nil).
+		AnyTimes()
 
 	// Creates a mock Repository
 	fakeCostRepo := mock.NewMockCostRepository(ctrl)
@@ -58,7 +74,7 @@ func setupTest(t *testing.T) *controllertest.Utils {
 		AnyTimes()
 
 	// controllerTestUtils is used for issuing HTTP request and processing responses
-	controllerTestUtils := controllertest.NewTestUtils(NewCostController(fakeCostRepo))
+	controllerTestUtils := controllertest.NewTestUtils(fakeAuthProvider, NewCostController(fakeCostRepo))
 
 	return &controllerTestUtils
 }

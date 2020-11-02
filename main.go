@@ -1,15 +1,16 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
 	"strconv"
 
 	"github.com/equinor/radix-cost-allocation-api/api/cost"
+	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	models "github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/equinor/radix-cost-allocation-api/router"
-
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 )
@@ -41,9 +42,12 @@ func main() {
 	costRepository := models.NewSQLCostRepository(creds)
 	defer costRepository.CloseDB()
 
+	ctx := context.Background()
+	authProvider := utils.NewAuthProvider(ctx)
+
 	go func() {
 		log.Infof("API is serving on port %s", *port)
-		err := http.ListenAndServe(fmt.Sprintf(":%s", *port), router.NewServer(clusterName, getControllers(costRepository)...))
+		err := http.ListenAndServe(fmt.Sprintf(":%s", *port), router.NewServer(clusterName, authProvider, getControllers(costRepository)...))
 		errs <- err
 	}()
 
