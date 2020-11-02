@@ -1,7 +1,15 @@
 package router
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"strings"
+
+	"github.com/coreos/go-oidc"
 	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	"github.com/equinor/radix-cost-allocation-api/models"
 	_ "github.com/equinor/radix-cost-allocation-api/swaggerui" // statik files
@@ -10,8 +18,6 @@ import (
 	"github.com/rakyll/statik/fs"
 	"github.com/rs/cors"
 	"github.com/urfave/negroni"
-	"net/http"
-	"os"
 )
 
 const (
@@ -36,6 +42,9 @@ func NewServer(clusterName string, controllers ...models.Controller) http.Handle
 		panic(err)
 	}
 
+	ctx := context.Background()
+	tokenVerifier := getTokenVerifier(ctx)
+
 	staticServer := http.FileServer(statikFS)
 	sh := http.StripPrefix("/swaggerui/", staticServer)
 	router.PathPrefix("/swaggerui/").Handler(sh)
@@ -49,14 +58,24 @@ func NewServer(clusterName string, controllers ...models.Controller) http.Handle
 		negroni.Wrap(router),
 	))
 
+	authenticationMiddleware := newAuthenticationMiddleware(tokenVerifier)
+	authorizationMiddleware := newADGroupAuthorizationMiddleware(os.Getenv("AD_REPORT_READERS"), tokenVerifier)
+
 	serveMux.Handle("/api/", negroni.New(
-		negroni.HandlerFunc(utils.BearerTokenHeaderVerifierMiddleware),
+		authenticationMiddleware,
+		negroni.Wrap(router),
+	))
+
+	serveMux.Handle("/api/v1/report", negroni.New(
+		authenticationMiddleware,
+		authorizationMiddleware,
 		negroni.Wrap(router),
 	))
 
 	// TODO: We should maybe have oauth to stop any non-radix user from being
 	// able to see the API
 	serveMux.Handle("/swaggerui/", negroni.New(
+		authenticationMiddleware,
 		negroni.Wrap(router),
 	))
 
@@ -132,4 +151,103 @@ func addHandlerRoute(router *mux.Router, route models.Route) {
 	path := apiVersionRoute + route.Path
 	router.HandleFunc(path,
 		utils.NewRadixMiddleware(path, route.Method, route.HandlerFunc).Handle).Methods(route.Method)
+}
+
+func getTokenVerifier(ctx context.Context) *oidc.IDTokenVerifier {
+
+	issuer := os.Getenv("TOKEN_ISSUER")
+
+	provider, err := oidc.NewProvider(ctx, issuer)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	oidcConfig := &oidc.Config{
+		SkipClientIDCheck: true,
+	}
+
+	return provider.Verifier(oidcConfig)
+}
+
+func newAuthenticationMiddleware(verifier *oidc.IDTokenVerifier) negroni.HandlerFunc {
+	ctx := context.Background()
+
+	return negroni.HandlerFunc(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+		token, err := utils.GetBearerTokenFromHeader(r)
+
+		if err != nil {
+			w.WriteHeader(403)
+			return
+		}
+
+		verified, err := verifier.Verify(ctx, token)
+
+		if err != nil || verified == nil {
+			w.WriteHeader(403)
+			return
+		}
+
+		next(w, r)
+	})
+}
+
+func newADGroupAuthorizationMiddleware(allowedADGroups string, verifier *oidc.IDTokenVerifier) negroni.HandlerFunc {
+	ctx := context.Background()
+
+	var allowedGroups struct {
+		List []string `json:"groups"`
+	}
+
+	json.Unmarshal([]byte(allowedADGroups), &allowedGroups)
+
+	return negroni.HandlerFunc(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+		token, err := utils.GetBearerTokenFromHeader(r)
+
+		if err != nil {
+			w.WriteHeader(403)
+			return
+		}
+
+		var verified *oidc.IDToken
+		verified, err = verifier.Verify(ctx, token)
+
+		if err != nil || verified == nil {
+			w.WriteHeader(403)
+		}
+
+		claims := &claims{}
+
+		err = verified.Claims(claims)
+
+		if err != nil {
+			w.WriteHeader(403)
+			return
+		}
+
+		for _, group := range claims.Groups {
+			if find(allowedGroups.List, group) {
+				next(w, r)
+			}
+		}
+
+		w.WriteHeader(401)
+		return
+
+	})
+}
+
+type claims struct {
+	Groups []string `json:"groups"`
+	Email  string   `json:"email"`
+}
+
+func find(list []string, val string) bool {
+	for _, item := range list {
+		if strings.EqualFold(val, item) {
+			return true
+		}
+	}
+
+	return false
 }

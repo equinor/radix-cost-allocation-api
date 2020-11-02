@@ -37,15 +37,3 @@ func (handler *RadixMiddleware) Handle(w http.ResponseWriter, r *http.Request) {
 
 	handler.next(w, r)
 }
-
-// BearerTokenHeaderVerifierMiddleware Will verify that the request has a bearer token in header
-func BearerTokenHeaderVerifierMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	_, err := getBearerTokenFromHeader(r)
-
-	if err != nil {
-		ErrorResponse(w, r, err)
-		return
-	}
-
-	next(w, r)
-}
