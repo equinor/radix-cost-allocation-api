@@ -155,14 +155,14 @@ func newAuthenticationMiddleware(authProvider utils.AuthProvider) negroni.Handle
 		token, err := utils.GetBearerTokenFromHeader(r)
 
 		if err != nil {
-			w.WriteHeader(403)
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
 		verified, err := authProvider.VerifyToken(ctx, token)
 
 		if err != nil || verified == nil {
-			w.WriteHeader(403)
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
@@ -183,7 +183,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider util
 		token, err := utils.GetBearerTokenFromHeader(r)
 
 		if err != nil {
-			w.WriteHeader(403)
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
@@ -191,7 +191,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider util
 		verified, err = authProvider.VerifyToken(ctx, token)
 
 		if err != nil || verified == nil {
-			w.WriteHeader(403)
+			w.WriteHeader(http.StatusUnauthorized)
 		}
 
 		claims := &claims{}
@@ -199,7 +199,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider util
 		err = verified.GetClaims(claims)
 
 		if err != nil {
-			w.WriteHeader(403)
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
@@ -209,7 +209,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider util
 			}
 		}
 
-		w.WriteHeader(401)
+		w.WriteHeader(http.StatusForbidden)
 		return
 
 	})

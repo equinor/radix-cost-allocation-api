@@ -21,11 +21,16 @@ type Utils struct {
 }
 
 // NewTestUtils Constructor
-func NewTestUtils(authProvider utils.AuthProvider, controllers ...models.Controller) Utils {
+func NewTestUtils(controllers ...models.Controller) Utils {
 	return Utils{
 		controllers,
-		authProvider,
+		nil,
 	}
+}
+
+// SetAuthProvider sets auth provider
+func (tu *Utils) SetAuthProvider(ap utils.AuthProvider) {
+	tu.authProvider = ap
 }
 
 // ExecuteRequest Helper method to issue a http request
