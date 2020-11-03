@@ -70,7 +70,6 @@ func NewServer(clusterName string, authProvider utils.AuthProvider, controllers 
 	// TODO: We should maybe have oauth to stop any non-radix user from being
 	// able to see the API
 	serveMux.Handle("/swaggerui/", negroni.New(
-		authenticationMiddleware,
 		negroni.Wrap(router),
 	))
 
