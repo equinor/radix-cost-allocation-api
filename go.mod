@@ -3,6 +3,7 @@ module github.com/equinor/radix-cost-allocation-api
 go 1.13
 
 require (
+	github.com/coreos/go-oidc v0.0.0-20180117170138-065b426bd416
 	github.com/denisenkom/go-mssqldb v0.0.0-20200428022330-06a60b6afbbc
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/equinor/radix-operator v1.5.15
