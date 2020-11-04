@@ -26,7 +26,7 @@ func setupTest() {
 	os.Setenv("SUBSCRIPTION_COST_CURRENCY", "NOK")
 }
 
-func TestCostController_ApplicationExists(t *testing.T) {
+func TestCostController_Application(t *testing.T) {
 	setupTest()
 
 	// Mock setup
@@ -100,9 +100,20 @@ func TestCostController_ApplicationExists(t *testing.T) {
 		applicationCost := applicationCostSet.ApplicationCosts[0]
 		assert.Equal(t, applicationCost.Name, appName)
 	})
+
+	t.Run("Futurecost estimate is not 0", func(t *testing.T) {
+		responseChannel := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/futurecost/%s", appName))
+		response := <-responseChannel
+		applicationCost := costModels.ApplicationCost{}
+		err := controllertest.GetResponseBody(response, &applicationCost)
+
+		assert.Nil(t, err)
+		assert.NotNil(t, applicationCost.Cost)
+		assert.NotEqual(t, applicationCost.Cost, 0)
+	})
 }
 
-func TestCostController_Returns403_InvalidAuthHeader(t *testing.T) {
+func TestCostController_Authentication(t *testing.T) {
 	setupTest()
 
 	// Mock setup

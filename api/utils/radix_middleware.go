@@ -35,7 +35,7 @@ func (handler *RadixMiddleware) Handle(w http.ResponseWriter, r *http.Request) {
 		metrics.AddRequestDuration(handler.path, handler.method, httpDuration)
 	}()
 
-	token, err := getBearerTokenFromHeader(r)
+	token, err := GetBearerTokenFromHeader(r)
 	if err != nil {
 		ErrorResponse(w, r, err)
 		return

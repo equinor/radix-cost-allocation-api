@@ -162,14 +162,18 @@ func (costHandler *Handler) GetFutureCost(appName *string) (*costModels.Applicat
 
 	cost, err := costModels.NewFutureCostEstimate(*appName, run, costHandler.env.SubscriptionCost, costHandler.env.SubscriptionCurrency)
 
+	if err != nil {
+		return nil, err
+	}
+
 	radixAPIClient := radix_api.GetForToken(costHandler.env.Context, costHandler.env.Cluster, costHandler.env.APIEnvironment, costHandler.getToken())
 	rrMap, err := costHandler.getRadixRegistrationMap(radixAPIClient, appName)
-
-	filteredByAccess := costHandler.filterApplicationsByAccess(*rrMap, []costModels.ApplicationCost{*cost})
 
 	if err != nil {
 		return nil, err
 	}
+
+	filteredByAccess := costHandler.filterApplicationsByAccess(*rrMap, []costModels.ApplicationCost{*cost})
 
 	if hasAccessToApp := len(filteredByAccess) > 0; hasAccessToApp {
 		return &filteredByAccess[0], nil
