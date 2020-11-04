@@ -34,6 +34,8 @@ spec:
         - SUBSCRIPTION_COST_VALUE
         - SUBSCRIPTION_COST_CURRENCY
         - WHITELIST
+        - AD_REPORT_READERS
+        - TOKEN_ISSUER
       environmentConfig:
         - environment: qa
           replicas: 1

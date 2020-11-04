@@ -19,7 +19,9 @@
         "RADIX_CLUSTER_NAME": "weekly-33",
         "SUBSCRIPTION_COST_VALUE": "10000",
         "SUBSCRIPTION_COST_CURRENCY": "NOK",
-        "WHITELIST": "{\"whiteList\": [\"canarycicd-test\",\"canarycicd-test1\",\"canarycicd-test2\",\"canarycicd-test3\",\"radix-api\",\"radix-canary-golang\",\"radix-cost-allocation-api\",\"radix-github-webhook\",\"radix-platform\",\"radix-web-console\"]}"
+        "WHITELIST": "{\"whiteList\": [\"canarycicd-test\",\"canarycicd-test1\",\"canarycicd-test2\",\"canarycicd-test3\",\"radix-api\",\"radix-canary-golang\",\"radix-cost-allocation-api\",\"radix-github-webhook\",\"radix-platform\",\"radix-web-console\"]}",
+        "AD_REPORT_READERS": "{\"groups\": [\"<AUTHORIZED-AD-GROUP>\"]}",
+        "TOKEN_ISSUER": "https://sts.windows.net/<TENANT-ID>",
       }
     }
   ]

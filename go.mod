@@ -3,17 +3,14 @@ module github.com/equinor/radix-cost-allocation-api
 go 1.13
 
 require (
+	github.com/coreos/go-oidc v0.0.0-20180117170138-065b426bd416
 	github.com/denisenkom/go-mssqldb v0.0.0-20200428022330-06a60b6afbbc
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/equinor/radix-operator v1.5.15
-	github.com/go-openapi/spec v0.19.8 // indirect
-	github.com/go-openapi/swag v0.19.9 // indirect
 	github.com/golang/gddo v0.0.0-20200611223618-a4829ef13274
-	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/mock v1.4.4
 	github.com/gorilla/mux v1.7.0
 	github.com/kr/text v0.2.0 // indirect
-	github.com/mailru/easyjson v0.7.1 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.6.0

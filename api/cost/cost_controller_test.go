@@ -2,13 +2,14 @@ package cost
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"testing"
 	"time"
 
 	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
 	controllertest "github.com/equinor/radix-cost-allocation-api/api/test"
-	mock "github.com/equinor/radix-cost-allocation-api/api/test/mock"
+	"github.com/equinor/radix-cost-allocation-api/api/test/mock"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -18,15 +19,35 @@ const (
 	timeLayout = "2006-01-02"
 )
 
-func setupTest(t *testing.T) *controllertest.Utils {
+func setupTest() {
 	// Set necessary environment variables
 	os.Setenv("WHITELIST", "{\"whiteList\": [\"canarycicd-test\",\"canarycicd-test1\",\"canarycicd-test2\",\"canarycicd-test3\",\"radix-api\",\"radix-canary-golang\",\"radix-cost-allocation-api\",\"radix-github-webhook\",\"radix-platform\",\"radix-web-console\"]}")
 	os.Setenv("SUBSCRIPTION_COST_VALUE", "100000")
 	os.Setenv("SUBSCRIPTION_COST_CURRENCY", "NOK")
+}
+
+func TestCostController_ApplicationExists(t *testing.T) {
+	setupTest()
 
 	// Mock setup
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
+	// Create mock auth provider
+	fakeAuthProvider := mock.NewMockAuthProvider(ctrl)
+
+	// Create mock idtoken
+	fakeIDToken := mock.NewMockIDToken(ctrl)
+
+	fakeIDToken.EXPECT().
+		GetClaims(gomock.Any()).
+		Return(nil).
+		AnyTimes()
+
+	fakeAuthProvider.EXPECT().
+		VerifyToken(gomock.Any(), gomock.Any()).
+		Return(fakeIDToken, nil).
+		AnyTimes()
 
 	// Creates a mock Repository
 	fakeCostRepo := mock.NewMockCostRepository(ctrl)
@@ -39,12 +60,6 @@ func setupTest(t *testing.T) *controllertest.Utils {
 		AListOfRuns().
 		BuildRuns()
 
-	// Set a cost period
-	from, to := getTimePeriod()
-	fromParsed, err := time.Parse(timeLayout, from)
-	toParsed, err := time.Parse(timeLayout, to)
-	assert.Nil(t, err)
-
 	// GetLatestRun() returns a mock run with test data
 	fakeCostRepo.EXPECT().
 		GetLatestRun().
@@ -53,18 +68,12 @@ func setupTest(t *testing.T) *controllertest.Utils {
 
 	// GetRunsBetweenTimes() returns mock runs
 	fakeCostRepo.EXPECT().
-		GetRunsBetweenTimes(&fromParsed, &toParsed).
+		GetRunsBetweenTimes(gomock.Any(), gomock.Any()).
 		Return(runs, nil).
 		AnyTimes()
 
-	// controllerTestUtils is used for issuing HTTP request and processing responses
 	controllerTestUtils := controllertest.NewTestUtils(NewCostController(fakeCostRepo))
-
-	return &controllerTestUtils
-}
-
-func TestCostController_ApplicationExists(t *testing.T) {
-	controllerTestUtils := setupTest(t)
+	controllerTestUtils.SetAuthProvider(fakeAuthProvider)
 
 	// Test that futurecost endpoint returns cost for requested application
 	t.Run("Futurecost application exists", func(t *testing.T) {
@@ -91,6 +100,37 @@ func TestCostController_ApplicationExists(t *testing.T) {
 		applicationCost := applicationCostSet.ApplicationCosts[0]
 		assert.Equal(t, applicationCost.Name, appName)
 	})
+}
+
+func TestCostController_Returns403_InvalidAuthHeader(t *testing.T) {
+	setupTest()
+
+	// Mock setup
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	// Create mock cost repo
+	fakeCostRepo := mock.NewMockCostRepository(ctrl)
+
+	// Create mock auth provider
+	fakeAuthProvider := mock.NewMockAuthProvider(ctrl)
+
+	fakeAuthProvider.EXPECT().
+		VerifyToken(gomock.Any(), gomock.Any()).
+		Return(nil, fmt.Errorf("Invalid token")).
+		AnyTimes()
+
+	controllerTestUtils := controllertest.NewTestUtils(NewCostController(fakeCostRepo))
+	controllerTestUtils.SetAuthProvider(fakeAuthProvider)
+
+	t.Run("Invalid auth header", func(t *testing.T) {
+		url := fmt.Sprintf("/api/")
+		responseChannel := controllerTestUtils.ExecuteRequest("GET", url)
+		response := <-responseChannel
+
+		assert.Equal(t, response.Code, http.StatusUnauthorized)
+	})
+
 }
 
 func getTimePeriod() (from, to string) {
