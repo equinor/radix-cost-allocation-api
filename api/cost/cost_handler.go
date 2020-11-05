@@ -111,12 +111,6 @@ func (costHandler *Handler) GetTotalCost(fromTime, toTime *time.Time, appName *s
 	filteredCosts := costHandler.filterApplicationsByAccess(*rrMap, applicationCostSet.ApplicationCosts)
 	applicationCostSet.ApplicationCosts = filteredCosts
 
-	err = costHandler.setApplicationProperties(&applicationCostSet.ApplicationCosts, rrMap)
-
-	if err != nil {
-		return nil, err
-	}
-
 	return &applicationCostSet, nil
 }
 
@@ -222,20 +216,6 @@ func (costHandler *Handler) filterApplicationCostsBy(appName *string, cost *cost
 		}
 	}
 	return []costModels.ApplicationCost{}
-}
-
-func (costHandler *Handler) setApplicationProperties(applicationCosts *[]costModels.ApplicationCost, rrMap *map[string]*radixApplication) error {
-	for idx := range *applicationCosts {
-		radixApp, rrExists := (*rrMap)[(*applicationCosts)[idx].Name]
-		if !rrExists {
-			(*applicationCosts)[idx].Comment = fmt.Sprintf("RadixApplication not found by application name %s.", (*applicationCosts)[idx].Name)
-			continue
-		}
-		(*applicationCosts)[idx].Creator = radixApp.Creator
-		(*applicationCosts)[idx].Owner = radixApp.Owner
-		(*applicationCosts)[idx].WBS = radixApp.WBS
-	}
-	return nil
 }
 
 type radixApplication struct {
