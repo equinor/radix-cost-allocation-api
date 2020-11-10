@@ -13,7 +13,6 @@ import (
 	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
 	models "github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
-	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/application"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/platform"
 	log "github.com/sirupsen/logrus"
@@ -34,15 +33,17 @@ type Handler struct {
 	repo     models.CostRepository
 	env      Env
 	accounts models.Accounts
+	radixapi radix_api.RadixAPIClient
 }
 
 // Init Constructor
-func Init(repo models.CostRepository, accounts models.Accounts) Handler {
+func Init(repo models.CostRepository, accounts models.Accounts, radixapi radix_api.RadixAPIClient) Handler {
 	env := initEnv()
 	return Handler{
 		repo:     repo,
 		env:      *env,
 		accounts: accounts,
+		radixapi: radixapi,
 	}
 }
 
@@ -105,24 +106,12 @@ func (costHandler *Handler) GetTotalCost(fromTime, toTime *time.Time, appName *s
 		applicationCostSet.ApplicationCosts = costHandler.filterApplicationCostsBy(appName, &applicationCostSet)
 	}
 
-	radixAPIClient := radix_api.GetForToken(costHandler.env.Context, costHandler.env.Cluster, costHandler.env.APIEnvironment, costHandler.getToken())
-	rrMap, err := costHandler.getRadixRegistrationMap(radixAPIClient, appName)
+	rrMap, err := costHandler.getRadixRegistrationMap(appName)
 
 	filteredCosts := costHandler.filterApplicationsByAccess(*rrMap, applicationCostSet.ApplicationCosts)
 	applicationCostSet.ApplicationCosts = filteredCosts
 
 	return &applicationCostSet, nil
-}
-
-func (costHandler *Handler) filterApplicationsByAccess(rrMap map[string]*radixApplication, applicationCosts []costModels.ApplicationCost) []costModels.ApplicationCost {
-	filteredApplicationCosts := make([]costModels.ApplicationCost, 0)
-	for _, applicationCost := range applicationCosts {
-		if _, exists := rrMap[applicationCost.Name]; exists {
-			filteredApplicationCosts = append(filteredApplicationCosts, applicationCost)
-		}
-	}
-
-	return filteredApplicationCosts
 }
 
 // GetFutureCost estimates cost for the next 30 days based on last run
@@ -160,8 +149,7 @@ func (costHandler *Handler) GetFutureCost(appName *string) (*costModels.Applicat
 		return nil, err
 	}
 
-	radixAPIClient := radix_api.GetForToken(costHandler.env.Context, costHandler.env.Cluster, costHandler.env.APIEnvironment, costHandler.getToken())
-	rrMap, err := costHandler.getRadixRegistrationMap(radixAPIClient, appName)
+	rrMap, err := costHandler.getRadixRegistrationMap(appName)
 
 	if err != nil {
 		return nil, err
@@ -218,50 +206,50 @@ func (costHandler *Handler) filterApplicationCostsBy(appName *string, cost *cost
 	return []costModels.ApplicationCost{}
 }
 
-type radixApplication struct {
-	Name    string
-	Creator string
-	Owner   string
-	WBS     string
+func (costHandler *Handler) filterApplicationsByAccess(rrMap map[string]*radix_api.RadixApplicationDetails, applicationCosts []costModels.ApplicationCost) []costModels.ApplicationCost {
+	filteredApplicationCosts := make([]costModels.ApplicationCost, 0)
+	for _, applicationCost := range applicationCosts {
+		if _, exists := rrMap[applicationCost.Name]; exists {
+			filteredApplicationCosts = append(filteredApplicationCosts, applicationCost)
+		}
+	}
+
+	return filteredApplicationCosts
 }
 
-func (costHandler *Handler) getRadixRegistrationMap(radixApiClient *client.Radixapi, appName *string) (*map[string]*radixApplication, error) {
+func (costHandler *Handler) getRadixRegistrationMap(appName *string) (*map[string]*radix_api.RadixApplicationDetails, error) {
+
 	if appName != nil && !strings.EqualFold(*appName, "") {
-		app, err := costHandler.getRadixApplicationDetails(radixApiClient, appName)
+		app, err := costHandler.getRadixApplicationDetails(appName)
 		if err != nil {
 			return nil, err
 		}
-		return &map[string]*radixApplication{app.Name: app}, nil
+		return &map[string]*radix_api.RadixApplicationDetails{app.Name: app}, nil
 	}
 
 	showApplicationParams := platform.NewShowApplicationsParams()
-	resp, err := radixApiClient.Platform.ShowApplications(showApplicationParams, nil)
+	apps, err := costHandler.radixapi.ShowRadixApplications(showApplicationParams, costHandler.getToken())
+
 	if err != nil {
 		return nil, err
 	}
 
-	radixAppMap := make(map[string]*radixApplication)
-	for _, appSummary := range resp.Payload {
-		name := appSummary.Name
-		radixAppMap[name] = &radixApplication{
-			Name: name,
-		}
-	}
-	return &radixAppMap, err
+	return apps, err
 }
 
-func (costHandler *Handler) getRadixApplicationDetails(radixApiClient *client.Radixapi, appName *string) (*radixApplication, error) {
+func (costHandler *Handler) getRadixApplicationDetails(appName *string) (*radix_api.RadixApplicationDetails, error) {
 	getApplicationParams := application.NewGetApplicationParams()
 	getApplicationParams.SetAppName(*appName)
-	resp, err := radixApiClient.Application.GetApplication(getApplicationParams, nil)
-	if err != nil || resp == nil {
+	token := costHandler.getToken()
+
+	appDetails, err := costHandler.radixapi.GetRadixApplicationDetails(getApplicationParams, token)
+	if err != nil || appDetails == nil {
 		return nil, err
 	}
-	ar := resp.Payload.Registration
-	return &radixApplication{
-		Name:    *ar.Name,
-		Creator: *ar.Creator,
-		Owner:   *ar.Owner,
-		WBS:     ar.WBS,
+	return &radix_api.RadixApplicationDetails{
+		Name:    appDetails.Name,
+		Creator: appDetails.Creator,
+		Owner:   appDetails.Owner,
+		WBS:     appDetails.WBS,
 	}, nil
 }

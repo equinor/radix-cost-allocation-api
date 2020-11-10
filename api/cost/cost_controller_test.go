@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
+
 	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
 	controllertest "github.com/equinor/radix-cost-allocation-api/api/test"
 	"github.com/equinor/radix-cost-allocation-api/api/test/mock"
@@ -15,8 +17,9 @@ import (
 )
 
 const (
-	appName    = "any-app"
-	timeLayout = "2006-01-02"
+	appName                      = "any-app"
+	timeLayout                   = "2006-01-02"
+	applicationIDontHaveAccessTo = "other-app"
 )
 
 func setupTest() {
@@ -38,6 +41,21 @@ func TestCostController_Application(t *testing.T) {
 
 	// Create mock idtoken
 	fakeIDToken := mock.NewMockIDToken(ctrl)
+
+	// Create radix_api_client mock
+	fakeRadixClient := mock.NewMockRadixAPIClient(ctrl)
+
+	fakeRadixClient.EXPECT().
+		GetRadixApplicationDetails(gomock.Any(), gomock.Any()).
+		Return(&radix_api.RadixApplicationDetails{Name: appName}, nil).
+		AnyTimes()
+
+	applicationDetailsMap := make(map[string]*radix_api.RadixApplicationDetails)
+	applicationDetailsMap[appName] = &radix_api.RadixApplicationDetails{Name: appName}
+	fakeRadixClient.EXPECT().
+		ShowRadixApplications(gomock.Any(), gomock.Any()).
+		Return(&applicationDetailsMap, nil).
+		AnyTimes()
 
 	fakeIDToken.EXPECT().
 		GetClaims(gomock.Any()).
@@ -72,7 +90,7 @@ func TestCostController_Application(t *testing.T) {
 		Return(runs, nil).
 		AnyTimes()
 
-	controllerTestUtils := controllertest.NewTestUtils(NewCostController(fakeCostRepo))
+	controllerTestUtils := controllertest.NewTestUtils(NewCostController(fakeCostRepo, fakeRadixClient))
 	controllerTestUtils.SetAuthProvider(fakeAuthProvider)
 
 	// Test that futurecost endpoint returns cost for requested application
@@ -111,6 +129,31 @@ func TestCostController_Application(t *testing.T) {
 		assert.NotNil(t, applicationCost.Cost)
 		assert.NotEqual(t, applicationCost.Cost, 0)
 	})
+
+	t.Run("Only access to owned applications", func(t *testing.T) {
+		responseChannel := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/futurecost/%s", applicationIDontHaveAccessTo))
+		response := <-responseChannel
+		applicationCost := costModels.ApplicationCost{}
+		err := controllertest.GetResponseBody(response, &applicationCost)
+
+		// Requesting cost for application one does not have access to results in an empty response since the application is filtered out
+		assert.Nil(t, err)
+		assert.Empty(t, applicationCost.Name)
+	})
+
+	t.Run("Only access to owned applications", func(t *testing.T) {
+		responseChannel := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/totalcosts?fromTime=2020-09-01&toTime=2020-10-01"))
+		response := <-responseChannel
+		applicationCostSet := costModels.ApplicationCostSet{}
+		err := controllertest.GetResponseBody(response, &applicationCostSet)
+
+		// Requesting cost for application one does not have access to results in an empty response since the application is filtered out
+		assert.Nil(t, err)
+
+		for _, appCost := range applicationCostSet.ApplicationCosts {
+			assert.NotEqual(t, appCost.Name, applicationIDontHaveAccessTo)
+		}
+	})
 }
 
 func TestCostController_Authentication(t *testing.T) {
@@ -126,12 +169,27 @@ func TestCostController_Authentication(t *testing.T) {
 	// Create mock auth provider
 	fakeAuthProvider := mock.NewMockAuthProvider(ctrl)
 
+	// Create radix_api_client mock
+	fakeRadixClient := mock.NewMockRadixAPIClient(ctrl)
+
+	fakeRadixClient.EXPECT().
+		GetRadixApplicationDetails(gomock.Any(), gomock.Any()).
+		Return(&radix_api.RadixApplicationDetails{Name: appName}, nil).
+		AnyTimes()
+
+	applicationDetailsMap := make(map[string]*radix_api.RadixApplicationDetails)
+	applicationDetailsMap[appName] = &radix_api.RadixApplicationDetails{Name: appName}
+	fakeRadixClient.EXPECT().
+		ShowRadixApplications(gomock.Any(), gomock.Any()).
+		Return(&applicationDetailsMap, nil).
+		AnyTimes()
+
 	fakeAuthProvider.EXPECT().
 		VerifyToken(gomock.Any(), gomock.Any()).
 		Return(nil, fmt.Errorf("Invalid token")).
 		AnyTimes()
 
-	controllerTestUtils := controllertest.NewTestUtils(NewCostController(fakeCostRepo))
+	controllerTestUtils := controllertest.NewTestUtils(NewCostController(fakeCostRepo, fakeRadixClient))
 	controllerTestUtils.SetAuthProvider(fakeAuthProvider)
 
 	t.Run("Invalid auth header", func(t *testing.T) {
