@@ -28,8 +28,19 @@ type CostReport struct {
 }
 
 // NewCostReport constructor
-func NewCostReport() *CostReport {
-	return &CostReport{}
+func NewCostReport(appCostSet *costModels.ApplicationCostSet) *CostReport {
+	cr := CostReport{}
+	for _, appCost := range appCostSet.ApplicationCosts {
+		cr.postingDate = append(cr.postingDate, time.Now().Format("2006-01-02"))
+		cr.amount = append(cr.amount, fmt.Sprintf("%.2f", appCost.Cost))
+		cr.companyCode = append(cr.companyCode, companyCode)
+		cr.documentHeader = append(cr.documentHeader, documentHeader)
+		cr.generalLedgerAccount = append(cr.generalLedgerAccount, generalLedgerAccount)
+		cr.lineText = append(cr.lineText, appCost.Name)
+		cr.wbs = append(cr.wbs, appCost.WBS)
+	}
+
+	return &cr
 }
 
 // Create takes the CostReport object and creates a CSV report according to specification
@@ -63,19 +74,6 @@ func (cr *CostReport) Create(out io.Writer) error {
 
 	return nil
 
-}
-
-// Aggregate ApplicationCostSet data and construct a CostReport
-func (cr *CostReport) Aggregate(appCostSet costModels.ApplicationCostSet) {
-	for _, appCost := range appCostSet.ApplicationCosts {
-		cr.postingDate = append(cr.postingDate, time.Now().Format("2006-01-02"))
-		cr.amount = append(cr.amount, fmt.Sprintf("%f", appCost.Cost))
-		cr.companyCode = append(cr.companyCode, companyCode)
-		cr.documentHeader = append(cr.documentHeader, documentHeader)
-		cr.generalLedgerAccount = append(cr.generalLedgerAccount, generalLedgerAccount)
-		cr.lineText = append(cr.lineText, appCost.Name)
-		cr.wbs = append(cr.wbs, appCost.WBS)
-	}
 }
 
 func (cr *CostReport) organiseData(numberOfRows int, params ...[]string) [][]string {

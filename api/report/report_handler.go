@@ -33,8 +33,7 @@ func (rh *ReportHandler) GetCostReport(out io.Writer) error {
 		return err
 	}
 
-	report := reportModels.NewCostReport()
-	report.Aggregate(*applicationCosts)
+	report := reportModels.NewCostReport(applicationCosts)
 	if err != nil {
 		return err
 	}
