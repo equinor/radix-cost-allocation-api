@@ -3,7 +3,6 @@ package radix_api
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/application"
@@ -11,11 +10,6 @@ import (
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 	log "github.com/sirupsen/logrus"
-)
-
-const (
-	apiEndpointPatternForContext = "api.%sradix.equinor.com"
-	apiEndpointPatternForCluster = "server-radix-api-%s.%s.dev.radix.equinor.com"
 )
 
 // RadixAPIClient interface
@@ -36,15 +30,17 @@ type RadixApplicationDetails struct {
 type Env struct {
 	Context        string
 	APIEnvironment string
-	Cluster        string
+	ClusterName    string
+	DNSZone        string
 }
 
 // Initialize environment variables
 func initEnv() *Env {
 	var (
-		context = os.Getenv("RADIX_CLUSTER_TYPE")
-		apiEnv  = os.Getenv("RADIX_ENVIRONMENT")
-		cluster = os.Getenv("RADIX_CLUSTER_NAME")
+		context     = os.Getenv("RADIX_CLUSTER_TYPE")
+		apiEnv      = os.Getenv("RADIX_ENVIRONMENT")
+		clusterName = os.Getenv("RADIX_CLUSTERNAME")
+		dnsZone     = os.Getenv("RADIX_DNS_ZONE")
 	)
 
 	if context == "" {
@@ -55,14 +51,19 @@ func initEnv() *Env {
 		log.Error("'API-Environment' environment variable is not set")
 	}
 
-	if cluster == "" {
+	if clusterName == "" {
 		log.Error("'Cluster' environment variables is not set")
+	}
+
+	if dnsZone == "" {
+		log.Error("'DNS Zone' environment variables is not set")
 	}
 
 	return &Env{
 		Context:        context,
 		APIEnvironment: apiEnv,
-		Cluster:        cluster,
+		ClusterName:    clusterName,
+		DNSZone:        dnsZone,
 	}
 
 }
@@ -76,7 +77,7 @@ type radixAPIClientStruct struct {
 // NewRadixAPIClient constructor
 func NewRadixAPIClient() RadixAPIClient {
 	env := initEnv()
-	client := Get(env.Context, env.Cluster, env.APIEnvironment)
+	client := Get(env.Context, env.ClusterName, env.APIEnvironment, env.DNSZone)
 	return radixAPIClientStruct{client: client, env: env}
 }
 
@@ -122,59 +123,21 @@ func (c radixAPIClientStruct) GetRadixApplicationDetails(appParams *application.
 }
 
 // Get Gets API client for current cluster and environment
-func Get(context, cluster, environment string) *client.Radixapi {
-	var apiEndpoint string
-
-	if cluster != "" {
-		apiEndpoint = getAPIEndpointForCluster(cluster, environment)
-	} else {
-		radixConfig := RadixConfigAccess{}
-		startingConfig := radixConfig.GetStartingConfig()
-
-		if strings.TrimSpace(context) == "" {
-			context = startingConfig.Config["context"]
-		}
-
-		apiEndpoint = getAPIEndpointForContext(context)
-	}
+func Get(context, cluster, environment, dnsZone string) *client.Radixapi {
+	apiEndpoint := getAPIEndpoint(environment, cluster, dnsZone)
 
 	transport := httptransport.New(apiEndpoint, "/api/v1", []string{"https"})
 	return client.New(transport, strfmt.Default)
 }
 
-func getAPIEndpointForContext(context string) string {
-	return fmt.Sprintf(apiEndpointPatternForContext, getPatternForContext(context))
-}
-
-func getAPIEndpointForCluster(cluster, environment string) string {
-	return fmt.Sprintf(apiEndpointPatternForCluster, environment, cluster)
-}
-
-func getPatternForContext(context string) string {
-	contextToPattern := make(map[string]string)
-	contextToPattern[ContextDevelopment] = "dev."
-	contextToPattern[ContextPlayground] = fmt.Sprintf("%s.", ContextPlayground)
-	contextToPattern[ContextProdction] = ""
-	return contextToPattern[context]
-}
-
 func (c *radixAPIClientStruct) setTransportWithBearerToken(token string) {
-	var apiEndpoint string
-
-	if c.env.Cluster != "" {
-		apiEndpoint = getAPIEndpointForCluster(c.env.Cluster, c.env.APIEnvironment)
-	} else {
-		radixConfig := RadixConfigAccess{}
-		startingConfig := radixConfig.GetStartingConfig()
-
-		if strings.TrimSpace(c.env.Context) == "" {
-			c.env.Context = startingConfig.Config["context"]
-		}
-
-		apiEndpoint = getAPIEndpointForContext(c.env.Context)
-	}
+	apiEndpoint := getAPIEndpoint(c.env.APIEnvironment, c.env.ClusterName, c.env.DNSZone)
 
 	transport := httptransport.New(apiEndpoint, "/api/v1", []string{"https"})
 	transport.DefaultAuthentication = httptransport.BearerToken(token)
 	c.client.SetTransport(transport)
+}
+
+func getAPIEndpoint(environment, clusterName, dnsZone string) string {
+	return fmt.Sprintf("server-radix-api-%s.%s.%s", environment, clusterName, dnsZone)
 }

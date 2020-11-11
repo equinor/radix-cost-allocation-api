@@ -112,6 +112,15 @@ func ValidationError(kind, message string) error {
 	}
 }
 
+// ApplicationNotFoundError indication that application was not found. Can also mean a user does not have access to the application.
+func ApplicationNotFoundError(message string, underlyingError error) error {
+	return &Error{
+		Type:    Missing,
+		Err:     underlyingError,
+		Message: message,
+	}
+}
+
 // CoverAllError Cover all other errors
 func CoverAllError(err error) *Error {
 	return &Error{

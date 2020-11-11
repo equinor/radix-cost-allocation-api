@@ -11,6 +11,7 @@ import (
 
 	_ "github.com/denisenkom/go-mssqldb"
 	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
+	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	models "github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/application"
@@ -161,7 +162,7 @@ func (costHandler *Handler) GetFutureCost(appName *string) (*costModels.Applicat
 		return &filteredByAccess[0], nil
 	}
 
-	return nil, fmt.Errorf("User does not have access to application %s", *appName)
+	return nil, utils.ApplicationNotFoundError(fmt.Sprintf("Application %s was not found.", *appName), fmt.Errorf("User does not have access to application %s", *appName))
 }
 
 // Whitelist contains list of apps that are not included in cost distribution

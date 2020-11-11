@@ -130,26 +130,24 @@ func TestCostController_Application(t *testing.T) {
 		assert.NotEqual(t, applicationCost.Cost, 0)
 	})
 
-	t.Run("Only access to owned applications", func(t *testing.T) {
+	t.Run("No access to application not owned by me", func(t *testing.T) {
 		responseChannel := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/futurecost/%s", applicationIDontHaveAccessTo))
 		response := <-responseChannel
-		applicationCost := costModels.ApplicationCost{}
-		err := controllertest.GetResponseBody(response, &applicationCost)
 
-		// Requesting cost for application one does not have access to results in an empty response since the application is filtered out
-		assert.Nil(t, err)
-		assert.Empty(t, applicationCost.Name)
+		// Requesting cost for an application the user does not have access to, results in 404 - Not Found.
+		assert.Equal(t, response.Code, http.StatusNotFound)
 	})
 
 	t.Run("Only access to owned applications", func(t *testing.T) {
-		responseChannel := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/totalcosts?fromTime=2020-09-01&toTime=2020-10-01"))
+		fromTime, toTime := getTimePeriod()
+		responseChannel := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/totalcosts?fromTime=%s&toTime=%s", fromTime, toTime))
 		response := <-responseChannel
 		applicationCostSet := costModels.ApplicationCostSet{}
 		err := controllertest.GetResponseBody(response, &applicationCostSet)
 
-		// Requesting cost for application one does not have access to results in an empty response since the application is filtered out
 		assert.Nil(t, err)
 
+		// Check that application we don't have access to is not in the list of returned applications
 		for _, appCost := range applicationCostSet.ApplicationCosts {
 			assert.NotEqual(t, appCost.Name, applicationIDontHaveAccessTo)
 		}
