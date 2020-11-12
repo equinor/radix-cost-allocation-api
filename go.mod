@@ -6,7 +6,7 @@ require (
 	github.com/coreos/go-oidc v0.0.0-20180117170138-065b426bd416
 	github.com/denisenkom/go-mssqldb v0.0.0-20200428022330-06a60b6afbbc
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/equinor/radix-operator v1.5.15
+	github.com/equinor/radix-operator v1.7.0
 	github.com/go-openapi/errors v0.19.7
 	github.com/go-openapi/runtime v0.19.16
 	github.com/go-openapi/strfmt v0.19.5
@@ -23,7 +23,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.6.1
 	github.com/urfave/negroni v1.0.0
-	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
 	golang.org/x/time v0.0.0-20200416051211-89c76fbcd5d1 // indirect
 	google.golang.org/protobuf v1.24.0 // indirect
