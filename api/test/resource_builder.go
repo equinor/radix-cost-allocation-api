@@ -202,7 +202,7 @@ func AListOfRequiredResources() ResourceBuilderList {
 			WithMemoryMegaBytes(150).
 			WithEnvironment("dev"),
 		NewResourceBuilder().
-			WithApplication("last-app").
+			WithApplication("other-app").
 			WithComponent("api").
 			WithWBS("A.BCD.00.888").
 			WithID(3).

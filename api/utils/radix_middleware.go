@@ -35,17 +35,21 @@ func (handler *RadixMiddleware) Handle(w http.ResponseWriter, r *http.Request) {
 		metrics.AddRequestDuration(handler.path, handler.method, httpDuration)
 	}()
 
-	handler.next(w, r)
-}
-
-// BearerTokenHeaderVerifierMiddleware Will verify that the request has a bearer token in header
-func BearerTokenHeaderVerifierMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	_, err := getBearerTokenFromHeader(r)
-
+	token, err := GetBearerTokenFromHeader(r)
 	if err != nil {
 		ErrorResponse(w, r, err)
 		return
 	}
 
-	next(w, r)
+	impersonation, err := getImpersonationFromHeader(r)
+	if err != nil {
+		ErrorResponse(w, r, UnexpectedError("Problems impersonating", err))
+		return
+	}
+
+	accounts := models.NewAccounts(
+		token,
+		impersonation)
+
+	handler.next(accounts, w, r)
 }

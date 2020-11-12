@@ -1,16 +1,19 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
 	"strconv"
 
+	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
+
 	"github.com/equinor/radix-cost-allocation-api/api/cost"
 	"github.com/equinor/radix-cost-allocation-api/api/report"
+	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	models "github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/equinor/radix-cost-allocation-api/router"
-
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 )
@@ -42,9 +45,14 @@ func main() {
 	costRepository := models.NewSQLCostRepository(creds)
 	defer costRepository.CloseDB()
 
+	ctx := context.Background()
+	authProvider := utils.NewAuthProvider(ctx)
+
+	radixAPIClient := radix_api.NewRadixAPIClient()
+
 	go func() {
 		log.Infof("API is serving on port %s", *port)
-		err := http.ListenAndServe(fmt.Sprintf(":%s", *port), router.NewServer(clusterName, getControllers(costRepository)...))
+		err := http.ListenAndServe(fmt.Sprintf(":%s", *port), router.NewServer(clusterName, authProvider, getControllers(costRepository, radixAPIClient)...))
 		errs <- err
 	}()
 
@@ -54,7 +62,7 @@ func main() {
 	}
 }
 
-func getControllers(repo models.CostRepository) []models.Controller {
+func getControllers(repo models.CostRepository, radixapi radix_api.RadixAPIClient) []models.Controller {
 	return []models.Controller{
 		cost.NewCostController(repo),
 		report.NewReportController(repo),

@@ -19,7 +19,8 @@ const reportName = "report.csv"
 
 // Utils Instance variables
 type Utils struct {
-	controllers []models.Controller
+	controllers  []models.Controller
+	authProvider utils.AuthProvider
 }
 
 // ReportUtils Instance variables
@@ -40,7 +41,13 @@ func NewReportTestUtils() ReportUtils {
 func NewTestUtils(controllers ...models.Controller) Utils {
 	return Utils{
 		controllers,
+		nil,
 	}
+}
+
+// SetAuthProvider sets auth provider
+func (tu *Utils) SetAuthProvider(ap utils.AuthProvider) {
+	tu.authProvider = ap
 }
 
 // ExecuteRequest Helper method to issue a http request
@@ -64,7 +71,7 @@ func (tu *Utils) ExecuteRequestWithParameters(method, endpoint string, parameter
 	response := make(chan *httptest.ResponseRecorder)
 	go func() {
 		rr := httptest.NewRecorder()
-		router.NewServer("anyClusterName", tu.controllers...).ServeHTTP(rr, req)
+		router.NewServer("anyClusterName", tu.authProvider, tu.controllers...).ServeHTTP(rr, req)
 		response <- rr
 		close(response)
 	}()

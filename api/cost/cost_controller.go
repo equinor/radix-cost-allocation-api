@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
+
 	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	models "github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/gorilla/mux"
@@ -15,19 +17,20 @@ const rootPath = ""
 
 type costController struct {
 	*models.DefaultController
-	repo models.CostRepository
+	repo     models.CostRepository
+	radixapi radix_api.RadixAPIClient
 }
 
 // NewCostController Constructor
-func NewCostController(repo models.CostRepository) models.Controller {
-	return &costController{repo: repo}
+func NewCostController(repo models.CostRepository, radixapi radix_api.RadixAPIClient) models.Controller {
+	return &costController{repo: repo, radixapi: radixapi}
 }
 
 // GetRoutes List the supported routes of this controller
 func (costController *costController) GetRoutes() models.Routes {
 	routes := models.Routes{
 		models.Route{
-			Path:        rootPath + "/totalcosts/",
+			Path:        rootPath + "/totalcosts",
 			Method:      "GET",
 			HandlerFunc: costController.GetTotalCosts,
 		},
@@ -47,7 +50,7 @@ func (costController *costController) GetRoutes() models.Routes {
 }
 
 // GetTotalCosts for all applications for period
-func (costController *costController) GetTotalCosts(w http.ResponseWriter, r *http.Request) {
+func (costController *costController) GetTotalCosts(accounts models.Accounts, w http.ResponseWriter, r *http.Request) {
 	// swagger:operation GET /totalcosts/ cost getTotalCosts
 	// ---
 	// summary: Gets the total cost for an application
@@ -83,11 +86,11 @@ func (costController *costController) GetTotalCosts(w http.ResponseWriter, r *ht
 	//     description: "Unauthorized"
 	//   "404":
 	//     description: "Not found"
-	costController.getTotalCosts(costController.repo, w, r, nil)
+	costController.getTotalCosts(accounts, costController.repo, w, r, nil)
 }
 
 // GetTotalCost for an application for period
-func (costController *costController) GetTotalCost(w http.ResponseWriter, r *http.Request) {
+func (costController *costController) GetTotalCost(accounts models.Accounts, w http.ResponseWriter, r *http.Request) {
 	// swagger:operation GET /totalcost/{appName} cost getTotalCost
 	// ---
 	// summary: Gets the total cost for an application
@@ -129,10 +132,10 @@ func (costController *costController) GetTotalCost(w http.ResponseWriter, r *htt
 	//   "404":
 	//     description: "Not found"
 	appName := mux.Vars(r)["appName"]
-	costController.getTotalCosts(costController.repo, w, r, &appName)
+	costController.getTotalCosts(accounts, costController.repo, w, r, &appName)
 }
 
-func (costController *costController) GetFutureCost(w http.ResponseWriter, r *http.Request) {
+func (costController *costController) GetFutureCost(accounts models.Accounts, w http.ResponseWriter, r *http.Request) {
 	// swagger:operation GET /futurecost/{appName} cost getFutureCost
 	// ---
 	// summary: Gets the estimated future cost for an application
@@ -162,11 +165,11 @@ func (costController *costController) GetFutureCost(w http.ResponseWriter, r *ht
 	//   "404":
 	//     description: "Not found"
 	appName := mux.Vars(r)["appName"]
-	costController.getFutureCost(costController.repo, w, r, appName)
+	costController.getFutureCost(accounts, costController.repo, w, r, &appName)
 }
 
-func (costController *costController) getFutureCost(costRepo models.CostRepository, w http.ResponseWriter, r *http.Request, appName string) {
-	handler := Init(costRepo)
+func (costController *costController) getFutureCost(accounts models.Accounts, costRepo models.CostRepository, w http.ResponseWriter, r *http.Request, appName *string) {
+	handler := Init(costRepo, accounts, costController.radixapi)
 	cost, err := handler.GetFutureCost(appName)
 
 	if err != nil {
@@ -177,14 +180,14 @@ func (costController *costController) getFutureCost(costRepo models.CostReposito
 	utils.JSONResponse(w, r, &cost)
 }
 
-func (costController *costController) getTotalCosts(costRepo models.CostRepository, w http.ResponseWriter, r *http.Request, appName *string) {
+func (costController *costController) getTotalCosts(accounts models.Accounts, costRepo models.CostRepository, w http.ResponseWriter, r *http.Request, appName *string) {
 	fromTime, toTime, err := getCostPeriod(w, r)
 	if err != nil {
 		utils.ErrorResponse(w, r, err)
 		return
 	}
 
-	handler := Init(costRepo)
+	handler := Init(costRepo, accounts, costController.radixapi)
 	cost, err := handler.GetTotalCost(fromTime, toTime, appName)
 	if err != nil {
 		utils.ErrorResponse(w, r, err)
