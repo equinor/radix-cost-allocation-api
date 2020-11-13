@@ -28,8 +28,7 @@ func Test_Created_Report_Exists(t *testing.T) {
 
 	appCostSet := reportUtils.AnApplicationCostSet().BuildApplicationCostSet()
 
-	report := NewCostReport()
-	report.Aggregate(*appCostSet)
+	report := NewCostReport(appCostSet)
 
 	err := report.Create(utils.File)
 

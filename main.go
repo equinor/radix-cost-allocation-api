@@ -64,7 +64,7 @@ func main() {
 
 func getControllers(repo models.CostRepository, radixapi radix_api.RadixAPIClient) []models.Controller {
 	return []models.Controller{
-		cost.NewCostController(repo),
+		cost.NewCostController(repo, radixapi),
 		report.NewReportController(repo),
 	}
 }

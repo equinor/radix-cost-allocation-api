@@ -31,7 +31,7 @@ func (rc *reportController) GetRoutes() models.Routes {
 	return routes
 }
 
-func (rc *reportController) GetCostReport(w http.ResponseWriter, r *http.Request) {
+func (rc *reportController) GetCostReport(accounts models.Accounts, w http.ResponseWriter, r *http.Request) {
 	handler := Init(rc.repo)
 	file, err := os.Create("cost-report.csv")
 	defer os.Remove(file.Name())

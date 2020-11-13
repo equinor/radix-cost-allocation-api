@@ -193,7 +193,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider util
 			w.WriteHeader(http.StatusUnauthorized)
 		}
 
-		claims := &claims{}
+		claims := &Claims{}
 
 		err = verified.GetClaims(claims)
 
@@ -214,7 +214,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider util
 	})
 }
 
-type claims struct {
+type Claims struct {
 	Groups []string `json:"groups"`
 	Email  string   `json:"email"`
 }
