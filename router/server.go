@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/equinor/radix-cost-allocation-api/api/utils/auth"
+
 	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	"github.com/equinor/radix-cost-allocation-api/models"
 	_ "github.com/equinor/radix-cost-allocation-api/swaggerui" // statik files
@@ -32,7 +34,7 @@ type Server struct {
 }
 
 // NewServer Constructor function
-func NewServer(clusterName string, authProvider utils.AuthProvider, controllers ...models.Controller) http.Handler {
+func NewServer(clusterName string, authProvider auth.AuthProvider, controllers ...models.Controller) http.Handler {
 	router := mux.NewRouter().StrictSlash(true)
 
 	statikFS, err := fs.New()
@@ -147,7 +149,7 @@ func addHandlerRoute(router *mux.Router, route models.Route) {
 		utils.NewRadixMiddleware(path, route.Method, route.HandlerFunc).Handle).Methods(route.Method)
 }
 
-func newAuthenticationMiddleware(authProvider utils.AuthProvider) negroni.HandlerFunc {
+func newAuthenticationMiddleware(authProvider auth.AuthProvider) negroni.HandlerFunc {
 	ctx := context.Background()
 
 	return negroni.HandlerFunc(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
@@ -169,7 +171,7 @@ func newAuthenticationMiddleware(authProvider utils.AuthProvider) negroni.Handle
 	})
 }
 
-func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider utils.AuthProvider) negroni.HandlerFunc {
+func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider auth.AuthProvider) negroni.HandlerFunc {
 	ctx := context.Background()
 
 	var allowedGroups struct {
@@ -186,14 +188,14 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider util
 			return
 		}
 
-		var verified utils.IDToken
+		var verified auth.IDToken
 		verified, err = authProvider.VerifyToken(ctx, token)
 
 		if err != nil || verified == nil {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
 
-		claims := &Claims{}
+		claims := &auth.Claims{}
 
 		err = verified.GetClaims(claims)
 
@@ -212,11 +214,6 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider util
 		return
 
 	})
-}
-
-type Claims struct {
-	Groups []string `json:"groups"`
-	Email  string   `json:"email"`
 }
 
 func find(list []string, val string) bool {

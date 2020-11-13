@@ -10,7 +10,7 @@ import (
 
 	controllerTest "github.com/equinor/radix-cost-allocation-api/api/test"
 	mock "github.com/equinor/radix-cost-allocation-api/api/test/mock"
-	"github.com/equinor/radix-cost-allocation-api/router"
+	"github.com/equinor/radix-cost-allocation-api/api/utils/auth"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -93,7 +93,7 @@ func TestReportController_UnAuthorizedUser_NoAccess(t *testing.T) {
 	// Create mock idtoken
 	fakeIDToken := mock.NewMockIDToken(ctrl)
 
-	c := router.Claims{Email: "radix_test@equinor.com", Groups: []string{notValidADGroup}}
+	c := auth.Claims{Email: "radix_test@equinor.com", Groups: []string{notValidADGroup}}
 
 	fakeIDToken.EXPECT().
 		GetClaims(gomock.Any()).
@@ -153,7 +153,7 @@ func TestReportController_AuthorizedUser_CanDownload(t *testing.T) {
 	// Create mock idtoken
 	fakeIDToken := mock.NewMockIDToken(ctrl)
 
-	c := router.Claims{Email: "radix_test@equinor.com", Groups: []string{validADGroup}}
+	c := auth.Claims{Email: "radix_test@equinor.com", Groups: []string{validADGroup}}
 
 	fakeIDToken.EXPECT().
 		GetClaims(gomock.Any()).

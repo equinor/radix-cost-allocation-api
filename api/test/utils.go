@@ -10,6 +10,7 @@ import (
 	"os"
 
 	"github.com/equinor/radix-cost-allocation-api/api/utils"
+	"github.com/equinor/radix-cost-allocation-api/api/utils/auth"
 	"github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/equinor/radix-cost-allocation-api/router"
 	log "github.com/sirupsen/logrus"
@@ -20,7 +21,7 @@ const reportName = "report.csv"
 // Utils Instance variables
 type Utils struct {
 	controllers  []models.Controller
-	authProvider utils.AuthProvider
+	authProvider auth.AuthProvider
 }
 
 // ReportUtils Instance variables
@@ -46,7 +47,7 @@ func NewTestUtils(controllers ...models.Controller) Utils {
 }
 
 // SetAuthProvider sets auth provider
-func (tu *Utils) SetAuthProvider(ap utils.AuthProvider) {
+func (tu *Utils) SetAuthProvider(ap auth.AuthProvider) {
 	tu.authProvider = ap
 }
 
