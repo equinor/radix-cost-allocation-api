@@ -88,14 +88,7 @@ func (cr *CostReport) Create(out io.Writer) error {
 		cr.Amount,
 		cr.LineText)
 
-	err = csvWriter.WriteAll(allData)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-
+	return csvWriter.WriteAll(allData)
 }
 
 func (cr *CostReport) organiseData(numberOfRows int, params ...[]string) [][]string {

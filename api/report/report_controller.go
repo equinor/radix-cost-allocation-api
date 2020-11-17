@@ -1,6 +1,7 @@
 package report
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 
@@ -47,8 +48,10 @@ func (rc *reportController) GetCostReport(accounts models.Accounts, w http.Respo
 	//     description: "Forbidden"
 	//   "404":
 	//     description: "Not found"
+
 	handler := Init(rc.repo)
-	file, err := os.Create("cost-report.csv")
+	fromDate, toDate := utils.GetFirstAndLastOfPreviousMonth()
+	file, err := os.Create(fmt.Sprintf("%s-%s.csv", fromDate.Format("2006-01-02"), toDate.Format("2006-01-02")))
 	defer os.Remove(file.Name())
 
 	if err != nil {

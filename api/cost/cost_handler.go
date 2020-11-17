@@ -153,7 +153,7 @@ func (costHandler *Handler) GetFutureCost(appName string) (*costModels.Applicati
 		return &filteredByAccess[0], nil
 	}
 
-	return nil, utils.ApplicationNotFoundError(fmt.Sprintf("Application %s was not found.", appName), fmt.Errorf("User does not have access to application %s", appName))
+	return nil, utils.ApplicationNotFoundError("Application was not found.", fmt.Errorf("User does not have access to application %s", appName))
 }
 
 func (costHandler *Handler) filterApplicationCostsBy(appName *string, cost *costModels.ApplicationCostSet) []costModels.ApplicationCost {

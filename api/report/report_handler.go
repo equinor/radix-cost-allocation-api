@@ -5,10 +5,10 @@ import (
 	"io"
 	"os"
 	"strconv"
-	"time"
 
 	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
 	reportModels "github.com/equinor/radix-cost-allocation-api/api/report/models"
+	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	models "github.com/equinor/radix-cost-allocation-api/models"
 	log "github.com/sirupsen/logrus"
 )
@@ -34,8 +34,11 @@ func initEnv() *Env {
 		whiteList   = os.Getenv("WHITELIST")
 	)
 
-	subscriptionCost, er := strconv.ParseFloat(subCost, 64)
-	if er != nil {
+	var err error
+
+	var subscriptionCost float64
+	subscriptionCost, err = strconv.ParseFloat(subCost, 64)
+	if err != nil {
 		subscriptionCost = 0.0
 		log.Info("Subscription Cost is invalid or is not set.")
 	}
@@ -44,7 +47,7 @@ func initEnv() *Env {
 	}
 
 	list := &costModels.Whitelist{}
-	err := json.Unmarshal([]byte(whiteList), list)
+	err = json.Unmarshal([]byte(whiteList), list)
 
 	if err != nil {
 		log.Info("Whitelist is not set")
@@ -69,7 +72,7 @@ func Init(repo models.CostRepository) ReportHandler {
 
 // GetCostReport creates a CostReport
 func (rh *ReportHandler) GetCostReport(out io.Writer) error {
-	from, to := getPeriod()
+	from, to := utils.GetFirstAndLastOfPreviousMonth()
 
 	runs, err := rh.repo.GetRunsBetweenTimes(from, to)
 
@@ -95,16 +98,4 @@ func (rh *ReportHandler) GetCostReport(out io.Writer) error {
 
 	return nil
 
-}
-
-func getPeriod() (*time.Time, *time.Time) {
-	now := time.Now()
-	currentYear, currentMonth, _ := now.Date()
-	currentLocation := now.Location()
-
-	firstOfMonth := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, currentLocation)
-	firstOfLastMonth := firstOfMonth.AddDate(0, -1, 0)
-	lastOfLastMonth := firstOfLastMonth.AddDate(0, 1, -1)
-
-	return &firstOfLastMonth, &lastOfLastMonth
 }

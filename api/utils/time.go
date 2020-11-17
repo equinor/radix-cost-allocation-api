@@ -40,3 +40,16 @@ func FormatTime(time *metav1.Time) string {
 
 	return ""
 }
+
+// GetFirstAndLastOfPreviousMonth gets the first and last date of the previous month
+func GetFirstAndLastOfPreviousMonth() (*time.Time, *time.Time) {
+	now := time.Now()
+	currentYear, currentMonth, _ := now.Date()
+	currentLocation := now.Location()
+
+	firstOfMonth := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, currentLocation)
+	firstOfLastMonth := firstOfMonth.AddDate(0, -1, 0)
+	lastOfLastMonth := firstOfLastMonth.AddDate(0, 1, -1)
+
+	return &firstOfLastMonth, &lastOfLastMonth
+}
