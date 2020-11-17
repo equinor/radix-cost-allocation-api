@@ -7,17 +7,35 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 
 	"github.com/equinor/radix-cost-allocation-api/api/utils"
+	"github.com/equinor/radix-cost-allocation-api/api/utils/auth"
 	"github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/equinor/radix-cost-allocation-api/router"
 	log "github.com/sirupsen/logrus"
 )
 
+const reportName = "report.csv"
+
 // Utils Instance variables
 type Utils struct {
 	controllers  []models.Controller
-	authProvider utils.AuthProvider
+	authProvider auth.AuthProvider
+}
+
+// ReportUtils Instance variables
+type ReportUtils struct {
+	File *os.File
+}
+
+// NewReportTestUtils Constructor
+func NewReportTestUtils() ReportUtils {
+	file, _ := os.Create(reportName)
+
+	return ReportUtils{
+		file,
+	}
 }
 
 // NewTestUtils Constructor
@@ -29,7 +47,7 @@ func NewTestUtils(controllers ...models.Controller) Utils {
 }
 
 // SetAuthProvider sets auth provider
-func (tu *Utils) SetAuthProvider(ap utils.AuthProvider) {
+func (tu *Utils) SetAuthProvider(ap auth.AuthProvider) {
 	tu.authProvider = ap
 }
 
@@ -81,4 +99,8 @@ func GetResponseBody(response *httptest.ResponseRecorder, target interface{}) er
 	log.Infof(string(body))
 
 	return json.Unmarshal(body, target)
+}
+
+func GetFileResponse(response *httptest.ResponseRecorder, target io.Writer) {
+	io.Copy(target, response.Body)
 }

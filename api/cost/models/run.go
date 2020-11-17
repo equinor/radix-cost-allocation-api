@@ -1,6 +1,9 @@
 package cost_models
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 // Run holds all required resources for a time
 type Run struct {
@@ -79,7 +82,7 @@ func (run Run) GetApplicationsRequiredResource() []Application {
 	for _, resource := range run.Resources {
 		requiredCPU[resource.Application] += resource.CPUMillicore * resource.Replicas
 		requiredMemory[resource.Application] += resource.MemoryMegaBytes * resource.Replicas
-		wbsCodes[resource.Application] += resource.WBS
+		wbsCodes[resource.Application] = resource.WBS
 	}
 	var applications []Application
 	for appName, val := range requiredCPU {
@@ -93,4 +96,25 @@ func (run Run) GetApplicationsRequiredResource() []Application {
 		})
 	}
 	return applications
+}
+
+// RemoveWhitelistedApplications removes all applications in the whitelist from the run
+func (run *Run) RemoveWhitelistedApplications(whiteList *Whitelist) {
+	cleanedResources := make([]RequiredResources, 0)
+	for _, resource := range run.Resources {
+		if !find(whiteList.List, resource.Application) {
+			cleanedResources = append(cleanedResources, resource)
+		}
+	}
+	run.Resources = cleanedResources
+}
+
+func find(list []string, val string) bool {
+	for _, item := range list {
+		if strings.EqualFold(val, item) {
+			return true
+		}
+	}
+
+	return false
 }

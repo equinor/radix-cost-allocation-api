@@ -86,7 +86,7 @@ func (costController *costController) GetTotalCosts(accounts models.Accounts, w 
 	//     description: "Unauthorized"
 	//   "404":
 	//     description: "Not found"
-	costController.getTotalCosts(accounts, costController.repo, w, r, nil)
+	costController.getTotalCosts(accounts, costController.repo, w, r, "")
 }
 
 // GetTotalCost for an application for period
@@ -99,7 +99,7 @@ func (costController *costController) GetTotalCost(accounts models.Accounts, w h
 	//   in: path
 	//   description: Name of application
 	//   type: string
-	//   required: false
+	//   required: true
 	// - name: fromTime
 	//   in: query
 	//   description: Get cost from fromTime (example 2020-03-18 or 2020-03-18T07:20:41+01:00)
@@ -132,7 +132,7 @@ func (costController *costController) GetTotalCost(accounts models.Accounts, w h
 	//   "404":
 	//     description: "Not found"
 	appName := mux.Vars(r)["appName"]
-	costController.getTotalCosts(accounts, costController.repo, w, r, &appName)
+	costController.getTotalCosts(accounts, costController.repo, w, r, appName)
 }
 
 func (costController *costController) GetFutureCost(accounts models.Accounts, w http.ResponseWriter, r *http.Request) {
@@ -165,10 +165,10 @@ func (costController *costController) GetFutureCost(accounts models.Accounts, w 
 	//   "404":
 	//     description: "Not found"
 	appName := mux.Vars(r)["appName"]
-	costController.getFutureCost(accounts, costController.repo, w, r, &appName)
+	costController.getFutureCost(accounts, costController.repo, w, r, appName)
 }
 
-func (costController *costController) getFutureCost(accounts models.Accounts, costRepo models.CostRepository, w http.ResponseWriter, r *http.Request, appName *string) {
+func (costController *costController) getFutureCost(accounts models.Accounts, costRepo models.CostRepository, w http.ResponseWriter, r *http.Request, appName string) {
 	handler := Init(costRepo, accounts, costController.radixapi)
 	cost, err := handler.GetFutureCost(appName)
 
@@ -180,7 +180,7 @@ func (costController *costController) getFutureCost(accounts models.Accounts, co
 	utils.JSONResponse(w, r, &cost)
 }
 
-func (costController *costController) getTotalCosts(accounts models.Accounts, costRepo models.CostRepository, w http.ResponseWriter, r *http.Request, appName *string) {
+func (costController *costController) getTotalCosts(accounts models.Accounts, costRepo models.CostRepository, w http.ResponseWriter, r *http.Request, appName string) {
 	fromTime, toTime, err := getCostPeriod(w, r)
 	if err != nil {
 		utils.ErrorResponse(w, r, err)

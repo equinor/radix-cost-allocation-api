@@ -3,9 +3,12 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"sort"
+	"strconv"
 
 	log "github.com/sirupsen/logrus"
 
@@ -178,6 +181,28 @@ func JSONResponse(w http.ResponseWriter, r *http.Request, result interface{}) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write(body)
+}
+
+// FileResponse creates a response with file
+func FileResponse(w http.ResponseWriter, r *http.Request, response *os.File) {
+	file, err := os.Open(response.Name())
+
+	if err != nil {
+		ErrorResponse(w, r, err)
+	}
+
+	FileHeader := make([]byte, 512)
+	file.Read(FileHeader)
+	FileContentType := http.DetectContentType(FileHeader)
+
+	FileStat, _ := file.Stat()
+	FileSize := strconv.FormatInt(FileStat.Size(), 10)
+
+	w.Header().Set("Content-Disposition", "attachment; filename="+file.Name())
+	w.Header().Set("Content-Type", FileContentType)
+	w.Header().Set("Content-Length", FileSize)
+	file.Seek(0, 0)
+	io.Copy(w, file)
 }
 
 // ErrorResponse Marshals error

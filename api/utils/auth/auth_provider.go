@@ -1,4 +1,4 @@
-package utils
+package auth
 
 import (
 	"context"
@@ -25,6 +25,11 @@ type oidcProvider struct {
 // IDTokenStruct instance variables
 type IDTokenStruct struct {
 	token *oidc.IDToken
+}
+
+type Claims struct {
+	Groups []string `json:"groups"`
+	Email  string   `json:"email"`
 }
 
 // GetClaims returns claims for the token

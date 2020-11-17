@@ -10,7 +10,8 @@ import (
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
 
 	"github.com/equinor/radix-cost-allocation-api/api/cost"
-	"github.com/equinor/radix-cost-allocation-api/api/utils"
+	"github.com/equinor/radix-cost-allocation-api/api/report"
+	"github.com/equinor/radix-cost-allocation-api/api/utils/auth"
 	models "github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/equinor/radix-cost-allocation-api/router"
 	log "github.com/sirupsen/logrus"
@@ -45,7 +46,7 @@ func main() {
 	defer costRepository.CloseDB()
 
 	ctx := context.Background()
-	authProvider := utils.NewAuthProvider(ctx)
+	authProvider := auth.NewAuthProvider(ctx)
 
 	radixAPIClient := radix_api.NewRadixAPIClient()
 
@@ -64,6 +65,7 @@ func main() {
 func getControllers(repo models.CostRepository, radixapi radix_api.RadixAPIClient) []models.Controller {
 	return []models.Controller{
 		cost.NewCostController(repo, radixapi),
+		report.NewReportController(repo),
 	}
 }
 

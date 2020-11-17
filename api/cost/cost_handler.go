@@ -90,21 +90,22 @@ func (costHandler *Handler) getToken() string {
 }
 
 // GetTotalCost handler for GetTotalCost
-func (costHandler *Handler) GetTotalCost(fromTime, toTime *time.Time, appName *string) (*costModels.ApplicationCostSet, error) {
+func (costHandler *Handler) GetTotalCost(fromTime, toTime *time.Time, appName string) (*costModels.ApplicationCostSet, error) {
 	runs, err := costHandler.repo.GetRunsBetweenTimes(fromTime, toTime)
 	if err != nil {
 		return nil, err
 	}
 
-	filteredRuns, err := costHandler.removeWhitelistedAppsFromRun(runs)
-
-	if err != nil {
-		return nil, err
+	cleanedRuns := make([]costModels.Run, 0)
+	for _, run := range runs {
+		run.RemoveWhitelistedApplications(costHandler.env.Whitelist)
+		cleanedRuns = append(cleanedRuns, run)
 	}
 
-	applicationCostSet := costModels.NewApplicationCostSet(*fromTime, *toTime, filteredRuns, costHandler.env.SubscriptionCost, costHandler.env.SubscriptionCurrency)
-	if appName != nil && !strings.EqualFold(*appName, "") {
-		applicationCostSet.ApplicationCosts = costHandler.filterApplicationCostsBy(appName, &applicationCostSet)
+	applicationCostSet := costModels.NewApplicationCostSet(*fromTime, *toTime, cleanedRuns, costHandler.env.SubscriptionCost, costHandler.env.SubscriptionCurrency)
+
+	if !strings.EqualFold(appName, "") {
+		applicationCostSet.FilterApplicationCostBy(appName)
 	}
 
 	rrMap, err := costHandler.getRadixRegistrationMap(appName)
@@ -116,7 +117,7 @@ func (costHandler *Handler) GetTotalCost(fromTime, toTime *time.Time, appName *s
 }
 
 // GetFutureCost estimates cost for the next 30 days based on last run
-func (costHandler *Handler) GetFutureCost(appName *string) (*costModels.ApplicationCost, error) {
+func (costHandler *Handler) GetFutureCost(appName string) (*costModels.ApplicationCost, error) {
 
 	run, err := costHandler.repo.GetLatestRun()
 	if err != nil {
@@ -132,19 +133,9 @@ func (costHandler *Handler) GetFutureCost(appName *string) (*costModels.Applicat
 		return nil, errors.New("Avaliable memory resources are 0. A cost estimate can not be made")
 	}
 
-	filteredRun, err := costHandler.removeWhitelistedAppsFromRun([]costModels.Run{run})
+	run.RemoveWhitelistedApplications(costHandler.env.Whitelist)
 
-	if err != nil {
-		return nil, err
-	}
-
-	if len(filteredRun) == 0 {
-		return nil, fmt.Errorf("Filtering run for application %s returned empty array", *appName)
-	}
-
-	run = filteredRun[0]
-
-	cost, err := costModels.NewFutureCostEstimate(*appName, run, costHandler.env.SubscriptionCost, costHandler.env.SubscriptionCurrency)
+	cost, err := costModels.NewFutureCostEstimate(appName, run, costHandler.env.SubscriptionCost, costHandler.env.SubscriptionCurrency)
 
 	if err != nil {
 		return nil, err
@@ -162,40 +153,7 @@ func (costHandler *Handler) GetFutureCost(appName *string) (*costModels.Applicat
 		return &filteredByAccess[0], nil
 	}
 
-	return nil, utils.ApplicationNotFoundError(fmt.Sprintf("Application %s was not found.", *appName), fmt.Errorf("User does not have access to application %s", *appName))
-}
-
-// Whitelist contains list of apps that are not included in cost distribution
-
-func (costHandler *Handler) removeWhitelistedAppsFromRun(runs []costModels.Run) ([]costModels.Run, error) {
-	cleanedRuns := runs
-	for index, run := range runs {
-		cleanedRun := cleanResources(run, costHandler.env.Whitelist)
-		cleanedRuns[index].Resources = cleanedRun.Resources
-	}
-
-	return cleanedRuns, nil
-}
-
-func cleanResources(run costModels.Run, whiteList *costModels.Whitelist) costModels.Run {
-	cleanedResources := make([]costModels.RequiredResources, 0)
-	for _, resource := range run.Resources {
-		if !find(whiteList.List, resource.Application) {
-			cleanedResources = append(cleanedResources, resource)
-		}
-	}
-	run.Resources = cleanedResources
-	return run
-}
-
-func find(list []string, val string) bool {
-	for _, item := range list {
-		if strings.EqualFold(val, item) {
-			return true
-		}
-	}
-
-	return false
+	return nil, utils.ApplicationNotFoundError("Application was not found.", fmt.Errorf("User does not have access to application %s", appName))
 }
 
 func (costHandler *Handler) filterApplicationCostsBy(appName *string, cost *costModels.ApplicationCostSet) []costModels.ApplicationCost {
@@ -218,9 +176,9 @@ func (costHandler *Handler) filterApplicationsByAccess(rrMap map[string]*radix_a
 	return filteredApplicationCosts
 }
 
-func (costHandler *Handler) getRadixRegistrationMap(appName *string) (*map[string]*radix_api.RadixApplicationDetails, error) {
+func (costHandler *Handler) getRadixRegistrationMap(appName string) (*map[string]*radix_api.RadixApplicationDetails, error) {
 
-	if appName != nil && !strings.EqualFold(*appName, "") {
+	if !strings.EqualFold(appName, "") {
 		app, err := costHandler.getRadixApplicationDetails(appName)
 		if err != nil {
 			return nil, err
@@ -238,9 +196,9 @@ func (costHandler *Handler) getRadixRegistrationMap(appName *string) (*map[strin
 	return apps, err
 }
 
-func (costHandler *Handler) getRadixApplicationDetails(appName *string) (*radix_api.RadixApplicationDetails, error) {
+func (costHandler *Handler) getRadixApplicationDetails(appName string) (*radix_api.RadixApplicationDetails, error) {
 	getApplicationParams := application.NewGetApplicationParams()
-	getApplicationParams.SetAppName(*appName)
+	getApplicationParams.SetAppName(appName)
 	token := costHandler.getToken()
 
 	appDetails, err := costHandler.radixapi.GetRadixApplicationDetails(getApplicationParams, token)
