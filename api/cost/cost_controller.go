@@ -99,7 +99,7 @@ func (costController *costController) GetTotalCost(accounts models.Accounts, w h
 	//   in: path
 	//   description: Name of application
 	//   type: string
-	//   required: false
+	//   required: true
 	// - name: fromTime
 	//   in: query
 	//   description: Get cost from fromTime (example 2020-03-18 or 2020-03-18T07:20:41+01:00)

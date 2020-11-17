@@ -31,7 +31,22 @@ func (rc *reportController) GetRoutes() models.Routes {
 	return routes
 }
 
+// GetCostReport creates a report for all applications for the previous month
 func (rc *reportController) GetCostReport(accounts models.Accounts, w http.ResponseWriter, r *http.Request) {
+	// swagger:operation GET /report/ report
+	// ---
+	// summary: Get cost-report for all applications for the previous month
+	// responses:
+	//   "200":
+	//     description: "Successfully created report"
+	//     schema:
+	//        "$ref": "#/definitions/CostReport"
+	//   "401":
+	//     description: "Unauthorized"
+	//   "403":
+	//     description: "Forbidden"
+	//   "404":
+	//     description: "Not found"
 	handler := Init(rc.repo)
 	file, err := os.Create("cost-report.csv")
 	defer os.Remove(file.Name())
