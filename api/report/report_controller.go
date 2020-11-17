@@ -34,14 +34,12 @@ func (rc *reportController) GetRoutes() models.Routes {
 
 // GetCostReport creates a report for all applications for the previous month
 func (rc *reportController) GetCostReport(accounts models.Accounts, w http.ResponseWriter, r *http.Request) {
-	// swagger:operation GET /report/ report
+	// swagger:operation GET /report report getCostReport
 	// ---
 	// summary: Get cost-report for all applications for the previous month
 	// responses:
 	//   "200":
 	//     description: "Successfully created report"
-	//     schema:
-	//        "$ref": "#/definitions/CostReport"
 	//   "401":
 	//     description: "Unauthorized"
 	//   "403":
