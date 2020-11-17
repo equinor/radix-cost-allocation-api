@@ -17,36 +17,14 @@ const (
 )
 
 // CostReport contains information to be exported to a CSV report
-// swagger:model CostReport
 type CostReport struct {
-	// CostReport created date
-	//
-	// required: true
-	PostingDate []string `json:"postingDate"`
-	// CostReport document header
-	//
-	// required: true
-	DocumentHeader []string `json:"documentHeader"`
-	// CostReport company code
-	//
-	// required: true
-	CompanyCode []string `json:"companyCode"`
-	// CostReport WBS
-	//
-	// required: true
-	WBS []string `json:"wbs"`
-	// CostReport GLA
-	//
-	// required: true
-	GeneralLedgerAccount []string `json:"generalLedgerAccount"`
-	// CostReport cost amount
-	//
-	// required: true
-	Amount []string `json:"amount"`
-	// CostReport line text
-	//
-	// required: true
-	LineText []string `json:"lineText"`
+	PostingDate          []string
+	DocumentHeader       []string
+	CompanyCode          []string
+	WBS                  []string
+	GeneralLedgerAccount []string
+	Amount               []string
+	LineText             []string
 }
 
 // NewCostReport constructor

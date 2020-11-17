@@ -51,7 +51,7 @@ func (costController *costController) GetRoutes() models.Routes {
 
 // GetTotalCosts for all applications for period
 func (costController *costController) GetTotalCosts(accounts models.Accounts, w http.ResponseWriter, r *http.Request) {
-	// swagger:operation GET /totalcosts/ cost getTotalCosts
+	// swagger:operation GET /totalcosts cost getTotalCosts
 	// ---
 	// summary: Gets the total cost for an application
 	// parameters:
