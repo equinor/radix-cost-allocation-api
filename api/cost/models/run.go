@@ -82,7 +82,7 @@ func (run Run) GetApplicationsRequiredResource() []Application {
 	for _, resource := range run.Resources {
 		requiredCPU[resource.Application] += resource.CPUMillicore * resource.Replicas
 		requiredMemory[resource.Application] += resource.MemoryMegaBytes * resource.Replicas
-		wbsCodes[resource.Application] += resource.WBS
+		wbsCodes[resource.Application] = resource.WBS
 	}
 	var applications []Application
 	for appName, val := range requiredCPU {
