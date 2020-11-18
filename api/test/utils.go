@@ -3,26 +3,52 @@ package test
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/equinor/radix-cost-allocation-api/api/utils"
-	"github.com/equinor/radix-cost-allocation-api/models"
-	"github.com/equinor/radix-cost-allocation-api/router"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
+
+	"github.com/equinor/radix-cost-allocation-api/api/utils"
+	"github.com/equinor/radix-cost-allocation-api/api/utils/auth"
+	"github.com/equinor/radix-cost-allocation-api/models"
+	"github.com/equinor/radix-cost-allocation-api/router"
+	log "github.com/sirupsen/logrus"
 )
+
+const reportName = "report.csv"
 
 // Utils Instance variables
 type Utils struct {
-	controllers []models.Controller
+	controllers  []models.Controller
+	authProvider auth.AuthProvider
+}
+
+// ReportUtils Instance variables
+type ReportUtils struct {
+	File *os.File
+}
+
+// NewReportTestUtils Constructor
+func NewReportTestUtils() ReportUtils {
+	file, _ := os.Create(reportName)
+
+	return ReportUtils{
+		file,
+	}
 }
 
 // NewTestUtils Constructor
 func NewTestUtils(controllers ...models.Controller) Utils {
 	return Utils{
 		controllers,
+		nil,
 	}
+}
+
+// SetAuthProvider sets auth provider
+func (tu *Utils) SetAuthProvider(ap auth.AuthProvider) {
+	tu.authProvider = ap
 }
 
 // ExecuteRequest Helper method to issue a http request
@@ -46,7 +72,7 @@ func (tu *Utils) ExecuteRequestWithParameters(method, endpoint string, parameter
 	response := make(chan *httptest.ResponseRecorder)
 	go func() {
 		rr := httptest.NewRecorder()
-		router.NewServer("anyClusterName", tu.controllers...).ServeHTTP(rr, req)
+		router.NewServer("anyClusterName", tu.authProvider, tu.controllers...).ServeHTTP(rr, req)
 		response <- rr
 		close(response)
 	}()
@@ -73,4 +99,8 @@ func GetResponseBody(response *httptest.ResponseRecorder, target interface{}) er
 	log.Infof(string(body))
 
 	return json.Unmarshal(body, target)
+}
+
+func GetFileResponse(response *httptest.ResponseRecorder, target io.Writer) {
+	io.Copy(target, response.Body)
 }

@@ -12,35 +12,40 @@ import (
 	"time"
 )
 
-// SQLClient used to perform sql queries
-type SQLClient struct {
+// CostRepository interface
+type CostRepository interface {
+	GetLatestRun() (costModels.Run, error)
+	GetRunsBetweenTimes(from, to *time.Time) ([]costModels.Run, error)
+}
+
+// DBCredentials hold credentials for database
+type DBCredentials struct {
 	Server   string
 	Port     int
 	Database string
 	UserID   string
 	Password string
-	db       *sql.DB
 }
 
-// NewSQLClient create sqlclient and setup the db connection
-func NewSQLClient(server, database string, port int, userID, password string) SQLClient {
-	sqlClient := SQLClient{
-		Server:   server,
-		Database: database,
-		Port:     port,
-		UserID:   userID,
-		Password: password,
+// SQLCostRepository struct defines a connection to DB
+type SQLCostRepository struct {
+	db *sql.DB
+}
+
+// NewSQLCostRepository initializes new connection to database
+func NewSQLCostRepository(creds *DBCredentials) *SQLCostRepository {
+	dbConnection := creds.setupDBConnection()
+	return &SQLCostRepository{
+		dbConnection,
 	}
-	sqlClient.db = sqlClient.setupDBConnection()
-	return sqlClient
 }
 
 // GetLatestRun fetches the last run and joins them with resources logged for that run
-func (sqlClient SQLClient) GetLatestRun() (costModels.Run, error) {
+func (repo SQLCostRepository) GetLatestRun() (costModels.Run, error) {
 	var requiredResources []costModels.RequiredResources
 	var lastRun costModels.Run
 
-	ctx, err := sqlClient.verifyConnection()
+	ctx, err := repo.verifyConnection()
 	if err != nil {
 		return costModels.Run{}, err
 	}
@@ -53,7 +58,14 @@ func (sqlClient SQLClient) GetLatestRun() (costModels.Run, error) {
 			" SELECT rr.application, rr.cpu_millicores, rr.memory_mega_bytes, rr.wbs, rr.replicas, r.cluster_cpu_millicores, r.cluster_memory_mega_bytes, r.measured_time_utc FROM [cost].[runs] r " +
 			" INNER JOIN temptable rr ON r.[id] = rr.[run_id] "
 
-	rows, err := sqlClient.db.QueryContext(ctx, query)
+	// Create new connection to database
+	connection, err := repo.db.Conn(ctx)
+	if err != nil {
+		log.Fatal("Error creating connection to DB", err.Error())
+	}
+	defer connection.Close()
+
+	rows, err := connection.QueryContext(ctx, query)
 
 	if err != nil {
 		return costModels.Run{}, err
@@ -104,10 +116,10 @@ func (sqlClient SQLClient) GetLatestRun() (costModels.Run, error) {
 }
 
 // GetRunsBetweenTimes get all runs with its resources between from and to time
-func (sqlClient SQLClient) GetRunsBetweenTimes(from, to *time.Time) ([]costModels.Run, error) {
+func (dbCon SQLCostRepository) GetRunsBetweenTimes(from, to *time.Time) ([]costModels.Run, error) {
 	runsResources := map[int64]*[]costModels.RequiredResources{}
 	runs := map[int64]costModels.Run{}
-	ctx, err := sqlClient.verifyConnection()
+	ctx, err := dbCon.verifyConnection()
 	if err != nil {
 		return nil, err
 	}
@@ -120,8 +132,15 @@ func (sqlClient SQLClient) GetRunsBetweenTimes(from, to *time.Time) ([]costModel
 		" JOIN [cost].[required_resources] rr ON r.id = rr.run_id" +
 		" WHERE measured_time_utc BETWEEN @from AND @to;"
 
+	// Create new connection to database
+	connection, err := dbCon.db.Conn(ctx)
+	if err != nil {
+		log.Fatal("Error creating connection to DB", err.Error())
+	}
+	defer connection.Close()
+
 	// Execute query
-	rows, err := sqlClient.db.QueryContext(ctx, tsql, sql.Named("from", from), sql.Named("to", to))
+	rows, err := connection.QueryContext(ctx, tsql, sql.Named("from", from), sql.Named("to", to))
 	if err != nil {
 		return nil, err
 	}
@@ -193,47 +212,16 @@ func (sqlClient SQLClient) GetRunsBetweenTimes(from, to *time.Time) ([]costModel
 	return runsAsArray, nil
 }
 
-// SaveRequiredResources inserts all required resources under run.Resources
-func (sqlClient SQLClient) SaveRequiredResources(run costModels.Run) error {
-	tsql := `INSERT INTO cost.required_resources (run_id, wbs, application, environment, component, cpu_millicores, memory_mega_bytes, replicas) 
-	VALUES (@runId, @wbs, @application, @environment, @component, @cpuMillicores, @memoryMegaBytes, @replicas); select convert(bigint, SCOPE_IDENTITY());`
-	for _, req := range run.Resources {
-		_, err := sqlClient.execSQL(tsql,
-			sql.Named("runId", run.ID),
-			sql.Named("wbs", req.WBS),
-			sql.Named("application", req.Application),
-			sql.Named("environment", req.Environment),
-			sql.Named("component", req.Component),
-			sql.Named("cpuMillicores", req.CPUMillicore),
-			sql.Named("memoryMegaBytes", req.MemoryMegaBytes),
-			sql.Named("replicas", req.Replicas))
-		if err != nil {
-			return fmt.Errorf("Failed to insert req resources %v", err)
-		}
-	}
-	return nil
-}
-
-// SaveRun inserts a new run, returns id
-func (sqlClient SQLClient) SaveRun(measuredTime time.Time, clusterCPUMillicores, clusterMemoryMegaBytes int) (int64, error) {
-	tsql := `INSERT INTO cost.runs (measured_time_utc, cluster_cpu_millicores, cluster_memory_mega_bytes) 
-	VALUES (@measuredTimeUTC, @clusterCPUMillicores, @clusterMemoryMegaBytes); select convert(bigint, SCOPE_IDENTITY());`
-	return sqlClient.execSQL(tsql,
-		sql.Named("measuredTimeUTC", measuredTime),
-		sql.Named("clusterCPUMillicores", clusterCPUMillicores),
-		sql.Named("clusterMemoryMegaBytes", clusterMemoryMegaBytes))
-}
-
-// Close the underlying db connection
-func (sqlClient SQLClient) Close() {
-	sqlClient.db.Close()
+// CloseDB closes the underlying db connection - Only to be called when API exits
+func (dbCon SQLCostRepository) CloseDB() {
+	dbCon.db.Close()
 }
 
 // SetupDBConnection sets up db connection
-func (sqlClient SQLClient) setupDBConnection() *sql.DB {
+func (creds DBCredentials) setupDBConnection() *sql.DB {
 	// Build connection string
 	connString := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%d;database=%s;",
-		sqlClient.Server, sqlClient.UserID, sqlClient.Password, sqlClient.Port, sqlClient.Database)
+		creds.Server, creds.UserID, creds.Password, creds.Port, creds.Database)
 
 	var err error
 
@@ -251,39 +239,17 @@ func (sqlClient SQLClient) setupDBConnection() *sql.DB {
 	return db
 }
 
-func (sqlClient SQLClient) execSQL(tsql string, args ...interface{}) (int64, error) {
-	ctx, err := sqlClient.verifyConnection()
-	if err != nil {
-		return -1, err
-	}
-
-	stmt, err := sqlClient.db.Prepare(tsql)
-	if err != nil {
-		return -1, err
-	}
-	defer stmt.Close()
-
-	row := stmt.QueryRowContext(ctx, args...)
-	var newID int64
-	err = row.Scan(&newID)
-	if err != nil {
-		return -1, err
-	}
-
-	return newID, nil
-}
-
-func (sqlClient SQLClient) verifyConnection() (context.Context, error) {
+func (dbCon SQLCostRepository) verifyConnection() (context.Context, error) {
 	ctx := context.Background()
 	var err error
 
-	if sqlClient.db == nil {
+	if dbCon.db == nil {
 		err = errors.New("CreateRun: db is null")
 		return ctx, err
 	}
 
 	// Check if database is alive.
-	err = sqlClient.db.PingContext(ctx)
+	err = dbCon.db.PingContext(ctx)
 	if err != nil {
 		return ctx, err
 	}

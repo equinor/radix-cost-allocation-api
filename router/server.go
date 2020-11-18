@@ -1,7 +1,15 @@
 package router
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"os"
+	"strings"
+
+	"github.com/equinor/radix-cost-allocation-api/api/utils/auth"
+
 	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	"github.com/equinor/radix-cost-allocation-api/models"
 	_ "github.com/equinor/radix-cost-allocation-api/swaggerui" // statik files
@@ -10,8 +18,6 @@ import (
 	"github.com/rakyll/statik/fs"
 	"github.com/rs/cors"
 	"github.com/urfave/negroni"
-	"net/http"
-	"os"
 )
 
 const (
@@ -28,7 +34,7 @@ type Server struct {
 }
 
 // NewServer Constructor function
-func NewServer(clusterName string, controllers ...models.Controller) http.Handler {
+func NewServer(clusterName string, authProvider auth.AuthProvider, controllers ...models.Controller) http.Handler {
 	router := mux.NewRouter().StrictSlash(true)
 
 	statikFS, err := fs.New()
@@ -49,8 +55,17 @@ func NewServer(clusterName string, controllers ...models.Controller) http.Handle
 		negroni.Wrap(router),
 	))
 
+	authenticationMiddleware := newAuthenticationMiddleware(authProvider)
+	authorizationMiddleware := newADGroupAuthorizationMiddleware(os.Getenv("AD_REPORT_READERS"), authProvider)
+
 	serveMux.Handle("/api/", negroni.New(
-		negroni.HandlerFunc(utils.BearerTokenHeaderVerifierMiddleware),
+		authenticationMiddleware,
+		negroni.Wrap(router),
+	))
+
+	serveMux.Handle("/api/v1/report", negroni.New(
+		authenticationMiddleware,
+		authorizationMiddleware,
 		negroni.Wrap(router),
 	))
 
@@ -132,4 +147,81 @@ func addHandlerRoute(router *mux.Router, route models.Route) {
 	path := apiVersionRoute + route.Path
 	router.HandleFunc(path,
 		utils.NewRadixMiddleware(path, route.Method, route.HandlerFunc).Handle).Methods(route.Method)
+}
+
+func newAuthenticationMiddleware(authProvider auth.AuthProvider) negroni.HandlerFunc {
+	ctx := context.Background()
+
+	return negroni.HandlerFunc(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+		token, err := utils.GetBearerTokenFromHeader(r)
+
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		verified, err := authProvider.VerifyToken(ctx, token)
+
+		if err != nil || verified == nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		next(w, r)
+	})
+}
+
+func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider auth.AuthProvider) negroni.HandlerFunc {
+	ctx := context.Background()
+
+	var allowedGroups struct {
+		List []string `json:"groups"`
+	}
+
+	json.Unmarshal([]byte(allowedADGroups), &allowedGroups)
+
+	return negroni.HandlerFunc(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+		token, err := utils.GetBearerTokenFromHeader(r)
+
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		var verified auth.IDToken
+		verified, err = authProvider.VerifyToken(ctx, token)
+
+		if err != nil || verified == nil {
+			w.WriteHeader(http.StatusUnauthorized)
+		}
+
+		claims := &auth.Claims{}
+
+		err = verified.GetClaims(claims)
+
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		for _, group := range claims.Groups {
+			if find(allowedGroups.List, group) {
+				next(w, r)
+			}
+		}
+
+		w.WriteHeader(http.StatusForbidden)
+		return
+
+	})
+}
+
+func find(list []string, val string) bool {
+	for _, item := range list {
+		if strings.EqualFold(val, item) {
+			return true
+		}
+	}
+
+	return false
 }

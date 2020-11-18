@@ -2,8 +2,9 @@ package models
 
 import (
 	"fmt"
-	jwt "github.com/dgrijalva/jwt-go"
 	"net/http"
+
+	jwt "github.com/dgrijalva/jwt-go"
 )
 
 // NewAccounts creates a new Accounts struct

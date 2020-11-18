@@ -128,6 +128,17 @@ func (cost ApplicationCostSet) GetCostBy(appName string) *ApplicationCost {
 	return nil
 }
 
+// FilterApplicationCostBy filters by app name
+func (cost *ApplicationCostSet) FilterApplicationCostBy(appName string) {
+	for _, applicationCost := range (*cost).ApplicationCosts {
+		if applicationCost.Name == appName {
+			cost.ApplicationCosts = []ApplicationCost{applicationCost}
+			return
+		}
+	}
+	cost.ApplicationCosts = []ApplicationCost{}
+}
+
 // AddWBS set WBS to application cost from the run
 func (appCost ApplicationCost) AddWBS(run Run) {
 	for _, resource := range run.Resources {

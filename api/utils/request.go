@@ -2,14 +2,15 @@ package utils
 
 import (
 	"errors"
-	"github.com/equinor/radix-cost-allocation-api/models"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/equinor/radix-cost-allocation-api/models"
 )
 
-// GetBearerToken Gets bearer token from request header
-func getBearerTokenFromHeader(r *http.Request) (string, error) {
+// GetBearerTokenFromHeader gets bearer token from request header
+func GetBearerTokenFromHeader(r *http.Request) (string, error) {
 	authorizationHeader := r.Header.Get("authorization")
 	authArr := strings.Split(authorizationHeader, " ")
 	var jwtToken string

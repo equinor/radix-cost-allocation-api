@@ -30,6 +30,7 @@ Run once after cloning of the GitHub repository:
 
 1. `go mod download`
 2. `make swagger`
+3. `make generate-radix-api-client`
 
 The following env var is needed. Useful default values in brackets.
 
@@ -112,6 +113,11 @@ To install with `install_base_components.sh`, mentioned above - add RadixRegistr
       "subscriptionCost": {
         "value": "<COST-VALUE>",
         "currency": "<COST-CURRENCY>"
+        "whiteList": "{\"whiteList\": [\"APP1\", \"APP2\"]}"
+      },
+      "auth": {
+        "tokenIssuer": "https://sts.windows.net/<TENANT-ID>/",
+        "reportReaders": "{\"groups\": [\"<AD-GROUP>\"]}"
       }
     }
     ```
