@@ -146,7 +146,7 @@ func (costHandler *Handler) GetFutureCost(appName string) (*costModels.Applicati
 	rrMap, err := costHandler.getRadixRegistrationMap(appName)
 
 	if err != nil {
-		log.Info("Unable to get application details", err)
+		log.Info("Unable to get application details. ", err)
 		return nil, err
 	}
 

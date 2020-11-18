@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/equinor/radix-cost-allocation-api/api/utils/auth"
-	"github.com/golang/gddo/log"
 
 	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	"github.com/equinor/radix-cost-allocation-api/models"
