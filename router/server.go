@@ -17,6 +17,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rakyll/statik/fs"
 	"github.com/rs/cors"
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/negroni"
 )
 
@@ -156,6 +157,7 @@ func newAuthenticationMiddleware(authProvider auth.AuthProvider) negroni.Handler
 		token, err := utils.GetBearerTokenFromHeader(r)
 
 		if err != nil {
+			log.Info("Could not get token from header")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -163,6 +165,7 @@ func newAuthenticationMiddleware(authProvider auth.AuthProvider) negroni.Handler
 		verified, err := authProvider.VerifyToken(ctx, token)
 
 		if err != nil || verified == nil {
+			log.Info("Could not verify token. ", err)
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -184,6 +187,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider auth
 		token, err := utils.GetBearerTokenFromHeader(r)
 
 		if err != nil {
+			log.Info("Could not get token from header")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -192,6 +196,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider auth
 		verified, err = authProvider.VerifyToken(ctx, token)
 
 		if err != nil || verified == nil {
+			log.Info("Unable to verify token. ", err)
 			w.WriteHeader(http.StatusUnauthorized)
 		}
 
@@ -200,6 +205,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider auth
 		err = verified.GetClaims(claims)
 
 		if err != nil {
+			log.Info("Could not get claims from token. ", err)
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -210,6 +216,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider auth
 			}
 		}
 
+		log.Info("User does not have correct AD group access. ", claims)
 		w.WriteHeader(http.StatusForbidden)
 		return
 
