@@ -111,6 +111,11 @@ func (costHandler *Handler) GetTotalCost(fromTime, toTime *time.Time, appName st
 
 	rrMap, err := costHandler.getRadixRegistrationMap(appName)
 
+	if err != nil {
+		log.Info("Could not get application details. ", err)
+		return nil, err
+	}
+
 	filteredCosts := costHandler.filterApplicationsByAccess(*rrMap, applicationCostSet.ApplicationCosts)
 	applicationCostSet.ApplicationCosts = filteredCosts
 
