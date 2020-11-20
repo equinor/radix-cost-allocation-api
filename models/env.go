@@ -70,7 +70,7 @@ func NewEnv() *Env {
 	err = json.Unmarshal([]byte(whiteList), list)
 
 	if err != nil {
-		log.Info("Whitelist is not set")
+		log.Info("Whitelist is not set. ", err)
 	}
 
 	return &Env{
