@@ -19,11 +19,12 @@ type costController struct {
 	*models.DefaultController
 	repo     models.CostRepository
 	radixapi radix_api.RadixAPIClient
+	env      *models.Env
 }
 
 // NewCostController Constructor
-func NewCostController(repo models.CostRepository, radixapi radix_api.RadixAPIClient) models.Controller {
-	return &costController{repo: repo, radixapi: radixapi}
+func NewCostController(env *models.Env, repo models.CostRepository, radixapi radix_api.RadixAPIClient) models.Controller {
+	return &costController{repo: repo, radixapi: radixapi, env: env}
 }
 
 // GetRoutes List the supported routes of this controller
