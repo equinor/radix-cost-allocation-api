@@ -14,11 +14,12 @@ const rootPath = ""
 type reportController struct {
 	*models.DefaultController
 	repo models.CostRepository
+	env  *models.Env
 }
 
 // NewReportController constructor
-func NewReportController(repo models.CostRepository) models.Controller {
-	return &reportController{repo: repo}
+func NewReportController(env *models.Env, repo models.CostRepository) models.Controller {
+	return &reportController{repo: repo, env: env}
 }
 
 func (rc *reportController) GetRoutes() models.Routes {
@@ -47,7 +48,7 @@ func (rc *reportController) GetCostReport(accounts models.Accounts, w http.Respo
 	//   "404":
 	//     description: "Not found"
 
-	handler := Init(rc.repo)
+	handler := NewReportHandler(rc.repo, rc.env)
 	fromDate, toDate := utils.GetFirstAndLastOfPreviousMonth()
 	file, err := os.Create(fmt.Sprintf("%s-%s.csv", fromDate.Format("2006-01-02"), toDate.Format("2006-01-02")))
 	defer os.Remove(file.Name())

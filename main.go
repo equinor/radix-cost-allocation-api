@@ -17,19 +17,13 @@ import (
 	_ "net/http/pprof"
 )
 
-const clusternameEnvironmentVariable = "RADIX_CLUSTERNAME"
-
 func main() {
 	env := models.NewEnv()
 	fs := initializeFlagSet()
-
-	var (
-		port        = fs.StringP("port", "p", defaultPort(), "Port where API will be served")
-		clusterName = os.Getenv(clusternameEnvironmentVariable)
-	)
+	port := fs.StringP("port", "p", defaultPort(), "Port where API will be served")
 
 	log.Debugf("Port: %s\n", *port)
-	log.Debugf("Cluster: %s\n", clusterName)
+	log.Debugf("Cluster: %s\n", env.ClusterName)
 
 	parseFlagsFromArgs(fs)
 
@@ -44,7 +38,11 @@ func main() {
 
 	go func() {
 		log.Infof("API is serving on port %s", *port)
-		errs <- http.ListenAndServe(fmt.Sprintf(":%s", *port), router.NewServer(clusterName, authProvider, getControllers(env, costRepository, radixAPIClient)...))
+		addr := fmt.Sprintf(":%s", *port)
+		handler := router.NewServer(env.ClusterName, authProvider,
+			cost.NewCostController(env, costRepository, radixAPIClient),
+			report.NewReportController(env, costRepository))
+		errs <- http.ListenAndServe(addr, handler)
 	}()
 
 	if env.UseProfiler {
@@ -57,13 +55,6 @@ func main() {
 	err := <-errs
 	if err != nil {
 		log.Fatalf("Radix cost allocation api server crashed: %v", err)
-	}
-}
-
-func getControllers(env *models.Env, repo models.CostRepository, radixapi radix_api.RadixAPIClient) []models.Controller {
-	return []models.Controller{
-		cost.NewCostController(env, repo, radixapi),
-		report.NewReportController(repo),
 	}
 }
 
