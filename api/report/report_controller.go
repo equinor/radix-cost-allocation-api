@@ -7,6 +7,7 @@ import (
 
 	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	models "github.com/equinor/radix-cost-allocation-api/models"
+	log "github.com/sirupsen/logrus"
 )
 
 const rootPath = ""
@@ -54,12 +55,14 @@ func (rc *reportController) GetCostReport(accounts models.Accounts, w http.Respo
 	defer os.Remove(file.Name())
 
 	if err != nil {
+		log.Info("Failed to create file. ", err)
 		utils.ErrorResponse(w, r, err)
 	}
 
 	err = handler.GetCostReport(file)
 
 	if err != nil {
+		log.Info("Failed to get report. ", err)
 		utils.ErrorResponse(w, r, err)
 	}
 

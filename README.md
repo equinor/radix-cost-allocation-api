@@ -136,11 +136,11 @@ To install with `install_base_components.sh`, mentioned above - add RadixRegistr
       "subscriptionCost": {
         "value": "<COST-VALUE>",
         "currency": "<COST-CURRENCY>"
-        "whiteList": "{\"whiteList\": [\"APP1\", \"APP2\"]}"
+        "whiteList": "{"whiteList": ["APP1", "APP2"]}"
       },
       "auth": {
         "tokenIssuer": "https://sts.windows.net/<TENANT-ID>/",
-        "reportReaders": "{\"groups\": [\"<AD-GROUP>\"]}"
+        "reportReaders": "{"groups": ["<AD-GROUP>"]}"
       }
     }
     ```

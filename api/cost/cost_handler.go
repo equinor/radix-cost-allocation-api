@@ -42,6 +42,7 @@ func (costHandler *Handler) getToken() string {
 func (costHandler *Handler) GetTotalCost(fromTime, toTime *time.Time, appName string) (*costModels.ApplicationCostSet, error) {
 	runs, err := costHandler.repo.GetRunsBetweenTimes(fromTime, toTime)
 	if err != nil {
+		log.Info("Failed to get runs. ", err)
 		return nil, err
 	}
 
@@ -58,7 +59,9 @@ func (costHandler *Handler) GetTotalCost(fromTime, toTime *time.Time, appName st
 	}
 
 	rrMap, err := costHandler.getRadixRegistrationMap(appName)
+
 	if err != nil {
+		log.Info("Could not get application details. ", err)
 		return nil, err
 	}
 
@@ -90,12 +93,14 @@ func (costHandler *Handler) GetFutureCost(appName string) (*costModels.Applicati
 	cost, err := costModels.NewFutureCostEstimate(appName, run, costHandler.env.SubscriptionCost, costHandler.env.SubscriptionCurrency)
 
 	if err != nil {
+		log.Info("Failed to create cost estimate. ", err)
 		return nil, err
 	}
 
 	rrMap, err := costHandler.getRadixRegistrationMap(appName)
 
 	if err != nil {
+		log.Info("Unable to get application details. ", err)
 		return nil, err
 	}
 
@@ -105,6 +110,7 @@ func (costHandler *Handler) GetFutureCost(appName string) (*costModels.Applicati
 		return &filteredByAccess[0], nil
 	}
 
+	log.Info("User does not have access to application ", appName)
 	return nil, utils.ApplicationNotFoundError("Application was not found.", fmt.Errorf("User does not have access to application %s", appName))
 }
 

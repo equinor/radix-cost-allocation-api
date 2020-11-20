@@ -29,6 +29,7 @@ func (rh *ReportHandler) GetCostReport(out io.Writer) error {
 	runs, err := rh.repo.GetRunsBetweenTimes(from, to)
 
 	if err != nil {
+		log.Info("Could not get runs. ", err)
 		return err
 	}
 
@@ -42,12 +43,5 @@ func (rh *ReportHandler) GetCostReport(out io.Writer) error {
 
 	report := reportModels.NewCostReport(&costSet)
 
-	err = report.Create(out)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-
+	return report.Create(out)
 }
