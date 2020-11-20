@@ -5,6 +5,7 @@ import (
 	reportModels "github.com/equinor/radix-cost-allocation-api/api/report/models"
 	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	models "github.com/equinor/radix-cost-allocation-api/models"
+	log "github.com/sirupsen/logrus"
 	"io"
 )
 
