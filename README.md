@@ -95,7 +95,7 @@ To install with `install_base_components.sh`, mentioned above - add RadixRegistr
 1. If using a terminal - login to an Azure and switch to an Azure subscription:
     ```
     az login
-    az account set -s "<SUBSCRIPTION-NAME>`
+    az account set -s "<SUBSCRIPTION-NAME>"
     ```
 2. Create a file `radix-cost-allocation-api-radixregistration-values.yaml` with a content:
     ```
