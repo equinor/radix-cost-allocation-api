@@ -218,7 +218,7 @@ func (dbCon SQLCostRepository) CloseDB() {
 }
 
 // SetupDBConnection sets up db connection
-func (creds DBCredentials) setupDBConnection() *sql.DB {
+func (creds *DBCredentials) setupDBConnection() *sql.DB {
 	// Build connection string
 	connString := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%d;database=%s;",
 		creds.Server, creds.UserID, creds.Password, creds.Port, creds.Database)

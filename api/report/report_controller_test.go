@@ -3,6 +3,7 @@ package report
 import (
 	"encoding/csv"
 	"fmt"
+	"github.com/equinor/radix-cost-allocation-api/models"
 	"io"
 	"net/http"
 	"os"
@@ -22,12 +23,14 @@ const (
 	validADGroup    = "VALID-AD-GROUP"
 )
 
+var env *models.Env
+
 func setupTest() {
 	os.Setenv("WHITELIST", "{\"whiteList\": [\"canarycicd-test\",\"canarycicd-test1\",\"canarycicd-test2\",\"canarycicd-test3\",\"radix-api\",\"radix-canary-golang\",\"radix-cost-allocation-api\",\"radix-github-webhook\",\"radix-platform\",\"radix-web-console\"]}")
 	os.Setenv("SUBSCRIPTION_COST_VALUE", "100000")
 	os.Setenv("SUBSCRIPTION_COST_CURRENCY", "NOK")
 	os.Setenv("AD_REPORT_READERS", fmt.Sprintf("{\"groups\": [\"%s\"]}", validADGroup))
-
+	env = models.NewEnv()
 }
 
 func TestController_ReportReturned_NotEmpty(t *testing.T) {
@@ -59,7 +62,7 @@ func TestController_ReportReturned_NotEmpty(t *testing.T) {
 		Return(runs, nil).
 		AnyTimes()
 
-	controllerTestUtils := controllerTest.NewTestUtils(NewReportController(fakeCostRepo))
+	controllerTestUtils := controllerTest.NewTestUtils(NewReportController(env, fakeCostRepo))
 
 	t.Run("CSV report is returned", func(t *testing.T) {
 		responseChannel := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/report"))
@@ -129,7 +132,7 @@ func TestReportController_UnAuthorizedUser_NoAccess(t *testing.T) {
 		Return(runs, nil).
 		AnyTimes()
 
-	controllerTestUtils := controllerTest.NewTestUtils(NewReportController(fakeCostRepo))
+	controllerTestUtils := controllerTest.NewTestUtils(NewReportController(env, fakeCostRepo))
 	controllerTestUtils.SetAuthProvider(fakeAuthProvider)
 
 	t.Run("User without required AD group can't download report", func(t *testing.T) {
@@ -189,7 +192,7 @@ func TestReportController_AuthorizedUser_CanDownload(t *testing.T) {
 		Return(runs, nil).
 		AnyTimes()
 
-	controllerTestUtils := controllerTest.NewTestUtils(NewReportController(fakeCostRepo))
+	controllerTestUtils := controllerTest.NewTestUtils(NewReportController(env, fakeCostRepo))
 	controllerTestUtils.SetAuthProvider(fakeAuthProvider)
 
 	t.Run("User with correct AD group can download report", func(t *testing.T) {

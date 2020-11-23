@@ -19,11 +19,12 @@ type costController struct {
 	*models.DefaultController
 	repo     models.CostRepository
 	radixapi radix_api.RadixAPIClient
+	env      *models.Env
 }
 
 // NewCostController Constructor
-func NewCostController(repo models.CostRepository, radixapi radix_api.RadixAPIClient) models.Controller {
-	return &costController{repo: repo, radixapi: radixapi}
+func NewCostController(env *models.Env, repo models.CostRepository, radixapi radix_api.RadixAPIClient) models.Controller {
+	return &costController{repo: repo, radixapi: radixapi, env: env}
 }
 
 // GetRoutes List the supported routes of this controller
@@ -169,7 +170,7 @@ func (costController *costController) GetFutureCost(accounts models.Accounts, w 
 }
 
 func (costController *costController) getFutureCost(accounts models.Accounts, costRepo models.CostRepository, w http.ResponseWriter, r *http.Request, appName string) {
-	handler := Init(costRepo, accounts, costController.radixapi)
+	handler := Init(costRepo, accounts, costController.radixapi, costController.env)
 	cost, err := handler.GetFutureCost(appName)
 
 	if err != nil {
@@ -187,7 +188,7 @@ func (costController *costController) getTotalCosts(accounts models.Accounts, co
 		return
 	}
 
-	handler := Init(costRepo, accounts, costController.radixapi)
+	handler := Init(costRepo, accounts, costController.radixapi, costController.env)
 	cost, err := handler.GetTotalCost(fromTime, toTime, appName)
 	if err != nil {
 		utils.ErrorResponse(w, r, err)

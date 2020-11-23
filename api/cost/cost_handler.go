@@ -1,11 +1,8 @@
 package cost
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -19,69 +16,21 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Env variables
-type Env struct {
-	SubscriptionCost     float64
-	SubscriptionCurrency string
-	Whitelist            *costModels.Whitelist
-	Context              string
-	APIEnvironment       string
-	Cluster              string
-}
-
 // Handler Instance variables
 type Handler struct {
 	repo     models.CostRepository
-	env      Env
+	env      models.Env
 	accounts models.Accounts
 	radixapi radix_api.RadixAPIClient
 }
 
 // Init Constructor
-func Init(repo models.CostRepository, accounts models.Accounts, radixapi radix_api.RadixAPIClient) Handler {
-	env := initEnv()
+func Init(repo models.CostRepository, accounts models.Accounts, radixapi radix_api.RadixAPIClient, env *models.Env) Handler {
 	return Handler{
 		repo:     repo,
 		env:      *env,
 		accounts: accounts,
 		radixapi: radixapi,
-	}
-}
-
-func initEnv() *Env {
-
-	var (
-		subCost        = os.Getenv("SUBSCRIPTION_COST_VALUE")
-		subCurrency    = os.Getenv("SUBSCRIPTION_COST_CURRENCY")
-		whiteList      = os.Getenv("WHITELIST")
-		context        = os.Getenv("RADIX_CLUSTER_TYPE")
-		apiEnvironment = os.Getenv("RADIX_ENVIRONMENT")
-		cluster        = os.Getenv("RADIX_CLUSTER_NAME")
-	)
-
-	subscriptionCost, er := strconv.ParseFloat(subCost, 64)
-	if er != nil {
-		subscriptionCost = 0.0
-		log.Info("Subscription Cost is invalid or is not set.")
-	}
-	if len(subCurrency) == 0 {
-		log.Info("Subscription Cost currency is not set.")
-	}
-
-	list := &costModels.Whitelist{}
-	err := json.Unmarshal([]byte(whiteList), list)
-
-	if err != nil {
-		log.Info("Whitelist is not set. ", err)
-	}
-
-	return &Env{
-		SubscriptionCost:     subscriptionCost,
-		SubscriptionCurrency: subCurrency,
-		Whitelist:            list,
-		Context:              context,
-		APIEnvironment:       apiEnvironment,
-		Cluster:              cluster,
 	}
 }
 

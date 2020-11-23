@@ -2,6 +2,7 @@ package cost
 
 import (
 	"fmt"
+	"github.com/equinor/radix-cost-allocation-api/models"
 	"net/http"
 	"os"
 	"testing"
@@ -22,11 +23,14 @@ const (
 	applicationIDontHaveAccessTo = "other-app"
 )
 
+var env *models.Env
+
 func setupTest() {
 	// Set necessary environment variables
 	os.Setenv("WHITELIST", "{\"whiteList\": [\"canarycicd-test\",\"canarycicd-test1\",\"canarycicd-test2\",\"canarycicd-test3\",\"radix-api\",\"radix-canary-golang\",\"radix-cost-allocation-api\",\"radix-github-webhook\",\"radix-platform\",\"radix-web-console\"]}")
 	os.Setenv("SUBSCRIPTION_COST_VALUE", "100000")
 	os.Setenv("SUBSCRIPTION_COST_CURRENCY", "NOK")
+	env = models.NewEnv()
 }
 
 func TestCostController_Application(t *testing.T) {
@@ -90,7 +94,7 @@ func TestCostController_Application(t *testing.T) {
 		Return(runs, nil).
 		AnyTimes()
 
-	controllerTestUtils := controllertest.NewTestUtils(NewCostController(fakeCostRepo, fakeRadixClient))
+	controllerTestUtils := controllertest.NewTestUtils(NewCostController(env, fakeCostRepo, fakeRadixClient))
 	controllerTestUtils.SetAuthProvider(fakeAuthProvider)
 
 	// Test that futurecost endpoint returns cost for requested application
@@ -187,7 +191,7 @@ func TestCostController_Authentication(t *testing.T) {
 		Return(nil, fmt.Errorf("Invalid token")).
 		AnyTimes()
 
-	controllerTestUtils := controllertest.NewTestUtils(NewCostController(fakeCostRepo, fakeRadixClient))
+	controllerTestUtils := controllertest.NewTestUtils(NewCostController(env, fakeCostRepo, fakeRadixClient))
 	controllerTestUtils.SetAuthProvider(fakeAuthProvider)
 
 	t.Run("Invalid auth header", func(t *testing.T) {
