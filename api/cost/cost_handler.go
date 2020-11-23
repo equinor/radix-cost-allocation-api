@@ -24,8 +24,8 @@ type Handler struct {
 	radixapi radix_api.RadixAPIClient
 }
 
-// Init Constructor
-func Init(repo models.CostRepository, accounts models.Accounts, radixapi radix_api.RadixAPIClient, env *models.Env) Handler {
+// NewCostHandler Constructor
+func NewCostHandler(repo models.CostRepository, accounts models.Accounts, radixapi radix_api.RadixAPIClient, env *models.Env) Handler {
 	return Handler{
 		repo:     repo,
 		env:      *env,

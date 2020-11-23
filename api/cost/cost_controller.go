@@ -170,7 +170,7 @@ func (costController *costController) GetFutureCost(accounts models.Accounts, w 
 }
 
 func (costController *costController) getFutureCost(accounts models.Accounts, costRepo models.CostRepository, w http.ResponseWriter, r *http.Request, appName string) {
-	handler := Init(costRepo, accounts, costController.radixapi, costController.env)
+	handler := NewCostHandler(costRepo, accounts, costController.radixapi, costController.env)
 	cost, err := handler.GetFutureCost(appName)
 
 	if err != nil {
@@ -188,7 +188,7 @@ func (costController *costController) getTotalCosts(accounts models.Accounts, co
 		return
 	}
 
-	handler := Init(costRepo, accounts, costController.radixapi, costController.env)
+	handler := NewCostHandler(costRepo, accounts, costController.radixapi, costController.env)
 	cost, err := handler.GetTotalCost(fromTime, toTime, appName)
 	if err != nil {
 		utils.ErrorResponse(w, r, err)
