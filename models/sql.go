@@ -148,6 +148,30 @@ func (dbCon SQLCostRepository) GetRunsBetweenTimes(from, to *time.Time) ([]costM
 	defer rows.Close()
 
 	// Iterate through the result set.
+	err = dbCon.iterateResultSet(rows, runs, runsResources)
+	if err != nil {
+		return nil, err
+	}
+
+	//i := make([]costModels.Run, 0)
+	//runsAsArray := &i
+	runsAsArray := dbCon.setRunsArray(runs, runsResources)
+
+	return *runsAsArray, nil
+}
+
+func (dbCon *SQLCostRepository) setRunsArray(runs map[int64]costModels.Run, runsResources map[int64]*[]costModels.RequiredResources) *[]costModels.Run {
+	runsAsArray := make([]costModels.Run, len(runs))
+	runEntryIndex := 0
+	for key, val := range runs {
+		val.Resources = *runsResources[key]
+		runsAsArray[runEntryIndex] = val
+		runEntryIndex++
+	}
+	return &runsAsArray
+}
+
+func (dbCon *SQLCostRepository) iterateResultSet(rows *sql.Rows, runs map[int64]costModels.Run, runsResources map[int64]*[]costModels.RequiredResources) error {
 	for rows.Next() {
 		var measuredTimeUTC time.Time
 		var runID, id int64
@@ -170,7 +194,7 @@ func (dbCon SQLCostRepository) GetRunsBetweenTimes(from, to *time.Time) ([]costM
 			&replicas,
 		)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		resource := costModels.RequiredResources{
@@ -200,16 +224,7 @@ func (dbCon SQLCostRepository) GetRunsBetweenTimes(from, to *time.Time) ([]costM
 			runsResources[runID] = &resources
 		}
 	}
-
-	runsAsArray := make([]costModels.Run, len(runs))
-	runEntryIndex := 0
-	for key, val := range runs {
-		val.Resources = *runsResources[key]
-		runsAsArray[runEntryIndex] = val
-		runEntryIndex++
-	}
-
-	return runsAsArray, nil
+	return nil
 }
 
 // CloseDB closes the underlying db connection - Only to be called when API exits
