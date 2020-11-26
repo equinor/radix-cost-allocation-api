@@ -55,14 +55,14 @@ func (rc *reportController) GetCostReport(accounts models.Accounts, w http.Respo
 	defer os.Remove(file.Name())
 
 	if err != nil {
-		log.Info("Failed to create file. ", err)
+		log.Debugf("Failed to create file. Error: %v", err)
 		utils.ErrorResponse(w, r, err)
 	}
 
 	err = handler.GetCostReport(file)
 
 	if err != nil {
-		log.Info("Failed to get report. ", err)
+		log.Debugf("Failed to get report. Error: %v", err)
 		utils.ErrorResponse(w, r, err)
 	}
 
