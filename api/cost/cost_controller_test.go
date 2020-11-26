@@ -2,7 +2,6 @@ package cost
 
 import (
 	"fmt"
-	"github.com/equinor/radix-cost-allocation-api/models"
 	"net/http"
 	"os"
 	"testing"
