@@ -23,7 +23,7 @@ type Handler struct {
 	radixapi radix_api.RadixAPIClient
 }
 
-// Init Constructor
+
 func Init(repo models.CostRepository, accounts models.Accounts, radixapi radix_api.RadixAPIClient, env *models.Env) Handler {
 	return Handler{
 		repo:     repo,
@@ -41,7 +41,7 @@ func (costHandler *Handler) getToken() string {
 func (costHandler *Handler) GetTotalCost(fromTime, toTime *time.Time, appName *string) (*costModels.ApplicationCostSet, error) {
 	runs, err := costHandler.repo.GetRunsBetweenTimes(fromTime, toTime, appName)
 	if err != nil {
-		log.Info("Failed to get runs. ", err)
+		log.Debugf("Failed to get runs. Error: %v.", err)
 		return nil, err
 	}
 
@@ -92,14 +92,14 @@ func (costHandler *Handler) GetFutureCost(appName string) (*costModels.Applicati
 	cost, err := costModels.NewFutureCostEstimate(appName, run, costHandler.env.SubscriptionCost, costHandler.env.SubscriptionCurrency)
 
 	if err != nil {
-		log.Info("Failed to create cost estimate. ", err)
+		log.Debugf("Failed to create cost estimate. Error: %v", err)
 		return nil, err
 	}
 
 	rrMap, err := costHandler.getRadixRegistrationMap(&appName)
 
 	if err != nil {
-		log.Info("Unable to get application details. ", err)
+		log.Debugf("Unable to get application details. Error: %v", err)
 		return nil, err
 	}
 
@@ -109,7 +109,7 @@ func (costHandler *Handler) GetFutureCost(appName string) (*costModels.Applicati
 		return &filteredByAccess[0], nil
 	}
 
-	log.Info("User does not have access to application ", appName)
+	log.Debugf("User does not have access to application '%s'.", appName)
 	return nil, utils.ApplicationNotFoundError("Application was not found.", fmt.Errorf("User does not have access to application %s", appName))
 }
 

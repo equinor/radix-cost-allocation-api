@@ -3,6 +3,7 @@ package report
 import (
 	"encoding/csv"
 	"fmt"
+	"github.com/equinor/radix-cost-allocation-api/models"
 	"io"
 	"net/http"
 	"os"

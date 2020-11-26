@@ -31,7 +31,7 @@ func (rh *ReportHandler) GetCostReport(out io.Writer) error {
 	runs, err := rh.repo.GetRunsBetweenTimes(from, to, nil)
 
 	if err != nil {
-		log.Info("Could not get runs. ", err)
+		log.Debugf("Could not get runs. Error: %v", err)
 		return err
 	}
 
