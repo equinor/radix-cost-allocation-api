@@ -165,7 +165,7 @@ func newAuthenticationMiddleware(authProvider auth.AuthProvider) negroni.Handler
 		verified, err := authProvider.VerifyToken(ctx, token)
 
 		if err != nil || verified == nil {
-			log.Info("Could not verify token. ", err)
+			log.Debugf("Could not verify token. Error: %v", err)
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -196,7 +196,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider auth
 		verified, err = authProvider.VerifyToken(ctx, token)
 
 		if err != nil || verified == nil {
-			log.Info("Unable to verify token. ", err)
+			log.Debugf("Unable to verify token. Error: %v", err)
 			w.WriteHeader(http.StatusUnauthorized)
 		}
 
@@ -205,7 +205,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider auth
 		err = verified.GetClaims(claims)
 
 		if err != nil {
-			log.Info("Could not get claims from token. ", err)
+			log.Debugf("Could not get claims from token. Error: %v", err)
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -216,7 +216,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider auth
 			}
 		}
 
-		log.Info("User does not have correct AD group access. ", claims)
+		log.Debugf("User does not have correct AD group access. Logged AD groups for user: %v ", claims.Groups)
 		w.WriteHeader(http.StatusForbidden)
 		return
 
