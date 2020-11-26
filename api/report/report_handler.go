@@ -1,12 +1,13 @@
 package report
 
 import (
+	"io"
+
 	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
 	reportModels "github.com/equinor/radix-cost-allocation-api/api/report/models"
 	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	models "github.com/equinor/radix-cost-allocation-api/models"
 	log "github.com/sirupsen/logrus"
-	"io"
 )
 
 // ReportHandler instance variables
@@ -27,7 +28,7 @@ func NewReportHandler(repo models.CostRepository, env *models.Env) *ReportHandle
 func (rh *ReportHandler) GetCostReport(out io.Writer) error {
 	from, to := utils.GetFirstAndLastOfPreviousMonth()
 
-	runs, err := rh.repo.GetRunsBetweenTimes(from, to)
+	runs, err := rh.repo.GetRunsBetweenTimes(from, to, nil)
 
 	if err != nil {
 		log.Info("Could not get runs. ", err)

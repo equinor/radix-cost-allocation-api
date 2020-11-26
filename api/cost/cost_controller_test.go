@@ -2,11 +2,12 @@ package cost
 
 import (
 	"fmt"
-	"github.com/equinor/radix-cost-allocation-api/models"
 	"net/http"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/equinor/radix-cost-allocation-api/models"
 
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
 
@@ -90,7 +91,7 @@ func TestCostController_Application(t *testing.T) {
 
 	// GetRunsBetweenTimes() returns mock runs
 	fakeCostRepo.EXPECT().
-		GetRunsBetweenTimes(gomock.Any(), gomock.Any()).
+		GetRunsBetweenTimes(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(runs, nil).
 		AnyTimes()
 
