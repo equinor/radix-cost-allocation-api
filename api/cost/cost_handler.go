@@ -3,7 +3,6 @@ package cost
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	_ "github.com/denisenkom/go-mssqldb"
@@ -39,8 +38,8 @@ func (costHandler *Handler) getToken() string {
 }
 
 // GetTotalCost handler for GetTotalCost
-func (costHandler *Handler) GetTotalCost(fromTime, toTime *time.Time, appName string) (*costModels.ApplicationCostSet, error) {
-	runs, err := costHandler.repo.GetRunsBetweenTimes(fromTime, toTime)
+func (costHandler *Handler) GetTotalCost(fromTime, toTime *time.Time, appName *string) (*costModels.ApplicationCostSet, error) {
+	runs, err := costHandler.repo.GetRunsBetweenTimes(fromTime, toTime, appName)
 	if err != nil {
 		log.Debugf("Failed to get runs. Error: %v.", err)
 		return nil, err
@@ -54,8 +53,8 @@ func (costHandler *Handler) GetTotalCost(fromTime, toTime *time.Time, appName st
 
 	applicationCostSet := costModels.NewApplicationCostSet(*fromTime, *toTime, cleanedRuns, costHandler.env.SubscriptionCost, costHandler.env.SubscriptionCurrency)
 
-	if !strings.EqualFold(appName, "") {
-		applicationCostSet.FilterApplicationCostBy(appName)
+	if appName != nil {
+		applicationCostSet.FilterApplicationCostBy(*appName)
 	}
 
 	rrMap, err := costHandler.getRadixRegistrationMap(appName)
@@ -97,7 +96,7 @@ func (costHandler *Handler) GetFutureCost(appName string) (*costModels.Applicati
 		return nil, err
 	}
 
-	rrMap, err := costHandler.getRadixRegistrationMap(appName)
+	rrMap, err := costHandler.getRadixRegistrationMap(&appName)
 
 	if err != nil {
 		log.Debugf("Unable to get application details. Error: %v", err)
@@ -134,10 +133,10 @@ func (costHandler *Handler) filterApplicationsByAccess(rrMap map[string]*radix_a
 	return filteredApplicationCosts
 }
 
-func (costHandler *Handler) getRadixRegistrationMap(appName string) (*map[string]*radix_api.RadixApplicationDetails, error) {
+func (costHandler *Handler) getRadixRegistrationMap(appName *string) (*map[string]*radix_api.RadixApplicationDetails, error) {
 
-	if !strings.EqualFold(appName, "") {
-		app, err := costHandler.getRadixApplicationDetails(appName)
+	if appName != nil {
+		app, err := costHandler.getRadixApplicationDetails(*appName)
 		if err != nil {
 			return nil, err
 		}
