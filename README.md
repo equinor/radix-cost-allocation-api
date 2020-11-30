@@ -14,8 +14,18 @@ Also needed:
 
 - [`go-swagger`](https://github.com/go-swagger/go-swagger) (on a Mac, you can install it with Homebrew: `brew install go-swagger`)
 - [`statik`](https://github.com/rakyll/statik) (install with `go get github.com/rakyll/statik`)
+- [`gomock`](https://github.com/golang/mock) (GO111MODULE=on go get github.com/golang/mock/mockgen@v1.4.4)
 
 Clone the repo into your `GOPATH` and run `go mod download`.
+
+### Generating mocks
+We use gomock to generate mocks used in unit test.
+You need to regenerate mocks if you make changes to any of the interface types used by the application, e.g. **CostRepository**, **RadixAPIClient**, **AuthProvider** or **IDToken**
+For example, regenerate **CostRepository** by executing
+```
+$ mockgen -source ./models/sql.go -destination ./api/test/mock/db_mock.go -package mock
+```
+
 
 ### Dependencies - go modules
 
