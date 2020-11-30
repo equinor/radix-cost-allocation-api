@@ -78,7 +78,7 @@ func TestReportController_UnAuthorizedUser_NoAccess(t *testing.T) {
 
 	// GetRunsBetweenTimes() returns mock runs
 	fakeCostRepo.EXPECT().
-		GetRunsBetweenTimes(gomock.Any(), gomock.Any(), gomock.Nil()).
+		GetRunsBetweenTimes(gomock.Any(), gomock.Any()).
 		Return(runs, nil).
 		Times(0)
 
@@ -138,7 +138,7 @@ func TestReportController_AuthorizedUser_CanDownload(t *testing.T) {
 
 	// GetRunsBetweenTimes() returns mock runs
 	fakeCostRepo.EXPECT().
-		GetRunsBetweenTimes(gomock.Any(), gomock.Any(), gomock.Nil()).
+		GetRunsBetweenTimes(gomock.Any(), gomock.Any()).
 		Return(runs, nil).
 		Times(1)
 

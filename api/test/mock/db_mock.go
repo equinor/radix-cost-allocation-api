@@ -50,16 +50,16 @@ func (mr *MockCostRepositoryMockRecorder) GetLatestRun() *gomock.Call {
 }
 
 // GetRunsBetweenTimes mocks base method
-func (m *MockCostRepository) GetRunsBetweenTimes(from, to *time.Time, appName *string) ([]cost_models.Run, error) {
+func (m *MockCostRepository) GetRunsBetweenTimes(from, to *time.Time) ([]cost_models.Run, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRunsBetweenTimes", from, to, appName)
+	ret := m.ctrl.Call(m, "GetRunsBetweenTimes", from, to)
 	ret0, _ := ret[0].([]cost_models.Run)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetRunsBetweenTimes indicates an expected call of GetRunsBetweenTimes
-func (mr *MockCostRepositoryMockRecorder) GetRunsBetweenTimes(from, to, appName interface{}) *gomock.Call {
+func (mr *MockCostRepositoryMockRecorder) GetRunsBetweenTimes(from, to interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRunsBetweenTimes", reflect.TypeOf((*MockCostRepository)(nil).GetRunsBetweenTimes), from, to, appName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRunsBetweenTimes", reflect.TypeOf((*MockCostRepository)(nil).GetRunsBetweenTimes), from, to)
 }

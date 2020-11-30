@@ -39,7 +39,7 @@ func (costHandler *Handler) getToken() string {
 
 // GetTotalCost handler for GetTotalCost
 func (costHandler *Handler) GetTotalCost(fromTime, toTime *time.Time, appName *string) (*costModels.ApplicationCostSet, error) {
-	runs, err := costHandler.repo.GetRunsBetweenTimes(fromTime, toTime, appName)
+	runs, err := costHandler.repo.GetRunsBetweenTimes(fromTime, toTime)
 	if err != nil {
 		log.Debugf("Failed to get runs. Error: %v.", err)
 		return nil, err

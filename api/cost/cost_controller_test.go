@@ -91,7 +91,7 @@ func TestCostController_Application(t *testing.T) {
 
 	// GetRunsBetweenTimes() returns mock runs
 	fakeCostRepo.EXPECT().
-		GetRunsBetweenTimes(gomock.Any(), gomock.Any(), gomock.Any()).
+		GetRunsBetweenTimes(gomock.Any(), gomock.Any()).
 		Return(runs, nil).
 		AnyTimes()
 
