@@ -94,8 +94,8 @@ type Whitelist struct {
 }
 
 type wbsInfo struct {
-	wbs       string
-	knownTime time.Time
+	wbs          string
+	measuredTime time.Time
 }
 
 // NewApplicationCostSet aggregate cost over a time period for applications
@@ -164,8 +164,8 @@ func aggregateCostBetweenDatesOnApplications(runs []Run, subscriptionCost float6
 	for _, run := range runs {
 		applications := run.GetApplicationsRequiredResource()
 		for _, application := range applications {
-			if currentWbs, wbsExist := wbsCodes[application.Name]; !wbsExist || run.MeasuredTimeUTC.After(currentWbs.knownTime) {
-				wbsCodes[application.Name] = wbsInfo{wbs: application.WBS, knownTime: run.MeasuredTimeUTC}
+			if currentWbs, wbsExist := wbsCodes[application.Name]; !wbsExist || run.MeasuredTimeUTC.After(currentWbs.measuredTime) {
+				wbsCodes[application.Name] = wbsInfo{wbs: application.WBS, measuredTime: run.MeasuredTimeUTC}
 			}
 			cpuPercentages[application.Name] += run.CPUWeightInPeriod(totalRequestedCPU) * application.RequestedCPUPercentageOfRun
 			memoryPercentage[application.Name] += run.MemoryWeightInPeriod(totalRequestedMemory) * application.RequestedMemoryPercentageOfRun
