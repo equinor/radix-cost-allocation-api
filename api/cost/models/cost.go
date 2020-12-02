@@ -93,6 +93,11 @@ type Whitelist struct {
 	List []string `json:"whiteList"`
 }
 
+type wbsInfo struct {
+	wbs          string
+	measuredTime time.Time
+}
+
 // NewApplicationCostSet aggregate cost over a time period for applications
 func NewApplicationCostSet(from, to time.Time, runs []Run, subscriptionCost float64, subscriptionCostCurrency string) ApplicationCostSet {
 	applicationCosts, totalRequestedCPU, totalRequestedMemory := aggregateCostBetweenDatesOnApplications(runs, subscriptionCost, subscriptionCostCurrency)
@@ -154,12 +159,14 @@ func aggregateCostBetweenDatesOnApplications(runs []Run, subscriptionCost float6
 	totalRequestedMemory := totalRequestedMemoryMegaBytes(runs)
 	cpuPercentages := map[string]float64{}
 	memoryPercentage := map[string]float64{}
-	wbsCodes := map[string]string{}
+	wbsCodes := map[string]wbsInfo{}
 
 	for _, run := range runs {
 		applications := run.GetApplicationsRequiredResource()
 		for _, application := range applications {
-			wbsCodes[application.Name] = application.WBS
+			if currentWbs, wbsExist := wbsCodes[application.Name]; !wbsExist || run.MeasuredTimeUTC.After(currentWbs.measuredTime) {
+				wbsCodes[application.Name] = wbsInfo{wbs: application.WBS, measuredTime: run.MeasuredTimeUTC}
+			}
 			cpuPercentages[application.Name] += run.CPUWeightInPeriod(totalRequestedCPU) * application.RequestedCPUPercentageOfRun
 			memoryPercentage[application.Name] += run.MemoryWeightInPeriod(totalRequestedMemory) * application.RequestedMemoryPercentageOfRun
 		}
@@ -169,7 +176,7 @@ func aggregateCostBetweenDatesOnApplications(runs []Run, subscriptionCost float6
 	for appName, cpu := range cpuPercentages {
 		applications = append(applications, ApplicationCost{
 			Name:                   appName,
-			WBS:                    wbsCodes[appName],
+			WBS:                    wbsCodes[appName].wbs,
 			Cost:                   (cpu + memoryPercentage[appName]) / 2 * subscriptionCost,
 			Currency:               subscriptionCostCurrency,
 			CostPercentageByCPU:    cpu,
