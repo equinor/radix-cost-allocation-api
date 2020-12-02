@@ -16,12 +16,13 @@
         "SQL_PASSWORD": "<PASSWORD>",
         "RADIX_CLUSTER_TYPE": "development",
         "RADIX_ENVIRONMENT": "qa",
-        "RADIX_CLUSTER_NAME": "weekly-33",
+        "RADIX_CLUSTERNAME": "weekly-33",
+        "RADIX_DNS_ZONE": "dev.radix.equinor.com",
         "SUBSCRIPTION_COST_VALUE": "10000",
         "SUBSCRIPTION_COST_CURRENCY": "NOK",
         "WHITELIST": "{\"whiteList\": [\"canarycicd-test\",\"canarycicd-test1\",\"canarycicd-test2\",\"canarycicd-test3\",\"radix-api\",\"radix-canary-golang\",\"radix-cost-allocation-api\",\"radix-github-webhook\",\"radix-platform\",\"radix-web-console\"]}",
         "AD_REPORT_READERS": "{\"groups\": [\"<AUTHORIZED-AD-GROUP>\"]}",
-        "TOKEN_ISSUER": "https://sts.windows.net/<TENANT-ID>",
+        "TOKEN_ISSUER": "https://sts.windows.net/<TENANT-ID>"
       }
     }
   ]

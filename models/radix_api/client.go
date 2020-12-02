@@ -1,15 +1,12 @@
 package radix_api
 
 import (
-	"fmt"
-	"os"
-
-	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client"
+	"github.com/equinor/radix-cost-allocation-api/models"
+	apiClient "github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/application"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/platform"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
-	log "github.com/sirupsen/logrus"
 )
 
 // RadixAPIClient interface
@@ -26,59 +23,19 @@ type RadixApplicationDetails struct {
 	WBS     string
 }
 
-// Env instance variables
-type Env struct {
-	Context        string
-	APIEnvironment string
-	ClusterName    string
-	DNSZone        string
-}
-
-// Initialize environment variables
-func initEnv() *Env {
-	var (
-		context     = os.Getenv("RADIX_CLUSTER_TYPE")
-		apiEnv      = os.Getenv("RADIX_ENVIRONMENT")
-		clusterName = os.Getenv("RADIX_CLUSTERNAME")
-		dnsZone     = os.Getenv("RADIX_DNS_ZONE")
-	)
-
-	if context == "" {
-		log.Error("'Context' environment variable is not set")
-	}
-
-	if apiEnv == "" {
-		log.Error("'API-Environment' environment variable is not set")
-	}
-
-	if clusterName == "" {
-		log.Error("'Cluster' environment variables is not set")
-	}
-
-	if dnsZone == "" {
-		log.Error("'DNS Zone' environment variables is not set")
-	}
-
-	return &Env{
-		Context:        context,
-		APIEnvironment: apiEnv,
-		ClusterName:    clusterName,
-		DNSZone:        dnsZone,
-	}
-
-}
-
 // radixAPIClientStruct instance variables
 type radixAPIClientStruct struct {
-	client *client.Radixapi
-	env    *Env
+	client *apiClient.Radixapi
+	env    *models.Env
 }
 
 // NewRadixAPIClient constructor
-func NewRadixAPIClient() RadixAPIClient {
-	env := initEnv()
-	client := Get(env.Context, env.ClusterName, env.APIEnvironment, env.DNSZone)
-	return radixAPIClientStruct{client: client, env: env}
+func NewRadixAPIClient(env *models.Env) RadixAPIClient {
+	transport := getRadixApiTransport(env)
+	return radixAPIClientStruct{
+		client: apiClient.New(transport, strfmt.Default),
+		env:    env,
+	}
 }
 
 func (c radixAPIClientStruct) ShowRadixApplications(appParams *platform.ShowApplicationsParams, token string) (*map[string]*RadixApplicationDetails, error) {
@@ -122,22 +79,12 @@ func (c radixAPIClientStruct) GetRadixApplicationDetails(appParams *application.
 	}, nil
 }
 
-// Get Gets API client for current cluster and environment
-func Get(context, cluster, environment, dnsZone string) *client.Radixapi {
-	apiEndpoint := getAPIEndpoint(environment, cluster, dnsZone)
-
-	transport := httptransport.New(apiEndpoint, "/api/v1", []string{"https"})
-	return client.New(transport, strfmt.Default)
-}
-
 func (c *radixAPIClientStruct) setTransportWithBearerToken(token string) {
-	apiEndpoint := getAPIEndpoint(c.env.APIEnvironment, c.env.ClusterName, c.env.DNSZone)
-
-	transport := httptransport.New(apiEndpoint, "/api/v1", []string{"https"})
+	transport := getRadixApiTransport(c.env)
 	transport.DefaultAuthentication = httptransport.BearerToken(token)
 	c.client.SetTransport(transport)
 }
 
-func getAPIEndpoint(environment, clusterName, dnsZone string) string {
-	return fmt.Sprintf("server-radix-api-%s.%s.%s", environment, clusterName, dnsZone)
+func getRadixApiTransport(env *models.Env) *httptransport.Runtime {
+	return httptransport.New(env.GetRadixAPIURL(), "/api/v1", env.GetRadixAPISchemes())
 }

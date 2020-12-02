@@ -1,12 +1,8 @@
 package cost
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
-	"strconv"
-	"strings"
 	"time"
 
 	_ "github.com/denisenkom/go-mssqldb"
@@ -19,27 +15,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Env variables
-type Env struct {
-	SubscriptionCost     float64
-	SubscriptionCurrency string
-	Whitelist            *costModels.Whitelist
-	Context              string
-	APIEnvironment       string
-	Cluster              string
-}
-
 // Handler Instance variables
 type Handler struct {
 	repo     models.CostRepository
-	env      Env
+	env      models.Env
 	accounts models.Accounts
 	radixapi radix_api.RadixAPIClient
 }
 
-// Init Constructor
-func Init(repo models.CostRepository, accounts models.Accounts, radixapi radix_api.RadixAPIClient) Handler {
-	env := initEnv()
+// NewCostHandler Constructor
+func NewCostHandler(repo models.CostRepository, accounts models.Accounts, radixapi radix_api.RadixAPIClient, env *models.Env) Handler {
 	return Handler{
 		repo:     repo,
 		env:      *env,
@@ -48,52 +33,15 @@ func Init(repo models.CostRepository, accounts models.Accounts, radixapi radix_a
 	}
 }
 
-func initEnv() *Env {
-
-	var (
-		subCost        = os.Getenv("SUBSCRIPTION_COST_VALUE")
-		subCurrency    = os.Getenv("SUBSCRIPTION_COST_CURRENCY")
-		whiteList      = os.Getenv("WHITELIST")
-		context        = os.Getenv("RADIX_CLUSTER_TYPE")
-		apiEnvironment = os.Getenv("RADIX_ENVIRONMENT")
-		cluster        = os.Getenv("RADIX_CLUSTER_NAME")
-	)
-
-	subscriptionCost, er := strconv.ParseFloat(subCost, 64)
-	if er != nil {
-		subscriptionCost = 0.0
-		log.Info("Subscription Cost is invalid or is not set.")
-	}
-	if len(subCurrency) == 0 {
-		log.Info("Subscription Cost currency is not set.")
-	}
-
-	list := &costModels.Whitelist{}
-	err := json.Unmarshal([]byte(whiteList), list)
-
-	if err != nil {
-		log.Info("Whitelist is not set. ", err)
-	}
-
-	return &Env{
-		SubscriptionCost:     subscriptionCost,
-		SubscriptionCurrency: subCurrency,
-		Whitelist:            list,
-		Context:              context,
-		APIEnvironment:       apiEnvironment,
-		Cluster:              cluster,
-	}
-}
-
 func (costHandler *Handler) getToken() string {
 	return costHandler.accounts.GetToken()
 }
 
 // GetTotalCost handler for GetTotalCost
-func (costHandler *Handler) GetTotalCost(fromTime, toTime *time.Time, appName string) (*costModels.ApplicationCostSet, error) {
+func (costHandler *Handler) GetTotalCost(fromTime, toTime *time.Time, appName *string) (*costModels.ApplicationCostSet, error) {
 	runs, err := costHandler.repo.GetRunsBetweenTimes(fromTime, toTime)
 	if err != nil {
-		log.Info("Failed to get runs. ", err)
+		log.Debugf("Failed to get runs. Error: %v.", err)
 		return nil, err
 	}
 
@@ -105,11 +53,16 @@ func (costHandler *Handler) GetTotalCost(fromTime, toTime *time.Time, appName st
 
 	applicationCostSet := costModels.NewApplicationCostSet(*fromTime, *toTime, cleanedRuns, costHandler.env.SubscriptionCost, costHandler.env.SubscriptionCurrency)
 
-	if !strings.EqualFold(appName, "") {
-		applicationCostSet.FilterApplicationCostBy(appName)
+	if appName != nil {
+		applicationCostSet.FilterApplicationCostBy(*appName)
 	}
 
 	rrMap, err := costHandler.getRadixRegistrationMap(appName)
+
+	if err != nil {
+		log.Info("Could not get application details. ", err)
+		return nil, err
+	}
 
 	filteredCosts := costHandler.filterApplicationsByAccess(*rrMap, applicationCostSet.ApplicationCosts)
 	applicationCostSet.ApplicationCosts = filteredCosts
@@ -139,14 +92,14 @@ func (costHandler *Handler) GetFutureCost(appName string) (*costModels.Applicati
 	cost, err := costModels.NewFutureCostEstimate(appName, run, costHandler.env.SubscriptionCost, costHandler.env.SubscriptionCurrency)
 
 	if err != nil {
-		log.Info("Failed to create cost estimate. ", err)
+		log.Debugf("Failed to create cost estimate. Error: %v", err)
 		return nil, err
 	}
 
-	rrMap, err := costHandler.getRadixRegistrationMap(appName)
+	rrMap, err := costHandler.getRadixRegistrationMap(&appName)
 
 	if err != nil {
-		log.Info("Unable to get application details. ", err)
+		log.Debugf("Unable to get application details. Error: %v", err)
 		return nil, err
 	}
 
@@ -156,7 +109,7 @@ func (costHandler *Handler) GetFutureCost(appName string) (*costModels.Applicati
 		return &filteredByAccess[0], nil
 	}
 
-	log.Info("User does not have access to application ", appName)
+	log.Debugf("User does not have access to application '%s'.", appName)
 	return nil, utils.ApplicationNotFoundError("Application was not found.", fmt.Errorf("User does not have access to application %s", appName))
 }
 
@@ -180,10 +133,10 @@ func (costHandler *Handler) filterApplicationsByAccess(rrMap map[string]*radix_a
 	return filteredApplicationCosts
 }
 
-func (costHandler *Handler) getRadixRegistrationMap(appName string) (*map[string]*radix_api.RadixApplicationDetails, error) {
+func (costHandler *Handler) getRadixRegistrationMap(appName *string) (*map[string]*radix_api.RadixApplicationDetails, error) {
 
-	if !strings.EqualFold(appName, "") {
-		app, err := costHandler.getRadixApplicationDetails(appName)
+	if appName != nil {
+		app, err := costHandler.getRadixApplicationDetails(*appName)
 		if err != nil {
 			return nil, err
 		}

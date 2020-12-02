@@ -30,6 +30,8 @@ func NewRadixMiddleware(path, method string, next models.RadixHandlerFunc) *Radi
 func (handler *RadixMiddleware) Handle(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 
+	w.Header().Add("Access-Control-Allow-Origin", "*")
+
 	defer func() {
 		httpDuration := time.Since(start)
 		metrics.AddRequestDuration(handler.path, handler.method, httpDuration)

@@ -68,6 +68,13 @@ func Test_cost_one_app_no_requested(t *testing.T) {
 	assert.Equal(t, oneThird, cost.GetCostBy("app-4").CostPercentageByMemory)
 }
 
+func Test_cost_newest_wbs_selected(t *testing.T) {
+	runs := getTestRuns()
+	cost := cost_models.NewApplicationCostSet(time.Now().Add(-1), time.Now(), runs, 0, "")
+
+	assert.Equal(t, runs[1].Resources[0].WBS, cost.GetCostBy("app-1").WBS)
+}
+
 func Test_future_cost_distributed_equally(t *testing.T) {
 
 	run1 := getTestRunForSingleApp("app-1")
@@ -183,11 +190,13 @@ func getTestRuns() []cost_models.Run {
 			ID:                    1,
 			ClusterCPUMillicore:   1000,
 			ClusterMemoryMegaByte: 1000,
+			MeasuredTimeUTC:       time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
 			Resources: []cost_models.RequiredResources{
 				{
 					Application:     "app-1",
 					Environment:     "env-1",
 					Component:       "comp-1",
+					WBS:             "wbs-app1-run1",
 					CPUMillicore:    100,
 					MemoryMegaBytes: 100,
 					Replicas:        2,
@@ -222,11 +231,13 @@ func getTestRuns() []cost_models.Run {
 			ID:                    2,
 			ClusterCPUMillicore:   1000,
 			ClusterMemoryMegaByte: 1000,
+			MeasuredTimeUTC:       time.Date(2020, 1, 1, 0, 0, 10, 0, time.UTC),
 			Resources: []cost_models.RequiredResources{
 				{
 					Application:     "app-1",
 					Environment:     "env-1",
 					Component:       "comp-1",
+					WBS:             "wbs-app1-run2",
 					CPUMillicore:    100,
 					MemoryMegaBytes: 100,
 					Replicas:        2,
@@ -261,11 +272,13 @@ func getTestRuns() []cost_models.Run {
 			ID:                    3,
 			ClusterCPUMillicore:   2000,
 			ClusterMemoryMegaByte: 2000,
+			MeasuredTimeUTC:       time.Date(2020, 1, 1, 0, 0, 5, 0, time.UTC),
 			Resources: []cost_models.RequiredResources{
 				{
 					Application:     "app-1",
 					Environment:     "env-1",
 					Component:       "comp-1",
+					WBS:             "wbs-app1-run3",
 					CPUMillicore:    100,
 					MemoryMegaBytes: 100,
 					Replicas:        2,

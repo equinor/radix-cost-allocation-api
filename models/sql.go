@@ -41,17 +41,18 @@ func NewSQLCostRepository(creds *DBCredentials) *SQLCostRepository {
 }
 
 // GetLatestRun fetches the last run and joins them with resources logged for that run
-func (repo SQLCostRepository) GetLatestRun() (costModels.Run, error) {
+func (dbCon *SQLCostRepository) GetLatestRun() (costModels.Run, error) {
 	var requiredResources []costModels.RequiredResources
 	var lastRun costModels.Run
 
-	ctx, err := repo.verifyConnection()
+	ctx, err := dbCon.verifyConnection()
 	if err != nil {
 		return costModels.Run{}, err
 	}
 
 	query :=
-		" WITH temptable AS " +
+		"set nocount on; " +
+			" WITH temptable AS " +
 			" (SELECT [run_id],[wbs],[application],[cpu_millicores],[memory_mega_bytes],[replicas] " +
 			" FROM [cost].[required_resources] " +
 			" WHERE [run_id] IN ( SELECT MAX(run_id) FROM [cost].[required_resources] ))" +
@@ -59,7 +60,7 @@ func (repo SQLCostRepository) GetLatestRun() (costModels.Run, error) {
 			" INNER JOIN temptable rr ON r.[id] = rr.[run_id] "
 
 	// Create new connection to database
-	connection, err := repo.db.Conn(ctx)
+	connection, err := dbCon.db.Conn(ctx)
 	if err != nil {
 		log.Fatal("Error creating connection to DB", err.Error())
 	}
@@ -115,8 +116,10 @@ func (repo SQLCostRepository) GetLatestRun() (costModels.Run, error) {
 
 }
 
-// GetRunsBetweenTimes get all runs with its resources between from and to time
-func (dbCon SQLCostRepository) GetRunsBetweenTimes(from, to *time.Time) ([]costModels.Run, error) {
+// GetRunsBetweenTimes get all runs with its resources between from and to time, and optionally a specific application
+//
+// If appName is nil then runs for all applications are returned
+func (dbCon *SQLCostRepository) GetRunsBetweenTimes(from, to *time.Time) ([]costModels.Run, error) {
 	runsResources := map[int64]*[]costModels.RequiredResources{}
 	runs := map[int64]costModels.Run{}
 	ctx, err := dbCon.verifyConnection()
@@ -124,13 +127,15 @@ func (dbCon SQLCostRepository) GetRunsBetweenTimes(from, to *time.Time) ([]costM
 		return nil, err
 	}
 
-	tsql := "SELECT r.id run_id, r.measured_time_utc," +
-		" COALESCE(r.cluster_cpu_millicores, 0) AS cluster_cpu_millicores," +
-		" COALESCE(r.cluster_memory_mega_bytes, 0) AS cluster_memory_mega_bytes," +
-		" rr.id, rr.wbs, rr.application, rr.environment, rr.component, rr.cpu_millicores, rr.memory_mega_bytes, rr.replicas" +
-		" FROM [cost].[runs] r" +
-		" JOIN [cost].[required_resources] rr ON r.id = rr.run_id" +
-		" WHERE measured_time_utc BETWEEN @from AND @to;"
+	tsql :=
+		"set nocount on; " +
+			" SELECT r.id run_id, r.measured_time_utc," +
+			" COALESCE(r.cluster_cpu_millicores, 0) AS cluster_cpu_millicores," +
+			" COALESCE(r.cluster_memory_mega_bytes, 0) AS cluster_memory_mega_bytes," +
+			" rr.id, rr.wbs, rr.application, rr.environment, rr.component, rr.cpu_millicores, rr.memory_mega_bytes, rr.replicas" +
+			" FROM [cost].[runs] r" +
+			" JOIN [cost].[required_resources] rr ON r.id = rr.run_id" +
+			" WHERE r.measured_time_utc BETWEEN @from AND @to"
 
 	// Create new connection to database
 	connection, err := dbCon.db.Conn(ctx)
@@ -140,11 +145,14 @@ func (dbCon SQLCostRepository) GetRunsBetweenTimes(from, to *time.Time) ([]costM
 	defer connection.Close()
 
 	// Execute query
-	rows, err := connection.QueryContext(ctx, tsql, sql.Named("from", from), sql.Named("to", to))
+	args := []interface{}{
+		sql.Named("from", from),
+		sql.Named("to", to),
+	}
+	rows, err := connection.QueryContext(ctx, tsql, args...)
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
 
 	// Iterate through the result set.
@@ -213,12 +221,12 @@ func (dbCon SQLCostRepository) GetRunsBetweenTimes(from, to *time.Time) ([]costM
 }
 
 // CloseDB closes the underlying db connection - Only to be called when API exits
-func (dbCon SQLCostRepository) CloseDB() {
+func (dbCon *SQLCostRepository) CloseDB() {
 	dbCon.db.Close()
 }
 
 // SetupDBConnection sets up db connection
-func (creds DBCredentials) setupDBConnection() *sql.DB {
+func (creds *DBCredentials) setupDBConnection() *sql.DB {
 	// Build connection string
 	connString := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%d;database=%s;",
 		creds.Server, creds.UserID, creds.Password, creds.Port, creds.Database)
@@ -239,7 +247,7 @@ func (creds DBCredentials) setupDBConnection() *sql.DB {
 	return db
 }
 
-func (dbCon SQLCostRepository) verifyConnection() (context.Context, error) {
+func (dbCon *SQLCostRepository) verifyConnection() (context.Context, error) {
 	ctx := context.Background()
 	var err error
 

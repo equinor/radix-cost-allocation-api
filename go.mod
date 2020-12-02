@@ -14,6 +14,7 @@ require (
 	github.com/go-openapi/validate v0.19.11
 	github.com/golang/gddo v0.0.0-20200611223618-a4829ef13274
 	github.com/golang/mock v1.4.4
+	github.com/google/pprof v0.0.0-20201117184057-ae444373da19 // indirect
 	github.com/gorilla/mux v1.7.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.6.0
@@ -25,6 +26,7 @@ require (
 	github.com/urfave/negroni v1.0.0
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
+	golang.org/x/sys v0.0.0-20201119102817-f84b799fce68 // indirect
 	golang.org/x/time v0.0.0-20200416051211-89c76fbcd5d1 // indirect
 	google.golang.org/protobuf v1.24.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
