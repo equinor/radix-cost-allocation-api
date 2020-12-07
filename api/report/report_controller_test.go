@@ -158,6 +158,7 @@ func TestReportController_AuthorizedUser_CanDownload(t *testing.T) {
 
 		openedFile, _ := os.Open(returnedReport.Name())
 		reader := csv.NewReader(openedFile)
+		reader.Comma = ';'
 		allContent, err := reader.ReadAll()
 
 		assert.NotNil(t, allContent)
