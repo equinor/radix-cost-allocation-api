@@ -128,14 +128,11 @@ func (dbCon *SQLCostRepository) GetRunsBetweenTimes(from, to *time.Time) ([]cost
 	}
 
 	tsql :=
-		"set nocount on; " +
-			" SELECT r.id run_id, r.measured_time_utc," +
-			" COALESCE(r.cluster_cpu_millicores, 0) AS cluster_cpu_millicores," +
-			" COALESCE(r.cluster_memory_mega_bytes, 0) AS cluster_memory_mega_bytes," +
-			" rr.id, rr.wbs, rr.application, rr.environment, rr.component, rr.cpu_millicores, rr.memory_mega_bytes, rr.replicas" +
-			" FROM [cost].[runs] r" +
-			" JOIN [cost].[required_resources] rr ON r.id = rr.run_id" +
-			" WHERE r.measured_time_utc BETWEEN @from AND @to"
+		"SET NOCOUNT ON; " +
+			"SELECT r.run_id, r.measured_time_utc, r.cluster_cpu_millicores, r.cluster_memory_mega_bytes, " +
+			"r.application, r.wbs, r.cpu_millicores, r.memory_mega_bytes " +
+			"FROM cost.application_resource_run_aggregation r WITH(NOEXPAND) " +
+			"WHERE r.measured_time_utc BETWEEN @from AND @to"
 
 	// Create new connection to database
 	connection, err := dbCon.db.Conn(ctx)
@@ -158,38 +155,32 @@ func (dbCon *SQLCostRepository) GetRunsBetweenTimes(from, to *time.Time) ([]cost
 	// Iterate through the result set.
 	for rows.Next() {
 		var measuredTimeUTC time.Time
-		var runID, id int64
-		var clusterCPUMillicores, clusterMemoryMegaBytes, cpuMillicores, memoryMegaBytes, replicas int
-		var wbs, application, environment, component string
+		var runID int64
+		var clusterCPUMillicores, clusterMemoryMegaBytes, cpuMillicores, memoryMegaBytes int
+		var wbs, application string
 		var run costModels.Run
 
 		// Get values from row.
-		err := rows.Scan(&runID,
+		err := rows.Scan(
+			&runID,
 			&measuredTimeUTC,
 			&clusterCPUMillicores,
 			&clusterMemoryMegaBytes,
-			&id,
-			&wbs,
 			&application,
-			&environment,
-			&component,
+			&wbs,
 			&cpuMillicores,
 			&memoryMegaBytes,
-			&replicas,
 		)
 		if err != nil {
 			return nil, err
 		}
 
 		resource := costModels.RequiredResources{
-			ID:              id,
 			WBS:             wbs,
 			Application:     application,
-			Environment:     environment,
-			Component:       component,
 			CPUMillicore:    cpuMillicores,
 			MemoryMegaBytes: memoryMegaBytes,
-			Replicas:        replicas,
+			Replicas:        1,
 		}
 
 		if run = runs[runID]; run.ID == 0 {
