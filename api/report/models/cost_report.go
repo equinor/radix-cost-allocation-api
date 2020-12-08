@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
@@ -32,7 +33,7 @@ func NewCostReport(appCostSet *costModels.ApplicationCostSet) *CostReport {
 	cr := CostReport{}
 	for _, appCost := range appCostSet.ApplicationCosts {
 		cr.PostingDate = append(cr.PostingDate, time.Now().Format("2006-01-02"))
-		cr.Amount = append(cr.Amount, fmt.Sprintf("%.2f", appCost.Cost))
+		cr.Amount = append(cr.Amount, strings.Replace(fmt.Sprintf("%.2f", appCost.Cost), ".", ",", -1))
 		cr.CompanyCode = append(cr.CompanyCode, companyCode)
 		cr.DocumentHeader = append(cr.DocumentHeader, documentHeader)
 		cr.GeneralLedgerAccount = append(cr.GeneralLedgerAccount, generalLedgerAccount)
@@ -49,6 +50,8 @@ func (cr *CostReport) Create(out io.Writer) error {
 
 	writer := bufio.NewWriter(out)
 	csvWriter := csv.NewWriter(writer)
+	// Set field seperator to ;
+	csvWriter.Comma = ';'
 	defer writer.Flush()
 
 	err := csvWriter.Write(columns)
