@@ -38,6 +38,7 @@ spec:
         - TOKEN_ISSUER
       environmentConfig:
         - environment: qa
+          runAsNonRoot: true
           replicas: 1
           horizontalScaling:
             minReplicas: 1
