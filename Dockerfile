@@ -43,6 +43,6 @@ RUN adduser -S -u 1000 -G radix-cost radix-cost
 #FROM scratch
 #COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 #COPY --from=builder /usr/local/bin/radix-cost-allocation-api /usr/local/bin/radix-cost-allocation-api
-USER radix-cost
+USER 1000
 EXPOSE 3003
 ENTRYPOINT ["/usr/local/bin/radix-cost-allocation-api"]
