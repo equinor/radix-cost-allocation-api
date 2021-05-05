@@ -22,3 +22,6 @@ swaggerui_src/swagger.json
 
 /models/radix_api/generated_client/client/
 /models/radix_api/generated_client/models/
+
+# Env file with secrets
+.env
