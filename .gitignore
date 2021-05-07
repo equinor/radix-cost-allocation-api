@@ -4,6 +4,8 @@
 *.dll
 *.so
 *.dylib
+__debug_bin
+
 # Test binary, built with `go test -c`
 *.test
 radix-cost-allocation-api
@@ -22,3 +24,6 @@ swaggerui_src/swagger.json
 
 /models/radix_api/generated_client/client/
 /models/radix_api/generated_client/models/
+
+# Env file with secrets
+.env
