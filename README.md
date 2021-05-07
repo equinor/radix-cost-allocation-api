@@ -64,7 +64,7 @@ The following env var is needed. Useful default values in brackets.
 * `RADIX_DNS_ZONE` - Radix DNS zone (ex. `dev.radix.equinor.com`)
 * `SUBSCRIPTION_COST_VALUE` - Azure subscription monthly cost (ex. 10000)
 * `SUBSCRIPTION_COST_CURRENCY` - Azure subscription cost currency (ex. `NOK`)
-* `WHITELIST` - List of applications, not included for cost report `ex. {"whiteList": ["canarycicd-test","canarycicd-test1","canarycicd-test2","canarycicd-test3","radix-api","radix-canary-golang","radix-cost-allocation-api","radix-github-webhook","radix-platform","radix-web-console"]}`)
+* `WHITELIST` - List of applications, not included for cost report `ex. {"whiteList": ["canarycicd-test","canarycicd-test1","canarycicd-test2","canarycicd-test3","canarycicd-test4","radix-api","radix-canary-golang","radix-cost-allocation-api","radix-github-webhook","radix-platform","radix-web-console"]}`)
 * `AD_REPORT_READERS` - Azure AD group for user, allowed to get an overall cost report (ex. `{"groups": ["d59ab0b8-2b2c-11eb-adc1-0242ac120002"]}`)
 * `TOKEN_ISSUER` - Azure tennant ID (ex. `https://sts.windows.net/f08f9cda-2b2c-11eb-adc1-0242ac120002/`)
 * `USE_LOCAL_RADIX_API`

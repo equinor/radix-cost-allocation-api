@@ -27,7 +27,7 @@ const (
 var env *models.Env
 
 func setupTest() {
-	os.Setenv("WHITELIST", "{\"whiteList\": [\"canarycicd-test\",\"canarycicd-test1\",\"canarycicd-test2\",\"canarycicd-test3\",\"radix-api\",\"radix-canary-golang\",\"radix-cost-allocation-api\",\"radix-github-webhook\",\"radix-platform\",\"radix-web-console\"]}")
+	os.Setenv("WHITELIST", "{\"whiteList\": [\"canarycicd-test\",\"canarycicd-test1\",\"canarycicd-test2\",\"canarycicd-test3\",\"canarycicd-test4\",\"radix-api\",\"radix-canary-golang\",\"radix-cost-allocation-api\",\"radix-github-webhook\",\"radix-platform\",\"radix-web-console\"]}")
 	os.Setenv("SUBSCRIPTION_COST_VALUE", "100000")
 	os.Setenv("SUBSCRIPTION_COST_CURRENCY", "NOK")
 	os.Setenv("AD_REPORT_READERS", fmt.Sprintf("{\"groups\": [\"%s\"]}", validADGroup))
