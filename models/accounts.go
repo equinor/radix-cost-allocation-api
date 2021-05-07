@@ -20,7 +20,6 @@ func NewAccounts(
 
 // Accounts contains accounts for accessing k8s API.
 type Accounts struct {
-	UserAccount   Account
 	token         string
 	impersonation Impersonation
 }

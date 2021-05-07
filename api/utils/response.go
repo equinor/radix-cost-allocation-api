@@ -14,7 +14,6 @@ import (
 
 	"github.com/golang/gddo/httputil/header"
 	"github.com/pkg/errors"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // Error Representation of errors in the API. These are divided into a small
@@ -222,12 +221,6 @@ func ErrorResponse(w http.ResponseWriter, r *http.Request, apiError error) {
 	case *url.Error:
 		// Reflect any underlying network error
 		writeErrorWithCode(w, r, http.StatusInternalServerError, outErr)
-
-	case *apierrors.StatusError:
-		// Reflect any underlying error from Kubernetes API
-		se := apiError.(*apierrors.StatusError)
-		writeErrorWithCode(w, r, int(se.ErrStatus.Code), outErr)
-
 	default:
 		switch outErr.Type {
 		case Missing:

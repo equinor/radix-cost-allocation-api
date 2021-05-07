@@ -38,6 +38,7 @@ spec:
         - TOKEN_ISSUER
       environmentConfig:
         - environment: qa
+          runAsNonRoot: true
           replicas: 1
           horizontalScaling:
             minReplicas: 1
@@ -47,6 +48,7 @@ spec:
             PIPELINE_IMG_TAG: "master-latest"
             LOG_LEVEL: INFO
         - environment: prod
+          runAsNonRoot: true
           replicas: 1
           monitoring: true
           variables:
