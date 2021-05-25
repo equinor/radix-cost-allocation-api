@@ -3,9 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
 	"net/http"
 	"os"
+
+	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
+
+	_ "net/http/pprof"
 
 	"github.com/equinor/radix-cost-allocation-api/api/cost"
 	"github.com/equinor/radix-cost-allocation-api/api/report"
@@ -14,7 +17,6 @@ import (
 	"github.com/equinor/radix-cost-allocation-api/router"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
-	_ "net/http/pprof"
 )
 
 func main() {

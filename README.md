@@ -20,10 +20,14 @@ Clone the repo into your `GOPATH` and run `go mod download`.
 
 ### Generating mocks
 We use gomock to generate mocks used in unit test.
-You need to regenerate mocks if you make changes to any of the interface types used by the application; **CostRepository**, **RadixAPIClient**, **AuthProvider** and **IDToken**
+You need to regenerate mocks if you make changes to any of the interface types used by the application; **CostRepository**, **Repository**, **RadixAPIClient**, **AuthProvider** and **IDToken**
 CostRepository:
 ```
 $ mockgen -source ./models/sql.go -destination ./api/test/mock/db_mock.go -package mock
+```
+Repository:
+```
+$ mockgen -source ./repository/repository.go -destination ./repository/mock/repository_mock.go -package mock
 ```
 RadixAPIClient:
 ```
