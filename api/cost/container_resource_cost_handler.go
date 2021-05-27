@@ -1,13 +1,56 @@
 package cost
 
 import (
+	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
 	models "github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/equinor/radix-cost-allocation-api/repository"
 )
+
+type ContainerTotalCost struct {
+	Container *models.ContainerDto
+	Cost
+}
+
+type Cost struct {
+	Value    float64
+	Currency string
+}
+
+type ContainerCost struct {
+	ContainerId string
+	Cost
+}
+
+type ContainerResourceUsage struct {
+	ContainerId         string
+	CPUMillicoreSeconds float64
+	MemoryBytesSeconds  float64
+}
+
+type NodePoolCostAllocatedResources struct {
+	Cost                float64
+	Currency            string
+	CPUMillicoreSeconds float64
+	MemoryBytesSeconds  float64
+	ContainerResources  []ContainerResourceUsage
+}
+
+func ContainerMissingNodeError(containerId string) error {
+	return fmt.Errorf("container %s, node is nil", containerId)
+}
+
+func ContainerMissingNodePoolIdError(containerId string) error {
+	return fmt.Errorf("container %s, node pool Id is nil", containerId)
+}
+
+func CurrencyMismatchError(expected, actual string) error {
+	return fmt.Errorf("expected currency %s but got %s", expected, actual)
+}
 
 type containerResourceCostHandler struct {
 	repo repository.Repository
@@ -30,18 +73,170 @@ func (h *containerResourceCostHandler) GetTotalCost(from time.Time, to time.Time
 		return nil, err
 	}
 
-	buildNodePoolCost(from, to, nodePools, nodePoolCost)
+	containers, err := h.repo.GetContainers(from, to)
+
+	poolCost := buildNodePoolCost(from, to, nodePools, nodePoolCost)
+	containerCost, err := calculateContainerCost(poolCost, containers)
+	if err != nil {
+		return nil, err
+	}
+
+	aggregatedContainerCost, err := aggregateContainerCost(containerCost, containers)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println(aggregatedContainerCost)
 
 	return nil, nil
 }
 
-func buildNodePoolCost(from, to time.Time, nodePools []models.NodePoolDto, nodePoolCost []models.NodePoolCostDto) {
-	for _, pool := range nodePools {
-		cost := filterNodePoolCostByPoolId(nodePoolCost, pool.Id)
-		cost = adjustNodePoolCostTimeRange(from, to, cost)
+func aggregateContainerCost(containerCost []ContainerCost, containers []models.ContainerDto) ([]ContainerTotalCost, error) {
+	indexMap := make(map[string]int)
+	containerCostList := make([]ContainerTotalCost, len(containers))
+
+	for i, c := range containers {
+		c := c
+		indexMap[c.ContainerId] = i
+		containerCostList[i] = ContainerTotalCost{Container: &c}
+	}
+
+	for _, cost := range containerCost {
+		if i, ok := indexMap[cost.ContainerId]; ok {
+			if containerCostList[i].Currency == "" {
+				containerCostList[i].Currency = strings.ToUpper(cost.Currency)
+			}
+
+			if containerCostList[i].Currency != strings.ToUpper(cost.Currency) {
+				return nil, CurrencyMismatchError(containerCostList[i].Currency, cost.Currency)
+			}
+
+			containerCostList[i].Value += cost.Value
+		}
+	}
+
+	return containerCostList, nil
+}
+
+func calculateContainerCost(poolCosts []models.NodePoolCostDto, containers []models.ContainerDto) ([]ContainerCost, error) {
+	var containerCost []ContainerCost
+
+	for _, cost := range poolCosts {
+		nodePoolCostResource, err := getAllocatedResourcesForNodePoolCost(cost, containers)
+		if err != nil {
+			return nil, err
+		}
+
+		nodePoolContainerCost := calculateNodePoolContainerResourceCost(nodePoolCostResource)
+		containerCost = append(containerCost, nodePoolContainerCost...)
+	}
+
+	return containerCost, nil
+}
+
+func calculateNodePoolContainerResourceCost(nodePoolCostResource NodePoolCostAllocatedResources) (containerCost []ContainerCost) {
+	for _, resource := range nodePoolCostResource.ContainerResources {
+		containerCost = append(containerCost, ContainerCost{
+			ContainerId: resource.ContainerId,
+			Cost: Cost{
+				Value: calculateContainerResourceCost(
+					nodePoolCostResource.CPUMillicoreSeconds,
+					nodePoolCostResource.MemoryBytesSeconds,
+					resource.CPUMillicoreSeconds,
+					resource.MemoryBytesSeconds,
+					nodePoolCostResource.Cost),
+				Currency: nodePoolCostResource.Currency,
+			},
+		})
 	}
 
 	return
+}
+
+func calculateContainerResourceCost(nodepoolCpuSeconds, nodepoolMemorySeconds, containerCpuSeconds, containerMemorySeconds, nodepoolCost float64) float64 {
+	cpuCost := containerCpuSeconds / nodepoolCpuSeconds * nodepoolCost / 2
+	memCost := containerMemorySeconds / nodepoolMemorySeconds * nodepoolCost / 2
+	return cpuCost + memCost
+}
+
+func getAllocatedResourcesForNodePoolCost(cost models.NodePoolCostDto, containers []models.ContainerDto) (nodePoolCostResource NodePoolCostAllocatedResources, err error) {
+	var cpuSec, memSec float64
+	nodePoolCostResource.Cost = cost.Cost
+	nodePoolCostResource.Currency = cost.Currency
+
+	for _, cont := range containers {
+		contCpuSec, contMemSec, callErr := getContainerResourcesUsageInNodePoolCost(cost, cont)
+		if callErr != nil {
+			err = callErr
+			return
+		}
+
+		if contCpuSec > 0 || contMemSec > 0 {
+			containerResourceUsage := ContainerResourceUsage{ContainerId: cont.ContainerId, CPUMillicoreSeconds: contCpuSec, MemoryBytesSeconds: contMemSec}
+			nodePoolCostResource.ContainerResources = append(nodePoolCostResource.ContainerResources, containerResourceUsage)
+			cpuSec += contCpuSec
+			memSec += contMemSec
+		}
+	}
+
+	nodePoolCostResource.CPUMillicoreSeconds = cpuSec
+	nodePoolCostResource.MemoryBytesSeconds = memSec
+
+	return
+}
+
+func getContainerResourcesUsageInNodePoolCost(cost models.NodePoolCostDto, container models.ContainerDto) (cpuSec float64, memSec float64, err error) {
+	if container.Node == nil {
+		err = ContainerMissingNodeError(container.ContainerId)
+		return
+	}
+
+	if container.Node.NodePoolId == nil {
+		err = ContainerMissingNodePoolIdError(container.ContainerId)
+		return
+	}
+
+	if *container.Node.NodePoolId == cost.NodePoolId {
+		duration := getContainerDurationInNodePoolCost(cost, container)
+		cpuSec = duration.Seconds() * float64(container.CpuRequestedMillicores)
+		memSec = duration.Seconds() * float64(container.MemoryRequestedBytes)
+	}
+
+	return
+}
+
+func getContainerDurationInNodePoolCost(cost models.NodePoolCostDto, container models.ContainerDto) time.Duration {
+	if isContainerRunningInNodePoolCost(cost, container) {
+		duration := container.LastKnownRunningAt.Sub(container.StartedAt)
+
+		if container.StartedAt.Before(cost.FromDate) {
+			duration -= cost.FromDate.Sub(container.StartedAt)
+		}
+
+		if container.LastKnownRunningAt.After(cost.ToDate) {
+			duration -= container.LastKnownRunningAt.Sub(cost.ToDate)
+		}
+
+		return duration
+	}
+
+	return 0
+}
+
+func isContainerRunningInNodePoolCost(cost models.NodePoolCostDto, container models.ContainerDto) bool {
+	return container.LastKnownRunningAt.After(cost.FromDate) && container.StartedAt.Before(cost.ToDate)
+}
+
+func buildNodePoolCost(from, to time.Time, nodePools []models.NodePoolDto, nodePoolCost []models.NodePoolCostDto) []models.NodePoolCostDto {
+	var poolCosts []models.NodePoolCostDto
+
+	for _, pool := range nodePools {
+		cost := filterNodePoolCostByPoolId(nodePoolCost, pool.Id)
+		cost = adjustNodePoolCostTimeRange(from, to, cost)
+		poolCosts = append(poolCosts, cost...)
+	}
+
+	return poolCosts
 }
 
 func filterNodePoolCostByPoolId(cost []models.NodePoolCostDto, poolId int32) []models.NodePoolCostDto {
@@ -102,7 +297,7 @@ func adjustCostPeriod(cost models.NodePoolCostDto, newFromDate, newToDate time.T
 
 	cost.FromDate = newFromDate
 	cost.ToDate = newToDate
-	cost.Cost = int32(newDuration / currentDuration * float64(cost.Cost))
+	cost.Cost = newDuration / currentDuration * cost.Cost
 
 	return cost
 }
