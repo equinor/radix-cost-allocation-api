@@ -147,60 +147,177 @@ func Test_findNodePoolCostByPoolId(t *testing.T) {
 }
 
 func Test_adjustNodePoolCostTimeRange(t *testing.T) {
-	/*
-		Range (25)         |--------------------
-		c1 (1)     |-
-		c2 (3)            |---
-		c3 (5)              |-----
-		c4 (3)                  |---
-		c5 (8)                  |--------
-		c6 (2)                             |--
-		c7 (10)                               |----------
-		c8 (1)                                         |-
-	*/
 
-	day := time.Duration(24 * time.Hour)
-	periodDuration := time.Duration(20 * day)
-	periodFrom := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
-	periodTo := periodFrom.Add(periodDuration)
-	c1From := periodFrom.Add(-8 * day)
-	c1To := c1From.Add(1 * day)
-	c2From := periodFrom.Add(-1 * day)
-	c2To := c2From.Add(3 * day)
-	c3From := periodFrom.Add(1 * day)
-	c3To := c3From.Add(5 * day)
-	c4From := periodFrom.Add(5 * day)
-	c4To := c4From.Add(3 * day)
-	c5From := periodFrom.Add(5 * day)
-	c5To := c5From.Add(8 * day)
-	c6From := periodFrom.Add(16 * day)
-	c6To := c6From.Add(2 * day)
-	c7From := periodFrom.Add(19 * day)
-	c7To := c7From.Add(10 * day)
-	c8From := periodFrom.Add(28 * day)
-	c8To := c8From.Add(1 * day)
+	t.Run("multiple cost", func(t *testing.T) {
+		t.Parallel()
+		/*
+			Range (25)         |--------------------
+			c1 (1)     |-
+			c2 (3)            |---
+			c3 (5)              |-----
+			c4 (3)                  |---
+			c5 (8)                  |--------
+			c6 (2)                             |--
+			c7 (10)                               |----------
+			c8 (1)                                         |-
+		*/
 
-	cost := []models.NodePoolCostDto{
-		{Id: 1, Cost: 100, FromDate: c1From, ToDate: c1To},
-		{Id: 2, Cost: 300, FromDate: c2From, ToDate: c2To},
-		{Id: 3, Cost: 500, FromDate: c3From, ToDate: c3To},
-		{Id: 4, Cost: 300, FromDate: c4From, ToDate: c4To},
-		{Id: 5, Cost: 800, FromDate: c5From, ToDate: c5To},
-		{Id: 6, Cost: 200, FromDate: c6From, ToDate: c6To},
-		{Id: 7, Cost: 1000, FromDate: c7From, ToDate: c7To},
-		{Id: 8, Cost: 100, FromDate: c8From, ToDate: c8To},
-	}
+		day := time.Duration(24 * time.Hour)
+		periodDuration := time.Duration(20 * day)
+		periodFrom := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+		periodTo := periodFrom.Add(periodDuration)
+		c1From := periodFrom.Add(-8 * day)
+		c1To := c1From.Add(1 * day)
+		c2From := periodFrom.Add(-1 * day)
+		c2To := c2From.Add(3 * day)
+		c3From := periodFrom.Add(1 * day)
+		c3To := c3From.Add(5 * day)
+		c4From := periodFrom.Add(5 * day)
+		c4To := c4From.Add(3 * day)
+		c5From := periodFrom.Add(5 * day)
+		c5To := c5From.Add(8 * day)
+		c6From := periodFrom.Add(16 * day)
+		c6To := c6From.Add(2 * day)
+		c7From := periodFrom.Add(19 * day)
+		c7To := c7From.Add(10 * day)
+		c8From := periodFrom.Add(28 * day)
+		c8To := c8From.Add(1 * day)
 
-	expect := []models.NodePoolCostDto{
-		{Id: 2, FromDate: periodFrom, ToDate: c3From, Cost: 100},
-		{Id: 3, FromDate: c3From, ToDate: c4From, Cost: 400},
-		{Id: 5, FromDate: c5From, ToDate: c6From, Cost: 1100},
-		{Id: 6, FromDate: c6From, ToDate: c7From, Cost: 300},
-		{Id: 7, FromDate: c7From, ToDate: periodTo, Cost: 100},
-	}
+		cost := []models.NodePoolCostDto{
+			{Id: 1, Cost: 100, FromDate: c1From, ToDate: c1To},
+			{Id: 2, Cost: 300, FromDate: c2From, ToDate: c2To},
+			{Id: 3, Cost: 500, FromDate: c3From, ToDate: c3To},
+			{Id: 4, Cost: 300, FromDate: c4From, ToDate: c4To},
+			{Id: 5, Cost: 800, FromDate: c5From, ToDate: c5To},
+			{Id: 6, Cost: 200, FromDate: c6From, ToDate: c6To},
+			{Id: 7, Cost: 1000, FromDate: c7From, ToDate: c7To},
+			{Id: 8, Cost: 100, FromDate: c8From, ToDate: c8To},
+		}
 
-	actual := adjustNodePoolCostTimeRange(periodFrom, periodTo, cost)
-	assert.ElementsMatch(t, expect, actual)
+		expect := []models.NodePoolCostDto{
+			{Id: 2, FromDate: periodFrom, ToDate: c3From, Cost: 100},
+			{Id: 3, FromDate: c3From, ToDate: c4From, Cost: 400},
+			{Id: 5, FromDate: c5From, ToDate: c6From, Cost: 1100},
+			{Id: 6, FromDate: c6From, ToDate: c7From, Cost: 300},
+			{Id: 7, FromDate: c7From, ToDate: periodTo, Cost: 100},
+		}
+
+		actual := adjustNodePoolCostTimeRange(periodFrom, periodTo, cost)
+		assert.ElementsMatch(t, expect, actual)
+	})
+
+	t.Run("join past outside cost with inside", func(t *testing.T) {
+		t.Parallel()
+		/*
+			Range (25)         |--------------------
+			c1 (1)     |-
+			c2 (3)                  |---
+		*/
+
+		day := time.Duration(24 * time.Hour)
+		periodDuration := time.Duration(20 * day)
+		periodFrom := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+		periodTo := periodFrom.Add(periodDuration)
+		c1From := periodFrom.Add(-8 * day)
+		c1To := c1From.Add(1 * day)
+		c2From := periodFrom.Add(5 * day)
+		c2To := c2From.Add(3 * day)
+
+		cost := []models.NodePoolCostDto{
+			{Id: 1, Cost: 100, FromDate: c1From, ToDate: c1To},
+			{Id: 2, Cost: 300, FromDate: c2From, ToDate: c2To},
+		}
+
+		expect := []models.NodePoolCostDto{
+			{Id: 1, FromDate: periodFrom, ToDate: c2From, Cost: 500},
+			{Id: 2, FromDate: c2From, ToDate: periodTo, Cost: 1500},
+		}
+
+		actual := adjustNodePoolCostTimeRange(periodFrom, periodTo, cost)
+		assert.ElementsMatch(t, expect, actual)
+	})
+
+	t.Run("join future outside cost with inside - only inside is used", func(t *testing.T) {
+		t.Parallel()
+		/*
+			Range (25)         |--------------------
+			c1 (1)                                   |-
+			c2 (3)                  |---
+		*/
+
+		day := time.Duration(24 * time.Hour)
+		periodDuration := time.Duration(20 * day)
+		periodFrom := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+		periodTo := periodFrom.Add(periodDuration)
+		c1From := periodFrom.Add(22 * day)
+		c1To := c1From.Add(1 * day)
+		c2From := periodFrom.Add(5 * day)
+		c2To := c2From.Add(3 * day)
+
+		cost := []models.NodePoolCostDto{
+			{Id: 1, Cost: 100, FromDate: c1From, ToDate: c1To},
+			{Id: 2, Cost: 300, FromDate: c2From, ToDate: c2To},
+		}
+
+		expect := []models.NodePoolCostDto{
+			{Id: 2, FromDate: periodFrom, ToDate: periodTo, Cost: 2000},
+		}
+
+		actual := adjustNodePoolCostTimeRange(periodFrom, periodTo, cost)
+		assert.ElementsMatch(t, expect, actual)
+	})
+
+	t.Run("use past outside cost", func(t *testing.T) {
+		t.Parallel()
+		/*
+			Range (25)         |--------------------
+			c1 (1)          |-
+		*/
+
+		day := time.Duration(24 * time.Hour)
+		periodDuration := time.Duration(20 * day)
+		periodFrom := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+		periodTo := periodFrom.Add(periodDuration)
+		c1From := periodFrom.Add(-3 * day)
+		c1To := c1From.Add(1 * day)
+
+		cost := []models.NodePoolCostDto{
+			{Id: 1, Cost: 100, FromDate: c1From, ToDate: c1To},
+		}
+
+		expect := []models.NodePoolCostDto{
+			{Id: 1, FromDate: periodFrom, ToDate: periodTo, Cost: 2000},
+		}
+
+		actual := adjustNodePoolCostTimeRange(periodFrom, periodTo, cost)
+		assert.ElementsMatch(t, expect, actual)
+	})
+
+	t.Run("use future outside cost", func(t *testing.T) {
+		t.Parallel()
+		/*
+			Range (25)         |--------------------
+			c1 (1)                                   |-
+		*/
+
+		day := time.Duration(24 * time.Hour)
+		periodDuration := time.Duration(20 * day)
+		periodFrom := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+		periodTo := periodFrom.Add(periodDuration)
+		c1From := periodFrom.Add(22 * day)
+		c1To := c1From.Add(1 * day)
+
+		cost := []models.NodePoolCostDto{
+			{Id: 1, Cost: 100, FromDate: c1From, ToDate: c1To},
+		}
+
+		expect := []models.NodePoolCostDto{
+			{Id: 1, FromDate: periodFrom, ToDate: periodTo, Cost: 2000},
+		}
+
+		actual := adjustNodePoolCostTimeRange(periodFrom, periodTo, cost)
+		assert.ElementsMatch(t, expect, actual)
+	})
 }
 
 func Test_isContainerRunningInNodePoolCost(t *testing.T) {

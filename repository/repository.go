@@ -9,5 +9,5 @@ import (
 type Repository interface {
 	GetNodePools() ([]models.NodePoolDto, error)
 	GetContainers(from, to time.Time) ([]models.ContainerDto, error)
-	GetNodePoolCost(from, to time.Time) ([]models.NodePoolCostDto, error)
+	GetNodePoolCost() ([]models.NodePoolCostDto, error)
 }

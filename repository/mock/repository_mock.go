@@ -51,18 +51,18 @@ func (mr *MockRepositoryMockRecorder) GetContainers(from, to interface{}) *gomoc
 }
 
 // GetNodePoolCost mocks base method.
-func (m *MockRepository) GetNodePoolCost(from, to time.Time) ([]models.NodePoolCostDto, error) {
+func (m *MockRepository) GetNodePoolCost() ([]models.NodePoolCostDto, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNodePoolCost", from, to)
+	ret := m.ctrl.Call(m, "GetNodePoolCost")
 	ret0, _ := ret[0].([]models.NodePoolCostDto)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetNodePoolCost indicates an expected call of GetNodePoolCost.
-func (mr *MockRepositoryMockRecorder) GetNodePoolCost(from, to interface{}) *gomock.Call {
+func (mr *MockRepositoryMockRecorder) GetNodePoolCost() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodePoolCost", reflect.TypeOf((*MockRepository)(nil).GetNodePoolCost), from, to)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodePoolCost", reflect.TypeOf((*MockRepository)(nil).GetNodePoolCost))
 }
 
 // GetNodePools mocks base method.

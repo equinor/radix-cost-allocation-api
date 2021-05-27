@@ -44,13 +44,11 @@ func (r *gormRepository) GetContainers(from, to time.Time) ([]models.ContainerDt
 	return containers, tx.Error
 }
 
-func (r *gormRepository) GetNodePoolCost(from, to time.Time) ([]models.NodePoolCostDto, error) {
+func (r *gormRepository) GetNodePoolCost() ([]models.NodePoolCostDto, error) {
 	var cost []models.NodePoolCostDto
 
 	tx := r.db.
 		Preload(clause.Associations).
-		Where(clause.Lt{Column: "from_date", Value: to}).
-		Where(clause.Gt{Column: "to_date", Value: from}).
 		Find(&cost)
 	return cost, tx.Error
 }

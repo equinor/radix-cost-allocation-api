@@ -68,12 +68,15 @@ func (h *containerResourceCostHandler) GetTotalCost(from time.Time, to time.Time
 		return nil, err
 	}
 
-	nodePoolCost, err := h.repo.GetNodePoolCost(from, to)
+	nodePoolCost, err := h.repo.GetNodePoolCost()
 	if err != nil {
 		return nil, err
 	}
 
 	containers, err := h.repo.GetContainers(from, to)
+	if err != nil {
+		return nil, err
+	}
 
 	poolCost := buildNodePoolCost(from, to, nodePools, nodePoolCost)
 	containerCost, err := calculateContainerCost(poolCost, containers)
@@ -260,10 +263,6 @@ func adjustNodePoolCostTimeRange(from, to time.Time, cost []models.NodePoolCostD
 	sort.Sort(SortByFromAndTo(cost))
 
 	for i := 0; i < len(cost)-1; i++ {
-		if !isCostInsideRange(from, to, cost[i]) {
-			continue
-		}
-
 		if isCostEncapsulated(cost[i], cost[i+1]) {
 			continue
 		}
@@ -277,11 +276,31 @@ func adjustNodePoolCostTimeRange(from, to time.Time, cost []models.NodePoolCostD
 	}
 
 	// Add the last cost from source
-	if isCostInsideRange(from, to, cost[len(cost)-1]) {
-		adjustedCost = append(adjustedCost, cost[len(cost)-1])
+	adjustedCost = append(adjustedCost, cost[len(cost)-1])
+
+	// Adjust FromDate of first entry to range from date if FromDate>from
+	if adjustedCost[0].FromDate.After(from) {
+		adjustedCost[0] = adjustCostPeriod(adjustedCost[0], from, adjustedCost[0].ToDate)
 	}
 
-	// Adjust FromDate and ToDate in first and last cost item to match to and from range
+	// Adjust ToDate of last entry to range to date if ToDate<to
+	lastIdx := len(adjustedCost) - 1
+	if adjustedCost[lastIdx].ToDate.Before(to) {
+		adjustedCost[lastIdx] = adjustCostPeriod(adjustedCost[lastIdx], adjustedCost[lastIdx].FromDate, to)
+	}
+
+	// Remove cost entries outside from and to range
+	var idx int
+	for _, c := range adjustedCost {
+		if !isCostInsideRange(from, to, c) {
+			continue
+		}
+		adjustedCost[idx] = c
+		idx++
+	}
+	adjustedCost = adjustedCost[:idx]
+
+	// Adjust FromDate and ToDate in first and last cost item to match from and to range
 	if len(adjustedCost) > 0 {
 		adjustedCost[0] = adjustCostPeriod(adjustedCost[0], from, adjustedCost[0].ToDate)
 		lastIdx := len(adjustedCost) - 1
