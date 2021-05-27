@@ -6,22 +6,8 @@ import (
 	"time"
 
 	models "github.com/equinor/radix-cost-allocation-api/models"
-	mockrepository "github.com/equinor/radix-cost-allocation-api/repository/mock"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
-
-func Test_GetTotalCost(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	repo := mockrepository.NewMockRepository(ctrl)
-
-	from := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
-	to := time.Date(2020, 2, 1, 0, 0, 0, 0, time.UTC)
-	h := NewContainerResourceCostHandler(repo)
-	cost, err := h.GetTotalCost(from, to)
-	assert.Nil(t, err)
-	assert.NotNil(t, cost)
-}
 
 func Test_NodePoolCostByFromAndTo(t *testing.T) {
 	from1 := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
