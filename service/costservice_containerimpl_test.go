@@ -1,15 +1,31 @@
-package cost
+package service
 
 import (
 	"sort"
 	"testing"
 	"time"
 
-	models "github.com/equinor/radix-cost-allocation-api/models"
+	"github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_NodePoolCostByFromAndTo(t *testing.T) {
+func Test_removeApplicationsFromContainers(t *testing.T) {
+
+	containers := []models.ContainerDto{
+		{ContainerId: "1", ApplicationName: "app1"},
+		{ContainerId: "2", ApplicationName: "app1"},
+		{ContainerId: "3", ApplicationName: "app2"},
+		{ContainerId: "4", ApplicationName: "app2"},
+		{ContainerId: "5", ApplicationName: "app3"},
+		{ContainerId: "6", ApplicationName: "app3"},
+	}
+
+	expect := []models.ContainerDto{containers[2], containers[3]}
+	actual := removeApplicationsFromContainers(containers, []string{"app1", "app3"})
+	assert.ElementsMatch(t, expect, actual)
+}
+
+func Test_NodePoolCostByFromAndToSorter(t *testing.T) {
 	from1 := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 	to1 := time.Date(2020, 1, 5, 0, 0, 0, 0, time.UTC)
 
@@ -41,7 +57,7 @@ func Test_NodePoolCostByFromAndTo(t *testing.T) {
 		{FromDate: from4, ToDate: to4},
 	}
 
-	sort.Sort(SortByFromAndTo(values))
+	sort.Sort(sortByFromAndTo(values))
 	assert.Equal(t, expected, values)
 }
 
@@ -441,19 +457,19 @@ func Test_getAllocatedResourcesForNodePoolCost(t *testing.T) {
 	actual, err := getAllocatedResourcesForNodePoolCost(cost, []models.ContainerDto{c1, c2, c3, c4, c5, c6, c7})
 	expectedTotalCpu := 2*day*12 + 10*day*13 + 3*day*14 + 4*day*15 // c2+c3+c4+c5
 	expectedTotalMem := 2*day*22 + 10*day*23 + 3*day*24 + 4*day*25 // c2+c3+c4+c5
-	expectedContainerResources := []ContainerResourceUsage{
-		{ContainerId: "c2", CPUMillicoreSeconds: (2 * day * 12).Seconds(), MemoryBytesSeconds: (2 * day * 22).Seconds()},
-		{ContainerId: "c3", CPUMillicoreSeconds: (10 * day * 13).Seconds(), MemoryBytesSeconds: (10 * day * 23).Seconds()},
-		{ContainerId: "c4", CPUMillicoreSeconds: (3 * day * 14).Seconds(), MemoryBytesSeconds: (3 * day * 24).Seconds()},
-		{ContainerId: "c5", CPUMillicoreSeconds: (4 * day * 15).Seconds(), MemoryBytesSeconds: (4 * day * 25).Seconds()},
+	expectedContainerResources := []containerResourceUsage{
+		{containerID: "c2", cpuMillicoreSeconds: (2 * day * 12).Seconds(), memoryBytesSeconds: (2 * day * 22).Seconds()},
+		{containerID: "c3", cpuMillicoreSeconds: (10 * day * 13).Seconds(), memoryBytesSeconds: (10 * day * 23).Seconds()},
+		{containerID: "c4", cpuMillicoreSeconds: (3 * day * 14).Seconds(), memoryBytesSeconds: (3 * day * 24).Seconds()},
+		{containerID: "c5", cpuMillicoreSeconds: (4 * day * 15).Seconds(), memoryBytesSeconds: (4 * day * 25).Seconds()},
 	}
 	assert.Nil(t, err)
-	assert.Equal(t, expectedTotalCpu.Seconds(), actual.CPUMillicoreSeconds)
-	assert.Equal(t, expectedTotalMem.Seconds(), actual.MemoryBytesSeconds)
-	assert.Equal(t, float64(1000), actual.Cost)
-	assert.Equal(t, "NOK", actual.Currency)
-	assert.Len(t, actual.ContainerResources, 4)
-	assert.ElementsMatch(t, expectedContainerResources, actual.ContainerResources)
+	assert.Equal(t, expectedTotalCpu.Seconds(), actual.cpuMillicoreSeconds)
+	assert.Equal(t, expectedTotalMem.Seconds(), actual.memoryBytesSeconds)
+	assert.Equal(t, float64(1000), actual.cost)
+	assert.Equal(t, "NOK", actual.currency)
+	assert.Len(t, actual.containerResources, 4)
+	assert.ElementsMatch(t, expectedContainerResources, actual.containerResources)
 }
 
 func Test_calculateContainerResourceCost(t *testing.T) {
@@ -462,40 +478,41 @@ func Test_calculateContainerResourceCost(t *testing.T) {
 }
 
 func Test_calculateNodePoolContainerResourceCost(t *testing.T) {
-	cost := NodePoolCostAllocatedResources{
-		Cost:                10000,
-		Currency:            "NOK",
-		CPUMillicoreSeconds: 200,
-		MemoryBytesSeconds:  1000,
-		ContainerResources: []ContainerResourceUsage{
-			{ContainerId: "c1", CPUMillicoreSeconds: 50, MemoryBytesSeconds: 900},
-			{ContainerId: "c2", CPUMillicoreSeconds: 150, MemoryBytesSeconds: 100},
+	poolCost := nodePoolCostAllocatedResources{
+		cost:                10000,
+		currency:            "NOK",
+		cpuMillicoreSeconds: 200,
+		memoryBytesSeconds:  1000,
+		containerResources: []containerResourceUsage{
+			{containerID: "c1", cpuMillicoreSeconds: 50, memoryBytesSeconds: 900},
+			{containerID: "c2", cpuMillicoreSeconds: 150, memoryBytesSeconds: 100},
 		},
 	}
-	expected := []ContainerCost{
-		{ContainerId: "c1", Cost: Cost{Value: 5750, Currency: "NOK"}},
-		{ContainerId: "c2", Cost: Cost{Value: 4250, Currency: "NOK"}},
+
+	expected := []containerCost{
+		{containerID: "c1", cost: cost{value: 5750, currency: "NOK"}},
+		{containerID: "c2", cost: cost{value: 4250, currency: "NOK"}},
 	}
-	actual := calculateNodePoolContainerResourceCost(cost)
+	actual := calculateNodePoolContainerResourceCost(poolCost)
 	assert.ElementsMatch(t, expected, actual)
 }
 
 func Test_aggregateContainerCost(t *testing.T) {
-	cost1 := ContainerCost{ContainerId: "c1", Cost: Cost{Value: 100, Currency: "NOK"}}
-	cost2 := ContainerCost{ContainerId: "c1", Cost: Cost{Value: 100, Currency: "NOK"}}
-	cost3 := ContainerCost{ContainerId: "c1", Cost: Cost{Value: 100, Currency: "NOK"}}
-	cost4 := ContainerCost{ContainerId: "c1", Cost: Cost{Value: 100, Currency: "NOK"}}
-	cost5 := ContainerCost{ContainerId: "c2", Cost: Cost{Value: 100, Currency: "NOK"}}
-	cost6 := ContainerCost{ContainerId: "c2", Cost: Cost{Value: 100, Currency: "NOK"}}
+	cost1 := containerCost{containerID: "c1", cost: cost{value: 100, currency: "NOK"}}
+	cost2 := containerCost{containerID: "c1", cost: cost{value: 100, currency: "NOK"}}
+	cost3 := containerCost{containerID: "c1", cost: cost{value: 100, currency: "NOK"}}
+	cost4 := containerCost{containerID: "c1", cost: cost{value: 100, currency: "NOK"}}
+	cost5 := containerCost{containerID: "c2", cost: cost{value: 100, currency: "NOK"}}
+	cost6 := containerCost{containerID: "c2", cost: cost{value: 100, currency: "NOK"}}
 	c1 := models.ContainerDto{ContainerId: "c1"}
 	c2 := models.ContainerDto{ContainerId: "c2"}
 
-	expected := []ContainerTotalCost{
-		{Container: &c1, Cost: Cost{Currency: "NOK", Value: 400}},
-		{Container: &c2, Cost: Cost{Currency: "NOK", Value: 200}},
+	expected := []containerTotalCost{
+		{container: &c1, cost: cost{currency: "NOK", value: 400}},
+		{container: &c2, cost: cost{currency: "NOK", value: 200}},
 	}
 
-	actual, err := aggregateContainerCost([]ContainerCost{cost1, cost2, cost3, cost4, cost5, cost6}, []models.ContainerDto{c1, c2})
+	actual, err := aggregateContainerCost([]containerCost{cost1, cost2, cost3, cost4, cost5, cost6}, []models.ContainerDto{c1, c2})
 	assert.Nil(t, err)
 	assert.ElementsMatch(t, expected, actual)
 

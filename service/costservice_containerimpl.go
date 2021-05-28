@@ -1,4 +1,4 @@
-package cost
+package service
 
 import (
 	"fmt"
@@ -6,39 +6,10 @@ import (
 	"strings"
 	"time"
 
-	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
-	models "github.com/equinor/radix-cost-allocation-api/models"
+	"github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/equinor/radix-cost-allocation-api/repository"
+	sliceUtil "github.com/equinor/radix-cost-allocation-api/utils/slice"
 )
-
-type ContainerTotalCost struct {
-	Container *models.ContainerDto
-	Cost
-}
-
-type Cost struct {
-	Value    float64
-	Currency string
-}
-
-type ContainerCost struct {
-	ContainerId string
-	Cost
-}
-
-type ContainerResourceUsage struct {
-	ContainerId         string
-	CPUMillicoreSeconds float64
-	MemoryBytesSeconds  float64
-}
-
-type NodePoolCostAllocatedResources struct {
-	Cost                float64
-	Currency            string
-	CPUMillicoreSeconds float64
-	MemoryBytesSeconds  float64
-	ContainerResources  []ContainerResourceUsage
-}
 
 func ContainerMissingNodeError(containerId string) error {
 	return fmt.Errorf("container %s, node is nil", containerId)
@@ -52,39 +23,71 @@ func CurrencyMismatchError(expected, actual string) error {
 	return fmt.Errorf("expected currency %s but got %s", expected, actual)
 }
 
-type containerResourceCostHandler struct {
-	repo repository.Repository
+type containerTotalCost struct {
+	container *models.ContainerDto
+	cost
 }
 
-func NewContainerResourceCostHandler(repo repository.Repository) *containerResourceCostHandler {
-	return &containerResourceCostHandler{
-		repo: repo,
+type cost struct {
+	value    float64
+	currency string
+}
+
+type containerCost struct {
+	containerID string
+	cost
+}
+
+type containerResourceUsage struct {
+	containerID         string
+	cpuMillicoreSeconds float64
+	memoryBytesSeconds  float64
+}
+
+type nodePoolCostAllocatedResources struct {
+	cost                float64
+	currency            string
+	cpuMillicoreSeconds float64
+	memoryBytesSeconds  float64
+	containerResources  []containerResourceUsage
+}
+
+type containerCostService struct {
+	repo      repository.Repository
+	whitelist models.Whitelist
+}
+
+func NewContainerCostService(repo repository.Repository, whitelist models.Whitelist) CostService {
+	return &containerCostService{
+		repo:      repo,
+		whitelist: whitelist,
 	}
 }
 
-func (h *containerResourceCostHandler) GetTotalCost(from time.Time, to time.Time) (*costModels.ApplicationCostSet, error) {
-	nodePools, err := h.repo.GetNodePools()
+func (s *containerCostService) GetCostForPeriod(from, to time.Time) (*models.ApplicationCostSet, error) {
+	nodePools, err := s.repo.GetNodePools()
 	if err != nil {
 		return nil, err
 	}
 
-	nodePoolCost, err := h.repo.GetNodePoolCost()
+	nodePoolCost, err := s.repo.GetNodePoolCost()
 	if err != nil {
 		return nil, err
 	}
 
-	containers, err := h.repo.GetContainers(from, to)
+	containers, err := s.repo.GetContainers(from, to)
 	if err != nil {
 		return nil, err
 	}
 
+	containers = removeApplicationsFromContainers(containers, s.whitelist.List)
 	poolCost := buildNodePoolCost(from, to, nodePools, nodePoolCost)
-	containerCost, err := calculateContainerCost(poolCost, containers)
+	containerCostList, err := calculateContainerCost(poolCost, containers)
 	if err != nil {
 		return nil, err
 	}
 
-	aggregatedContainerCost, err := aggregateContainerCost(containerCost, containers)
+	aggregatedContainerCost, err := aggregateContainerCost(containerCostList, containers)
 	if err != nil {
 		return nil, err
 	}
@@ -94,35 +97,55 @@ func (h *containerResourceCostHandler) GetTotalCost(from time.Time, to time.Time
 	return nil, nil
 }
 
-func aggregateContainerCost(containerCost []ContainerCost, containers []models.ContainerDto) ([]ContainerTotalCost, error) {
+func (s *containerCostService) GetFutureCost(appName string) (*models.ApplicationCost, error) {
+	return nil, nil
+}
+
+func removeApplicationsFromContainers(containers []models.ContainerDto, applicationNames []string) []models.ContainerDto {
+	if len(applicationNames) == 0 {
+		return containers
+	}
+
+	var i int
+	for _, c := range containers {
+		if sliceUtil.StringSliceContains(applicationNames, c.ApplicationName) {
+			continue
+		}
+		containers[i] = c
+		i++
+	}
+	return containers[:i]
+}
+
+func aggregateContainerCost(containerCostList []containerCost, containers []models.ContainerDto) ([]containerTotalCost, error) {
 	indexMap := make(map[string]int)
-	containerCostList := make([]ContainerTotalCost, len(containers))
+	containerTotalCostList := make([]containerTotalCost, len(containers))
 
 	for i, c := range containers {
 		c := c
 		indexMap[c.ContainerId] = i
-		containerCostList[i] = ContainerTotalCost{Container: &c}
+		containerTotalCostList[i] = containerTotalCost{container: &c}
 	}
 
-	for _, cost := range containerCost {
-		if i, ok := indexMap[cost.ContainerId]; ok {
-			if containerCostList[i].Currency == "" {
-				containerCostList[i].Currency = strings.ToUpper(cost.Currency)
+	for _, cost := range containerCostList {
+		if i, ok := indexMap[cost.containerID]; ok {
+			if containerTotalCostList[i].currency == "" {
+				containerTotalCostList[i].currency = strings.ToUpper(cost.currency)
 			}
 
-			if containerCostList[i].Currency != strings.ToUpper(cost.Currency) {
-				return nil, CurrencyMismatchError(containerCostList[i].Currency, cost.Currency)
+			if containerTotalCostList[i].currency != strings.ToUpper(cost.currency) {
+				return nil, CurrencyMismatchError(containerTotalCostList[i].currency, cost.currency)
 			}
 
-			containerCostList[i].Value += cost.Value
+			containerTotalCostList[i].value += cost.value
 		}
 	}
 
-	return containerCostList, nil
+	return containerTotalCostList, nil
 }
 
-func calculateContainerCost(poolCosts []models.NodePoolCostDto, containers []models.ContainerDto) ([]ContainerCost, error) {
-	var containerCost []ContainerCost
+func calculateContainerCost(poolCosts []models.NodePoolCostDto, containers []models.ContainerDto) ([]containerCost, error) {
+	var containerCostList []containerCost
 
 	for _, cost := range poolCosts {
 		nodePoolCostResource, err := getAllocatedResourcesForNodePoolCost(cost, containers)
@@ -131,24 +154,24 @@ func calculateContainerCost(poolCosts []models.NodePoolCostDto, containers []mod
 		}
 
 		nodePoolContainerCost := calculateNodePoolContainerResourceCost(nodePoolCostResource)
-		containerCost = append(containerCost, nodePoolContainerCost...)
+		containerCostList = append(containerCostList, nodePoolContainerCost...)
 	}
 
-	return containerCost, nil
+	return containerCostList, nil
 }
 
-func calculateNodePoolContainerResourceCost(nodePoolCostResource NodePoolCostAllocatedResources) (containerCost []ContainerCost) {
-	for _, resource := range nodePoolCostResource.ContainerResources {
-		containerCost = append(containerCost, ContainerCost{
-			ContainerId: resource.ContainerId,
-			Cost: Cost{
-				Value: calculateContainerResourceCost(
-					nodePoolCostResource.CPUMillicoreSeconds,
-					nodePoolCostResource.MemoryBytesSeconds,
-					resource.CPUMillicoreSeconds,
-					resource.MemoryBytesSeconds,
-					nodePoolCostResource.Cost),
-				Currency: nodePoolCostResource.Currency,
+func calculateNodePoolContainerResourceCost(nodePoolCostResource nodePoolCostAllocatedResources) (containerCostList []containerCost) {
+	for _, resource := range nodePoolCostResource.containerResources {
+		containerCostList = append(containerCostList, containerCost{
+			containerID: resource.containerID,
+			cost: cost{
+				value: calculateContainerResourceCost(
+					nodePoolCostResource.cpuMillicoreSeconds,
+					nodePoolCostResource.memoryBytesSeconds,
+					resource.cpuMillicoreSeconds,
+					resource.memoryBytesSeconds,
+					nodePoolCostResource.cost),
+				currency: nodePoolCostResource.currency,
 			},
 		})
 	}
@@ -162,10 +185,10 @@ func calculateContainerResourceCost(nodepoolCpuSeconds, nodepoolMemorySeconds, c
 	return cpuCost + memCost
 }
 
-func getAllocatedResourcesForNodePoolCost(cost models.NodePoolCostDto, containers []models.ContainerDto) (nodePoolCostResource NodePoolCostAllocatedResources, err error) {
+func getAllocatedResourcesForNodePoolCost(cost models.NodePoolCostDto, containers []models.ContainerDto) (nodePoolCostResource nodePoolCostAllocatedResources, err error) {
 	var cpuSec, memSec float64
-	nodePoolCostResource.Cost = cost.Cost
-	nodePoolCostResource.Currency = cost.Currency
+	nodePoolCostResource.cost = cost.Cost
+	nodePoolCostResource.currency = cost.Currency
 
 	for _, cont := range containers {
 		contCpuSec, contMemSec, callErr := getContainerResourcesUsageInNodePoolCost(cost, cont)
@@ -175,15 +198,15 @@ func getAllocatedResourcesForNodePoolCost(cost models.NodePoolCostDto, container
 		}
 
 		if contCpuSec > 0 || contMemSec > 0 {
-			containerResourceUsage := ContainerResourceUsage{ContainerId: cont.ContainerId, CPUMillicoreSeconds: contCpuSec, MemoryBytesSeconds: contMemSec}
-			nodePoolCostResource.ContainerResources = append(nodePoolCostResource.ContainerResources, containerResourceUsage)
+			cru := containerResourceUsage{containerID: cont.ContainerId, cpuMillicoreSeconds: contCpuSec, memoryBytesSeconds: contMemSec}
+			nodePoolCostResource.containerResources = append(nodePoolCostResource.containerResources, cru)
 			cpuSec += contCpuSec
 			memSec += contMemSec
 		}
 	}
 
-	nodePoolCostResource.CPUMillicoreSeconds = cpuSec
-	nodePoolCostResource.MemoryBytesSeconds = memSec
+	nodePoolCostResource.cpuMillicoreSeconds = cpuSec
+	nodePoolCostResource.memoryBytesSeconds = memSec
 
 	return
 }
@@ -260,7 +283,7 @@ func adjustNodePoolCostTimeRange(from, to time.Time, cost []models.NodePoolCostD
 	}
 
 	adjustedCost := make([]models.NodePoolCostDto, 0, len(cost))
-	sort.Sort(SortByFromAndTo(cost))
+	sort.Sort(sortByFromAndTo(cost))
 
 	for i := 0; i < len(cost)-1; i++ {
 		if isCostEncapsulated(cost[i], cost[i+1]) {
@@ -335,10 +358,10 @@ func isCostEncapsulated(first, second models.NodePoolCostDto) bool {
 	return fromGte && toLte
 }
 
-type SortByFromAndTo []models.NodePoolCostDto
+type sortByFromAndTo []models.NodePoolCostDto
 
-func (c SortByFromAndTo) Len() int { return len(c) }
-func (c SortByFromAndTo) Less(i, j int) bool {
+func (c sortByFromAndTo) Len() int { return len(c) }
+func (c sortByFromAndTo) Less(i, j int) bool {
 
 	if c[i].FromDate.Before(c[j].FromDate) {
 		return true
@@ -348,4 +371,4 @@ func (c SortByFromAndTo) Less(i, j int) bool {
 
 	return c[i].ToDate.Before(c[j].ToDate)
 }
-func (c SortByFromAndTo) Swap(i, j int) { c[i], c[j] = c[j], c[i] }
+func (c sortByFromAndTo) Swap(i, j int) { c[i], c[j] = c[j], c[i] }

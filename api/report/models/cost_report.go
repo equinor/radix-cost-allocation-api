@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
+	"github.com/equinor/radix-cost-allocation-api/models"
 )
 
 const (
@@ -29,7 +29,7 @@ type CostReport struct {
 }
 
 // NewCostReport constructor
-func NewCostReport(appCostSet *costModels.ApplicationCostSet) *CostReport {
+func NewCostReport(appCostSet *models.ApplicationCostSet) *CostReport {
 	cr := CostReport{}
 	for _, appCost := range appCostSet.ApplicationCosts {
 		cr.PostingDate = append(cr.PostingDate, time.Now().Format("2006-01-02"))

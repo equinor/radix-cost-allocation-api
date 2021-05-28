@@ -3,11 +3,11 @@ package models
 import (
 	"encoding/json"
 	"fmt"
-	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"strconv"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // Env instance variables
@@ -21,7 +21,7 @@ type Env struct {
 	DbCredentials        *DBCredentials
 	SubscriptionCost     float64
 	SubscriptionCurrency string
-	Whitelist            *costModels.Whitelist
+	Whitelist            *Whitelist
 	Cluster              string
 }
 
@@ -66,7 +66,7 @@ func NewEnv() *Env {
 		log.Info("Subscription Cost currency is not set.")
 	}
 
-	list := &costModels.Whitelist{}
+	list := &Whitelist{}
 	err = json.Unmarshal([]byte(whiteList), list)
 
 	if err != nil {

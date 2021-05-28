@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
+	"github.com/equinor/radix-cost-allocation-api/service"
 
 	_ "net/http/pprof"
 
@@ -37,13 +38,14 @@ func main() {
 	ctx := context.Background()
 	authProvider := auth.NewAuthProvider(ctx)
 	radixAPIClient := radix_api.NewRadixAPIClient(env)
+	costService := service.NewRunCostService(costRepository, *env.Whitelist, env.SubscriptionCost, env.SubscriptionCurrency)
 
 	go func() {
 		log.Infof("API is serving on port %s", *port)
 		addr := fmt.Sprintf(":%s", *port)
 		handler := router.NewServer(env.ClusterName, authProvider,
-			cost.NewCostController(env, costRepository, radixAPIClient),
-			report.NewReportController(env, costRepository))
+			cost.NewCostController(radixAPIClient, costService),
+			report.NewReportController(costService))
 		errs <- http.ListenAndServe(addr, handler)
 	}()
 
