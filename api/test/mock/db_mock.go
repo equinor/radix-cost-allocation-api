@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 	time "time"
 
-	cost_models "github.com/equinor/radix-cost-allocation-api/api/cost/models"
+	models "github.com/equinor/radix-cost-allocation-api/models"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -36,10 +36,10 @@ func (m *MockCostRepository) EXPECT() *MockCostRepositoryMockRecorder {
 }
 
 // GetLatestRun mocks base method.
-func (m *MockCostRepository) GetLatestRun() (cost_models.Run, error) {
+func (m *MockCostRepository) GetLatestRun() (models.Run, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLatestRun")
-	ret0, _ := ret[0].(cost_models.Run)
+	ret0, _ := ret[0].(models.Run)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -51,10 +51,10 @@ func (mr *MockCostRepositoryMockRecorder) GetLatestRun() *gomock.Call {
 }
 
 // GetRunsBetweenTimes mocks base method.
-func (m *MockCostRepository) GetRunsBetweenTimes(from, to *time.Time) ([]cost_models.Run, error) {
+func (m *MockCostRepository) GetRunsBetweenTimes(from, to *time.Time) ([]models.Run, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRunsBetweenTimes", from, to)
-	ret0, _ := ret[0].([]cost_models.Run)
+	ret0, _ := ret[0].([]models.Run)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

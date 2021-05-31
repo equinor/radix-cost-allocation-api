@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
+	"github.com/equinor/radix-cost-allocation-api/models"
 )
 
 // ApplicationCostSetBuilder handles construction of applicationcostset
@@ -14,7 +14,7 @@ type ApplicationCostSetBuilder interface {
 	WithApplicationCosts(applicationCosts []ApplicationCostBuilder) ApplicationCostSetBuilder
 	WithTotalRequestedCPU(totalCPU int) ApplicationCostSetBuilder
 	WithTotalRequestedMemory(totalMemory int) ApplicationCostSetBuilder
-	BuildApplicationCostSet() *costModels.ApplicationCostSet
+	BuildApplicationCostSet() *models.ApplicationCostSet
 }
 
 // ApplicationCostBuilder handles construction of applicationcost
@@ -28,7 +28,7 @@ type ApplicationCostBuilder interface {
 	WithComment(comment string) ApplicationCostBuilder
 	WithCost(cost float64) ApplicationCostBuilder
 	WithCurrency(currency string) ApplicationCostBuilder
-	BuildApplicationCost() *costModels.ApplicationCost
+	BuildApplicationCost() *models.ApplicationCost
 }
 
 // ApplicationCostSetBuilderStruct instance variables
@@ -108,8 +108,8 @@ func (acb *ApplicationCostBuilderStruct) WithCurrency(currency string) Applicati
 }
 
 // BuildApplicationCost builds the ApplicationCost model
-func (acb *ApplicationCostBuilderStruct) BuildApplicationCost() *costModels.ApplicationCost {
-	return &costModels.ApplicationCost{
+func (acb *ApplicationCostBuilderStruct) BuildApplicationCost() *models.ApplicationCost {
+	return &models.ApplicationCost{
 		Comment:                acb.Comment,
 		Cost:                   acb.Cost,
 		CostPercentageByCPU:    acb.CostPercentageByCPU,
@@ -153,14 +153,14 @@ func (acsb *ApplicationCostSetBuilderStruct) WithTotalRequestedMemory(totalMemor
 }
 
 // BuildApplicationCostSet builds the ApplicationCostSet model
-func (acsb *ApplicationCostSetBuilderStruct) BuildApplicationCostSet() *costModels.ApplicationCostSet {
-	appCosts := make([]costModels.ApplicationCost, 0)
+func (acsb *ApplicationCostSetBuilderStruct) BuildApplicationCostSet() *models.ApplicationCostSet {
+	appCosts := make([]models.ApplicationCost, 0)
 	for _, appCost := range acsb.ApplicationCosts {
 		builtAppCost := appCost.BuildApplicationCost()
 		appCosts = append(appCosts, *builtAppCost)
 	}
 
-	return &costModels.ApplicationCostSet{
+	return &models.ApplicationCostSet{
 		From:                 acsb.From,
 		To:                   acsb.To,
 		ApplicationCosts:     appCosts,

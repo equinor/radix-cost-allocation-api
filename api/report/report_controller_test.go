@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/equinor/radix-cost-allocation-api/models"
+	"github.com/equinor/radix-cost-allocation-api/service"
 
 	controllerTest "github.com/equinor/radix-cost-allocation-api/api/test"
 	mock "github.com/equinor/radix-cost-allocation-api/api/test/mock"
@@ -82,7 +83,8 @@ func TestReportController_UnAuthorizedUser_NoAccess(t *testing.T) {
 		Return(runs, nil).
 		Times(0)
 
-	controllerTestUtils := controllerTest.NewTestUtils(NewReportController(env, fakeCostRepo))
+	costService := service.NewRunCostService(fakeCostRepo, *env.Whitelist, env.SubscriptionCost, env.SubscriptionCurrency)
+	controllerTestUtils := controllerTest.NewTestUtils(NewReportController(costService))
 	controllerTestUtils.SetAuthProvider(fakeAuthProvider)
 
 	t.Run("User without required AD group can't download report", func(t *testing.T) {
@@ -142,7 +144,8 @@ func TestReportController_AuthorizedUser_CanDownload(t *testing.T) {
 		Return(runs, nil).
 		Times(1)
 
-	controllerTestUtils := controllerTest.NewTestUtils(NewReportController(env, fakeCostRepo))
+	costService := service.NewRunCostService(fakeCostRepo, *env.Whitelist, env.SubscriptionCost, env.SubscriptionCurrency)
+	controllerTestUtils := controllerTest.NewTestUtils(NewReportController(costService))
 	controllerTestUtils.SetAuthProvider(fakeAuthProvider)
 
 	t.Run("User with correct AD group can download report", func(t *testing.T) {

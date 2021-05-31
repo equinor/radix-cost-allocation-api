@@ -1,6 +1,8 @@
 package test
 
-import costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
+import (
+	"github.com/equinor/radix-cost-allocation-api/models"
+)
 
 // ResourceBuilder construct RequiredResources
 type ResourceBuilder interface {
@@ -12,7 +14,7 @@ type ResourceBuilder interface {
 	WithCPUMillicore(cpu int) ResourceBuilder
 	WithMemoryMegaBytes(mem int) ResourceBuilder
 	WithReplicas(replicas int) ResourceBuilder
-	BuildResource() *costModels.RequiredResources
+	BuildResource() *models.RequiredResources
 	GetCPUMillicore() int
 	GetMemoryMegaByte() int
 }
@@ -20,7 +22,7 @@ type ResourceBuilder interface {
 // ResourceBuilderList constructs lists of RequiredResources
 type ResourceBuilderList interface {
 	WithBuilders(builders []ResourceBuilder) ResourceBuilderList
-	BuildResources() []costModels.RequiredResources
+	BuildResources() []models.RequiredResources
 	GetResourcesCPUMillicore() int
 	GetResourcesMemoryMegabyte() int
 }
@@ -129,8 +131,8 @@ func (rb *ResourceBuilderStruct) WithReplicas(replicas int) ResourceBuilder {
 }
 
 // BuildResource builds the resource
-func (rb *ResourceBuilderStruct) BuildResource() *costModels.RequiredResources {
-	resource := &costModels.RequiredResources{
+func (rb *ResourceBuilderStruct) BuildResource() *models.RequiredResources {
+	resource := &models.RequiredResources{
 		Application:     rb.application,
 		CPUMillicore:    rb.cpuMillicore,
 		Component:       rb.component,
@@ -145,8 +147,8 @@ func (rb *ResourceBuilderStruct) BuildResource() *costModels.RequiredResources {
 }
 
 // BuildResources builds all resources in builders list
-func (rbl *ResourceBuilderListStruct) BuildResources() []costModels.RequiredResources {
-	var resources []costModels.RequiredResources
+func (rbl *ResourceBuilderListStruct) BuildResources() []models.RequiredResources {
+	var resources []models.RequiredResources
 
 	for _, rr := range rbl.builders {
 		resources = append(resources, *rr.BuildResource())

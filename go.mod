@@ -23,8 +23,10 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/negroni v1.0.0
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 	google.golang.org/protobuf v1.24.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
+	gorm.io/driver/sqlserver v1.0.7
+	gorm.io/gorm v1.21.10
 	gotest.tools v2.2.0+incompatible
 )

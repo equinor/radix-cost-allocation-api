@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/equinor/radix-cost-allocation-api/models"
+	"github.com/equinor/radix-cost-allocation-api/service"
 
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
 
-	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
 	controllertest "github.com/equinor/radix-cost-allocation-api/api/test"
 	"github.com/equinor/radix-cost-allocation-api/api/test/mock"
 	"github.com/golang/mock/gomock"
@@ -95,14 +95,15 @@ func TestCostController_Application(t *testing.T) {
 		Return(runs, nil).
 		AnyTimes()
 
-	controllerTestUtils := controllertest.NewTestUtils(NewCostController(env, fakeCostRepo, fakeRadixClient))
+	costService := service.NewRunCostService(fakeCostRepo, *env.Whitelist, env.SubscriptionCost, env.SubscriptionCurrency)
+	controllerTestUtils := controllertest.NewTestUtils(NewCostController(fakeRadixClient, costService))
 	controllerTestUtils.SetAuthProvider(fakeAuthProvider)
 
 	// Test that futurecost endpoint returns cost for requested application
 	t.Run("Futurecost application exists", func(t *testing.T) {
 		responseChannel := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/futurecost/%s", appName))
 		response := <-responseChannel
-		applicationCost := costModels.ApplicationCost{}
+		applicationCost := models.ApplicationCost{}
 		err := controllertest.GetResponseBody(response, &applicationCost)
 
 		assert.Nil(t, err)
@@ -117,7 +118,7 @@ func TestCostController_Application(t *testing.T) {
 		responseChannel := controllerTestUtils.ExecuteRequest("GET", url)
 		response := <-responseChannel
 
-		applicationCostSet := costModels.ApplicationCostSet{}
+		applicationCostSet := models.ApplicationCostSet{}
 		controllertest.GetResponseBody(response, &applicationCostSet)
 		assert.NotNil(t, applicationCostSet)
 		applicationCost := applicationCostSet.ApplicationCosts[0]
@@ -127,7 +128,7 @@ func TestCostController_Application(t *testing.T) {
 	t.Run("Futurecost estimate is not 0", func(t *testing.T) {
 		responseChannel := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/futurecost/%s", appName))
 		response := <-responseChannel
-		applicationCost := costModels.ApplicationCost{}
+		applicationCost := models.ApplicationCost{}
 		err := controllertest.GetResponseBody(response, &applicationCost)
 
 		assert.Nil(t, err)
@@ -147,7 +148,7 @@ func TestCostController_Application(t *testing.T) {
 		fromTime, toTime := getTimePeriod()
 		responseChannel := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/totalcosts?fromTime=%s&toTime=%s", fromTime, toTime))
 		response := <-responseChannel
-		applicationCostSet := costModels.ApplicationCostSet{}
+		applicationCostSet := models.ApplicationCostSet{}
 		err := controllertest.GetResponseBody(response, &applicationCostSet)
 
 		assert.Nil(t, err)
@@ -192,7 +193,8 @@ func TestCostController_Authentication(t *testing.T) {
 		Return(nil, fmt.Errorf("Invalid token")).
 		AnyTimes()
 
-	controllerTestUtils := controllertest.NewTestUtils(NewCostController(env, fakeCostRepo, fakeRadixClient))
+	costService := service.NewRunCostService(fakeCostRepo, *env.Whitelist, env.SubscriptionCost, env.SubscriptionCurrency)
+	controllerTestUtils := controllertest.NewTestUtils(NewCostController(fakeRadixClient, costService))
 	controllerTestUtils.SetAuthProvider(fakeAuthProvider)
 
 	t.Run("Invalid auth header", func(t *testing.T) {
