@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -65,6 +66,39 @@ func NewContainerCostService(repo repository.Repository, whitelist models.Whitel
 }
 
 func (s *containerCostService) GetCostForPeriod(from, to time.Time) (*models.ApplicationCostSet, error) {
+	applicationCostList, err := s.getApplicationCostList(from, to)
+	if err != nil {
+		return nil, err
+	}
+
+	applicationCost := models.ApplicationCostSet{
+		From:             from,
+		To:               to,
+		ApplicationCosts: applicationCostList,
+	}
+	return &applicationCost, nil
+}
+
+func (s *containerCostService) GetFutureCost(appName string) (*models.ApplicationCost, error) {
+	to := time.Now()
+	from := to.Add(-24 * time.Hour)
+	applicationCostList, err := s.getApplicationCostList(from, to)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, appCost := range applicationCostList {
+		if strings.EqualFold(appCost.Name, appName) {
+			appCost := appCost
+			appCost.Cost *= 30 // Multiply cost for last 24 hours with 30 days
+			return &appCost, nil
+		}
+	}
+
+	return nil, errors.New("application not found or not running")
+}
+
+func (s *containerCostService) getApplicationCostList(from, to time.Time) ([]models.ApplicationCost, error) {
 	nodePools, err := s.repo.GetNodePools()
 	if err != nil {
 		return nil, err
@@ -92,13 +126,32 @@ func (s *containerCostService) GetCostForPeriod(from, to time.Time) (*models.App
 		return nil, err
 	}
 
-	fmt.Println(aggregatedContainerCost)
-
-	return nil, nil
+	applicationCostList := buildApplicationCostList(aggregatedContainerCost)
+	return applicationCostList, nil
 }
 
-func (s *containerCostService) GetFutureCost(appName string) (*models.ApplicationCost, error) {
-	return nil, nil
+func buildApplicationCostList(containerTotalCostList []containerTotalCost) []models.ApplicationCost {
+	appCostIndex := make(map[string]int)
+	var applicationCostList []models.ApplicationCost
+	wbsCodes := make(map[string]time.Time)
+
+	for _, c := range containerTotalCostList {
+		if idx, ok := appCostIndex[c.container.ApplicationName]; !ok {
+			appCost := models.ApplicationCost{Name: c.container.ApplicationName, Cost: c.value, Currency: c.currency, WBS: c.container.WBS}
+			applicationCostList = append(applicationCostList, appCost)
+			appCostIndex[c.container.ApplicationName] = len(applicationCostList) - 1
+			wbsCodes[c.container.ApplicationName] = c.container.LastKnownRunningAt
+		} else {
+			applicationCostList[idx].Cost += c.value
+
+			if c.container.LastKnownRunningAt.After(wbsCodes[c.container.ApplicationName]) {
+				wbsCodes[c.container.ApplicationName] = c.container.LastKnownRunningAt
+				applicationCostList[idx].WBS = c.container.WBS
+			}
+		}
+	}
+
+	return applicationCostList
 }
 
 func removeApplicationsFromContainers(containers []models.ContainerDto, applicationNames []string) []models.ContainerDto {
@@ -358,6 +411,12 @@ func isCostEncapsulated(first, second models.NodePoolCostDto) bool {
 	return fromGte && toLte
 }
 
+// NodePoolCostDto sorter - sorts by FromDate, and for entries where FromDate is equal we sort by ToDate
+// Example entries
+//   |---------|
+//        |-------|
+//        |----------------|
+//             |----|
 type sortByFromAndTo []models.NodePoolCostDto
 
 func (c sortByFromAndTo) Len() int { return len(c) }

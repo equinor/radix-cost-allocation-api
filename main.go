@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
+	"github.com/equinor/radix-cost-allocation-api/repository"
 	"github.com/equinor/radix-cost-allocation-api/service"
 
 	_ "net/http/pprof"
@@ -32,13 +33,10 @@ func main() {
 
 	errs := make(chan error)
 
-	costRepository := models.NewSQLCostRepository(env.DbCredentials)
-	defer costRepository.CloseDB()
-
 	ctx := context.Background()
 	authProvider := auth.NewAuthProvider(ctx)
 	radixAPIClient := radix_api.NewRadixAPIClient(env)
-	costService := service.NewRunCostService(costRepository, *env.Whitelist, env.SubscriptionCost, env.SubscriptionCurrency)
+	costService := getCostService(env)
 
 	go func() {
 		log.Infof("API is serving on port %s", *port)
@@ -60,6 +58,30 @@ func main() {
 	if err != nil {
 		log.Fatalf("Radix cost allocation api server crashed: %v", err)
 	}
+}
+
+func getCostService(env *models.Env) service.CostService {
+	if env.UseRunCostService {
+		return createRunCostService(env)
+	}
+	return createContainerCostService(env)
+}
+
+func createRunCostService(env *models.Env) service.CostService {
+	costRepository := models.NewSQLCostRepository(env.DbCredentials)
+	return service.NewRunCostService(costRepository, *env.Whitelist, env.SubscriptionCost, env.SubscriptionCurrency)
+}
+
+func createContainerCostService(env *models.Env) service.CostService {
+	gormdb, err := repository.OpenGormSqlServerDB(
+		repository.GetSqlServerDsn(env.DbCredentials.Server, env.DbCredentials.Database, env.DbCredentials.UserID, env.DbCredentials.Password, env.DbCredentials.Port),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	repo := repository.NewGormRepository(gormdb)
+	return service.NewContainerCostService(repo, *env.Whitelist)
 }
 
 func initializeFlagSet() *pflag.FlagSet {

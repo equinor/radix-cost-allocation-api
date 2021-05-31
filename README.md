@@ -83,7 +83,9 @@ The following env var is needed. Useful default values in brackets.
     ```
         go tool pprof -http=:6070 http://localhost:7070/debug/pprof/heap
     ```
-
+* `USE_RUN_COST_SERVICE`
+  * `false`, `no` or `not set` - use the new container based service to calculate application cost
+  * `true` or `yes` - use the old run based service to callculate cost
 #### Common errors running locally
 
 - **Problem**: `panic: statik/fs: no zip data registered`

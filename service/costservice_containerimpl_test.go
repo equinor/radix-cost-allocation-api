@@ -6,8 +6,157 @@ import (
 	"time"
 
 	"github.com/equinor/radix-cost-allocation-api/models"
+	mockrepo "github.com/equinor/radix-cost-allocation-api/repository/mock"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
+
+func Test_ContainerCostService_GetCostForPeriod(t *testing.T) {
+	day := 24 * time.Hour
+
+	t.Run("multiple apps and nodepools", func(t *testing.T) {
+		t.Parallel()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		from, to := time.Date(2020, 1, 10, 0, 0, 0, 0, time.UTC), time.Date(2020, 1, 20, 0, 0, 0, 0, time.UTC)
+		nodePoolId1 := int32(1)
+		nodePoolId2 := int32(2)
+		node1 := models.NodeDto{Id: 1, NodePoolId: &nodePoolId1}
+		node2 := models.NodeDto{Id: 2, NodePoolId: &nodePoolId1}
+		node3 := models.NodeDto{Id: 3, NodePoolId: &nodePoolId2}
+		nodePools := []models.NodePoolDto{
+			{Id: 1, Name: "nodepool1"},
+			{Id: 2, Name: "nodepool2"},
+		}
+		nodePoolCost := []models.NodePoolCostDto{
+			{Id: 1, Cost: 7000, Currency: "NOK", FromDate: from.Add(-2 * day), ToDate: from.Add(5 * day), NodePoolId: 1},   // 1000 NOK/d
+			{Id: 2, Cost: 18000, Currency: "NOK", FromDate: from.Add(4 * day), ToDate: from.Add(13 * day), NodePoolId: 1},  // 2000 NOK/d
+			{Id: 3, Cost: 60000, Currency: "NOK", FromDate: from.Add(-5 * day), ToDate: from.Add(15 * day), NodePoolId: 2}, // 3000 NOK/d
+		}
+
+		containers := []models.ContainerDto{
+			{Node: &node1, ContainerId: "1-app1", ApplicationName: "app1",
+				StartedAt: from.Add(-2 * day), LastKnownRunningAt: from.Add(4 * day), CpuRequestedMillicores: 50, MemoryRequestedBytes: 300},
+			{Node: &node1, ContainerId: "2-app1", ApplicationName: "app1",
+				StartedAt: from.Add(2 * day), LastKnownRunningAt: from.Add(12 * day), CpuRequestedMillicores: 100, MemoryRequestedBytes: 250},
+			{Node: &node2, ContainerId: "3-app1", ApplicationName: "app1",
+				StartedAt: from.Add(4 * day), LastKnownRunningAt: from.Add(5 * day), CpuRequestedMillicores: 100, MemoryRequestedBytes: 100},
+			{Node: &node1, ContainerId: "1-app2", ApplicationName: "app2",
+				StartedAt: from.Add(2 * day), LastKnownRunningAt: from.Add(5 * day), CpuRequestedMillicores: 800, MemoryRequestedBytes: 150},
+			{Node: &node2, ContainerId: "2-app2", ApplicationName: "app2",
+				StartedAt: from.Add(5 * day), LastKnownRunningAt: from.Add(12 * day), CpuRequestedMillicores: 100, MemoryRequestedBytes: 50},
+			{Node: &node3, ContainerId: "3-app2", ApplicationName: "app2",
+				StartedAt: from.Add(5 * day), LastKnownRunningAt: from.Add(6 * day), CpuRequestedMillicores: 100, MemoryRequestedBytes: 100},
+		}
+
+		repo := mockrepo.NewMockRepository(ctrl)
+		repo.EXPECT().GetNodePools().Return(nodePools, nil).Times(1)
+		repo.EXPECT().GetNodePoolCost().Return(nodePoolCost, nil).Times(1)
+		repo.EXPECT().GetContainers(from, to).Return(containers, nil).Times(1)
+
+		whitelist := models.Whitelist{List: []string{}}
+		costService := NewContainerCostService(repo, whitelist)
+
+		expected := models.ApplicationCostSet{
+			From: from,
+			To:   to,
+			ApplicationCosts: []models.ApplicationCost{
+				{Name: "app1", Cost: 9000, Currency: "NOK"},
+				{Name: "app2", Cost: 37000, Currency: "NOK"},
+			},
+		}
+		actual, err := costService.GetCostForPeriod(from, to)
+		assert.Nil(t, err)
+		assert.Equal(t, expected, *actual)
+	})
+
+	t.Run("whitelisted apps are not included", func(t *testing.T) {
+		t.Parallel()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		from, to := time.Date(2020, 1, 10, 0, 0, 0, 0, time.UTC), time.Date(2020, 1, 20, 0, 0, 0, 0, time.UTC)
+		nodePoolId1 := int32(1)
+		node1 := models.NodeDto{Id: 1, NodePoolId: &nodePoolId1}
+		nodePools := []models.NodePoolDto{
+			{Id: 1, Name: "nodepool1"},
+		}
+		nodePoolCost := []models.NodePoolCostDto{
+			{Id: 1, Cost: 10000, Currency: "NOK", FromDate: from.Add(0 * day), ToDate: from.Add(10 * day), NodePoolId: 1}, // 1000 NOK/d
+		}
+
+		containers := []models.ContainerDto{
+			{Node: &node1, ContainerId: "1-app1", ApplicationName: "app1",
+				StartedAt: from.Add(0 * day), LastKnownRunningAt: from.Add(10 * day), CpuRequestedMillicores: 100, MemoryRequestedBytes: 100},
+			{Node: &node1, ContainerId: "1-whitelisted", ApplicationName: "whitelisted",
+				StartedAt: from.Add(0 * day), LastKnownRunningAt: from.Add(10 * day), CpuRequestedMillicores: 100, MemoryRequestedBytes: 100},
+		}
+
+		repo := mockrepo.NewMockRepository(ctrl)
+		repo.EXPECT().GetNodePools().Return(nodePools, nil).Times(1)
+		repo.EXPECT().GetNodePoolCost().Return(nodePoolCost, nil).Times(1)
+		repo.EXPECT().GetContainers(from, to).Return(containers, nil).Times(1)
+
+		whitelist := models.Whitelist{List: []string{"whitelisted"}}
+		costService := NewContainerCostService(repo, whitelist)
+
+		expected := models.ApplicationCostSet{
+			From: from,
+			To:   to,
+			ApplicationCosts: []models.ApplicationCost{
+				{Name: "app1", Cost: 10000, Currency: "NOK"},
+			},
+		}
+		actual, err := costService.GetCostForPeriod(from, to)
+		assert.Nil(t, err)
+		assert.Equal(t, expected, *actual)
+	})
+
+	t.Run("newest web is returned", func(t *testing.T) {
+		t.Parallel()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		from, to := time.Date(2020, 1, 10, 0, 0, 0, 0, time.UTC), time.Date(2020, 1, 20, 0, 0, 0, 0, time.UTC)
+		nodePoolId1 := int32(1)
+		node1 := models.NodeDto{Id: 1, NodePoolId: &nodePoolId1}
+		nodePools := []models.NodePoolDto{
+			{Id: 1, Name: "nodepool1"},
+		}
+		nodePoolCost := []models.NodePoolCostDto{
+			{Id: 1, Cost: 10000, Currency: "NOK", FromDate: from.Add(0 * day), ToDate: from.Add(10 * day), NodePoolId: 1}, // 1000 NOK/d
+		}
+
+		containers := []models.ContainerDto{
+			{Node: &node1, ContainerId: "1-app1", ApplicationName: "app1", WBS: "wbs1",
+				StartedAt: from.Add(0 * day), LastKnownRunningAt: from.Add(5 * day), CpuRequestedMillicores: 100, MemoryRequestedBytes: 100},
+			{Node: &node1, ContainerId: "2-app1", ApplicationName: "app1", WBS: "wbs3",
+				StartedAt: from.Add(0 * day), LastKnownRunningAt: from.Add(10 * day), CpuRequestedMillicores: 100, MemoryRequestedBytes: 100},
+			{Node: &node1, ContainerId: "3-app1", ApplicationName: "app1", WBS: "wbs2",
+				StartedAt: from.Add(0 * day), LastKnownRunningAt: from.Add(7 * day), CpuRequestedMillicores: 100, MemoryRequestedBytes: 100},
+		}
+
+		repo := mockrepo.NewMockRepository(ctrl)
+		repo.EXPECT().GetNodePools().Return(nodePools, nil).Times(1)
+		repo.EXPECT().GetNodePoolCost().Return(nodePoolCost, nil).Times(1)
+		repo.EXPECT().GetContainers(from, to).Return(containers, nil).Times(1)
+
+		whitelist := models.Whitelist{List: []string{"whitelisted"}}
+		costService := NewContainerCostService(repo, whitelist)
+
+		expected := models.ApplicationCostSet{
+			From: from,
+			To:   to,
+			ApplicationCosts: []models.ApplicationCost{
+				{Name: "app1", WBS: "wbs3", Cost: 10000, Currency: "NOK"},
+			},
+		}
+		actual, err := costService.GetCostForPeriod(from, to)
+		assert.Nil(t, err)
+		assert.Equal(t, expected, *actual)
+	})
+}
 
 func Test_removeApplicationsFromContainers(t *testing.T) {
 
@@ -25,7 +174,7 @@ func Test_removeApplicationsFromContainers(t *testing.T) {
 	assert.ElementsMatch(t, expect, actual)
 }
 
-func Test_NodePoolCostByFromAndToSorter(t *testing.T) {
+func Test_sortByFromAndTo(t *testing.T) {
 	from1 := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 	to1 := time.Date(2020, 1, 5, 0, 0, 0, 0, time.UTC)
 
@@ -133,7 +282,7 @@ func Test_adjustCostPeriod(t *testing.T) {
 	assert.Equal(t, float64(500), adjustCostPeriod(c, time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC), time.Date(2020, 1, 2, 12, 0, 0, 0, time.UTC)).Cost)
 }
 
-func Test_findNodePoolCostByPoolId(t *testing.T) {
+func Test_filterNodePoolCostByPoolId(t *testing.T) {
 	cost := []models.NodePoolCostDto{
 		{NodePoolId: 1},
 		{NodePoolId: 2},

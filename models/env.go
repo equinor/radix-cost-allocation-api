@@ -23,6 +23,7 @@ type Env struct {
 	SubscriptionCurrency string
 	Whitelist            *Whitelist
 	Cluster              string
+	UseRunCostService    bool
 }
 
 // NewEnv Constructor
@@ -34,16 +35,17 @@ func NewEnv() *Env {
 		log.SetLevel(log.InfoLevel)
 	}
 	var (
-		context          = os.Getenv("RADIX_CLUSTER_TYPE")
-		apiEnv           = os.Getenv("RADIX_ENVIRONMENT")
-		clusterName      = os.Getenv("RADIX_CLUSTERNAME")
-		dnsZone          = os.Getenv("RADIX_DNS_ZONE")
-		subCost          = os.Getenv("SUBSCRIPTION_COST_VALUE")
-		subCurrency      = os.Getenv("SUBSCRIPTION_COST_CURRENCY")
-		whiteList        = os.Getenv("WHITELIST")
-		cluster          = os.Getenv("RADIX_CLUSTER_NAME")
-		useLocalRadixApi = envVarIsTrueOrYes(os.Getenv("USE_LOCAL_RADIX_API"))
-		useProfiler      = envVarIsTrueOrYes(os.Getenv("USE_PROFILER"))
+		context           = os.Getenv("RADIX_CLUSTER_TYPE")
+		apiEnv            = os.Getenv("RADIX_ENVIRONMENT")
+		clusterName       = os.Getenv("RADIX_CLUSTERNAME")
+		dnsZone           = os.Getenv("RADIX_DNS_ZONE")
+		subCost           = os.Getenv("SUBSCRIPTION_COST_VALUE")
+		subCurrency       = os.Getenv("SUBSCRIPTION_COST_CURRENCY")
+		whiteList         = os.Getenv("WHITELIST")
+		cluster           = os.Getenv("RADIX_CLUSTER_NAME")
+		useLocalRadixApi  = envVarIsTrueOrYes(os.Getenv("USE_LOCAL_RADIX_API"))
+		useProfiler       = envVarIsTrueOrYes(os.Getenv("USE_PROFILER"))
+		useRunCostService = envVarIsTrueOrYes(os.Getenv("USE_RUN_COST_SERVICE"))
 	)
 	if context == "" {
 		log.Error("'Context' environment variable is not set")
@@ -85,6 +87,7 @@ func NewEnv() *Env {
 		UseLocalRadixApi:     useLocalRadixApi,
 		UseProfiler:          useProfiler,
 		DbCredentials:        getDBCredentials(),
+		UseRunCostService:    useRunCostService,
 	}
 }
 
