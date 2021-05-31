@@ -55,8 +55,7 @@ func Test_ContainerCostService_GetCostForPeriod(t *testing.T) {
 		repo.EXPECT().GetNodePoolCost().Return(nodePoolCost, nil).Times(1)
 		repo.EXPECT().GetContainers(from, to).Return(containers, nil).Times(1)
 
-		whitelist := models.Whitelist{List: []string{}}
-		costService := NewContainerCostService(repo, whitelist)
+		costService := NewContainerCostService(repo, []string{})
 
 		expected := models.ApplicationCostSet{
 			From: from,
@@ -98,8 +97,7 @@ func Test_ContainerCostService_GetCostForPeriod(t *testing.T) {
 		repo.EXPECT().GetNodePoolCost().Return(nodePoolCost, nil).Times(1)
 		repo.EXPECT().GetContainers(from, to).Return(containers, nil).Times(1)
 
-		whitelist := models.Whitelist{List: []string{"whitelisted"}}
-		costService := NewContainerCostService(repo, whitelist)
+		costService := NewContainerCostService(repo, []string{"whitelisted"})
 
 		expected := models.ApplicationCostSet{
 			From: from,
@@ -113,7 +111,7 @@ func Test_ContainerCostService_GetCostForPeriod(t *testing.T) {
 		assert.Equal(t, expected, *actual)
 	})
 
-	t.Run("newest web is returned", func(t *testing.T) {
+	t.Run("newest WBS is returned", func(t *testing.T) {
 		t.Parallel()
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -142,8 +140,7 @@ func Test_ContainerCostService_GetCostForPeriod(t *testing.T) {
 		repo.EXPECT().GetNodePoolCost().Return(nodePoolCost, nil).Times(1)
 		repo.EXPECT().GetContainers(from, to).Return(containers, nil).Times(1)
 
-		whitelist := models.Whitelist{List: []string{"whitelisted"}}
-		costService := NewContainerCostService(repo, whitelist)
+		costService := NewContainerCostService(repo, []string{})
 
 		expected := models.ApplicationCostSet{
 			From: from,
@@ -170,7 +167,7 @@ func Test_removeApplicationsFromContainers(t *testing.T) {
 	}
 
 	expect := []models.ContainerDto{containers[2], containers[3]}
-	actual := removeApplicationsFromContainers(containers, []string{"app1", "app3"})
+	actual := excludeApplicationNames(containers, []string{"app1", "app3"})
 	assert.ElementsMatch(t, expect, actual)
 }
 

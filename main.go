@@ -81,7 +81,7 @@ func createContainerCostService(env *models.Env) service.CostService {
 	}
 
 	repo := repository.NewGormRepository(gormdb)
-	return service.NewContainerCostService(repo, *env.Whitelist)
+	return service.NewContainerCostService(repo, env.Whitelist.List)
 }
 
 func initializeFlagSet() *pflag.FlagSet {

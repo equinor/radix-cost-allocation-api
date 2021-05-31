@@ -54,14 +54,14 @@ type nodePoolCostAllocatedResources struct {
 }
 
 type containerCostService struct {
-	repo      repository.Repository
-	whitelist models.Whitelist
+	repo                   repository.Repository
+	applicationExcludeList []string
 }
 
-func NewContainerCostService(repo repository.Repository, whitelist models.Whitelist) CostService {
+func NewContainerCostService(repo repository.Repository, applicationExcludeList []string) CostService {
 	return &containerCostService{
-		repo:      repo,
-		whitelist: whitelist,
+		repo:                   repo,
+		applicationExcludeList: applicationExcludeList,
 	}
 }
 
@@ -114,7 +114,7 @@ func (s *containerCostService) getApplicationCostList(from, to time.Time) ([]mod
 		return nil, err
 	}
 
-	containers = removeApplicationsFromContainers(containers, s.whitelist.List)
+	containers = excludeApplicationNames(containers, s.applicationExcludeList)
 	poolCost := buildNodePoolCost(from, to, nodePools, nodePoolCost)
 	containerCostList, err := calculateContainerCost(poolCost, containers)
 	if err != nil {
@@ -154,7 +154,7 @@ func buildApplicationCostList(containerTotalCostList []containerTotalCost) []mod
 	return applicationCostList
 }
 
-func removeApplicationsFromContainers(containers []models.ContainerDto, applicationNames []string) []models.ContainerDto {
+func excludeApplicationNames(containers []models.ContainerDto, applicationNames []string) []models.ContainerDto {
 	if len(applicationNames) == 0 {
 		return containers
 	}
