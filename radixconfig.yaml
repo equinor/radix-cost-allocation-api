@@ -54,3 +54,4 @@ spec:
           variables:
             PIPELINE_IMG_TAG: "release-latest"
             LOG_LEVEL: INFO
+            USE_RUN_COST_SERVICE: true
