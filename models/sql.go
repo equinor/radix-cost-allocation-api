@@ -6,16 +6,14 @@ import (
 	"errors"
 	"fmt"
 
-	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
-
 	"log"
 	"time"
 )
 
 // CostRepository interface
 type CostRepository interface {
-	GetLatestRun() (costModels.Run, error)
-	GetRunsBetweenTimes(from, to *time.Time) ([]costModels.Run, error)
+	GetLatestRun() (Run, error)
+	GetRunsBetweenTimes(from, to *time.Time) ([]Run, error)
 }
 
 // DBCredentials hold credentials for database
@@ -41,13 +39,13 @@ func NewSQLCostRepository(creds *DBCredentials) *SQLCostRepository {
 }
 
 // GetLatestRun fetches the last run and joins them with resources logged for that run
-func (dbCon *SQLCostRepository) GetLatestRun() (costModels.Run, error) {
-	var requiredResources []costModels.RequiredResources
-	var lastRun costModels.Run
+func (dbCon *SQLCostRepository) GetLatestRun() (Run, error) {
+	var requiredResources []RequiredResources
+	var lastRun Run
 
 	ctx, err := dbCon.verifyConnection()
 	if err != nil {
-		return costModels.Run{}, err
+		return Run{}, err
 	}
 
 	query :=
@@ -69,7 +67,7 @@ func (dbCon *SQLCostRepository) GetLatestRun() (costModels.Run, error) {
 	rows, err := connection.QueryContext(ctx, query)
 
 	if err != nil {
-		return costModels.Run{}, err
+		return Run{}, err
 	}
 
 	defer rows.Close()
@@ -91,10 +89,10 @@ func (dbCon *SQLCostRepository) GetLatestRun() (costModels.Run, error) {
 		)
 
 		if err != nil {
-			return costModels.Run{}, err
+			return Run{}, err
 		}
 
-		resource := costModels.RequiredResources{
+		resource := RequiredResources{
 			Application:     application,
 			Environment:     environment,
 			Component:       component,
@@ -119,9 +117,9 @@ func (dbCon *SQLCostRepository) GetLatestRun() (costModels.Run, error) {
 // GetRunsBetweenTimes get all runs with its resources between from and to time, and optionally a specific application
 //
 // If appName is nil then runs for all applications are returned
-func (dbCon *SQLCostRepository) GetRunsBetweenTimes(from, to *time.Time) ([]costModels.Run, error) {
-	runsResources := map[int64]*[]costModels.RequiredResources{}
-	runs := map[int64]costModels.Run{}
+func (dbCon *SQLCostRepository) GetRunsBetweenTimes(from, to *time.Time) ([]Run, error) {
+	runsResources := map[int64]*[]RequiredResources{}
+	runs := map[int64]Run{}
 	ctx, err := dbCon.verifyConnection()
 	if err != nil {
 		return nil, err
@@ -158,7 +156,7 @@ func (dbCon *SQLCostRepository) GetRunsBetweenTimes(from, to *time.Time) ([]cost
 		var runID int64
 		var clusterCPUMillicores, clusterMemoryMegaBytes, cpuMillicores, memoryMegaBytes int
 		var wbs, application string
-		var run costModels.Run
+		var run Run
 
 		// Get values from row.
 		err := rows.Scan(
@@ -175,7 +173,7 @@ func (dbCon *SQLCostRepository) GetRunsBetweenTimes(from, to *time.Time) ([]cost
 			return nil, err
 		}
 
-		resource := costModels.RequiredResources{
+		resource := RequiredResources{
 			WBS:             wbs,
 			Application:     application,
 			CPUMillicore:    cpuMillicores,
@@ -184,9 +182,9 @@ func (dbCon *SQLCostRepository) GetRunsBetweenTimes(from, to *time.Time) ([]cost
 		}
 
 		if run = runs[runID]; run.ID == 0 {
-			resources := []costModels.RequiredResources{resource}
+			resources := []RequiredResources{resource}
 			runsResources[runID] = &resources
-			run = costModels.Run{
+			run = Run{
 				ID:                    runID,
 				MeasuredTimeUTC:       measuredTimeUTC,
 				ClusterCPUMillicore:   clusterCPUMillicores,
@@ -200,7 +198,7 @@ func (dbCon *SQLCostRepository) GetRunsBetweenTimes(from, to *time.Time) ([]cost
 		}
 	}
 
-	runsAsArray := make([]costModels.Run, len(runs))
+	runsAsArray := make([]Run, len(runs))
 	runEntryIndex := 0
 	for key, val := range runs {
 		val.Resources = *runsResources[key]

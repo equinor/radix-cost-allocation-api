@@ -13,30 +13,30 @@ import (
 	gomock "github.com/golang/mock/gomock"
 )
 
-// MockRadixAPIClient is a mock of RadixAPIClient interface
+// MockRadixAPIClient is a mock of RadixAPIClient interface.
 type MockRadixAPIClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockRadixAPIClientMockRecorder
 }
 
-// MockRadixAPIClientMockRecorder is the mock recorder for MockRadixAPIClient
+// MockRadixAPIClientMockRecorder is the mock recorder for MockRadixAPIClient.
 type MockRadixAPIClientMockRecorder struct {
 	mock *MockRadixAPIClient
 }
 
-// NewMockRadixAPIClient creates a new mock instance
+// NewMockRadixAPIClient creates a new mock instance.
 func NewMockRadixAPIClient(ctrl *gomock.Controller) *MockRadixAPIClient {
 	mock := &MockRadixAPIClient{ctrl: ctrl}
 	mock.recorder = &MockRadixAPIClientMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockRadixAPIClient) EXPECT() *MockRadixAPIClientMockRecorder {
 	return m.recorder
 }
 
-// GetRadixApplicationDetails mocks base method
+// GetRadixApplicationDetails mocks base method.
 func (m *MockRadixAPIClient) GetRadixApplicationDetails(appParams *application.GetApplicationParams, token string) (*radix_api.RadixApplicationDetails, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRadixApplicationDetails", appParams, token)
@@ -45,13 +45,13 @@ func (m *MockRadixAPIClient) GetRadixApplicationDetails(appParams *application.G
 	return ret0, ret1
 }
 
-// GetRadixApplicationDetails indicates an expected call of GetRadixApplicationDetails
+// GetRadixApplicationDetails indicates an expected call of GetRadixApplicationDetails.
 func (mr *MockRadixAPIClientMockRecorder) GetRadixApplicationDetails(appParams, token interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRadixApplicationDetails", reflect.TypeOf((*MockRadixAPIClient)(nil).GetRadixApplicationDetails), appParams, token)
 }
 
-// ShowRadixApplications mocks base method
+// ShowRadixApplications mocks base method.
 func (m *MockRadixAPIClient) ShowRadixApplications(appParams *platform.ShowApplicationsParams, token string) (*map[string]*radix_api.RadixApplicationDetails, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ShowRadixApplications", appParams, token)
@@ -60,7 +60,7 @@ func (m *MockRadixAPIClient) ShowRadixApplications(appParams *platform.ShowAppli
 	return ret0, ret1
 }
 
-// ShowRadixApplications indicates an expected call of ShowRadixApplications
+// ShowRadixApplications indicates an expected call of ShowRadixApplications.
 func (mr *MockRadixAPIClientMockRecorder) ShowRadixApplications(appParams, token interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ShowRadixApplications", reflect.TypeOf((*MockRadixAPIClient)(nil).ShowRadixApplications), appParams, token)

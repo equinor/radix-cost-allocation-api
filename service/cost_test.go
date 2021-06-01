@@ -1,4 +1,4 @@
-package cost_models_test
+package service
 
 import (
 	"math"
@@ -7,8 +7,7 @@ import (
 	"testing"
 	"time"
 
-	cost_models "github.com/equinor/radix-cost-allocation-api/api/cost/models"
-
+	"github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,7 +16,7 @@ const subscriptionCostCurrency = "NOK"
 
 func Test_cost_all_app_equal_requested(t *testing.T) {
 	runs := getTestRuns()
-	cost := cost_models.NewApplicationCostSet(time.Now().Add(-1), time.Now(), runs, 0, "")
+	cost := buildApplicationCostSetFromRuns(time.Now().Add(-1), time.Now(), runs, 0, "")
 
 	assert.Equal(t, cost.ApplicationCosts[0].CostPercentageByCPU, cost.ApplicationCosts[1].CostPercentageByCPU)
 	assert.Equal(t, cost.ApplicationCosts[1].CostPercentageByCPU, cost.ApplicationCosts[2].CostPercentageByCPU)
@@ -36,7 +35,7 @@ func Test_cost_one_app_double_requested(t *testing.T) {
 	runs[0].Resources[0].Replicas = 4
 	runs[1].Resources[0].Replicas = 4
 	runs[2].Resources[0].Replicas = 4
-	cost := cost_models.NewApplicationCostSet(time.Now().Add(-1), time.Now(), runs, 0, "")
+	cost := buildApplicationCostSetFromRuns(time.Now().Add(-1), time.Now(), runs, 0, "")
 
 	assert.Equal(t, 0.4, cost.GetCostBy("app-1").CostPercentageByCPU)
 	assert.Equal(t, 0.2, cost.GetCostBy("app-2").CostPercentageByCPU)
@@ -54,7 +53,7 @@ func Test_cost_one_app_no_requested(t *testing.T) {
 	runs[0].Resources[0].Replicas = 0
 	runs[1].Resources[0].Replicas = 0
 	runs[2].Resources[0].Replicas = 0
-	cost := cost_models.NewApplicationCostSet(time.Now().Add(-1), time.Now(), runs, 0, "")
+	cost := buildApplicationCostSetFromRuns(time.Now().Add(-1), time.Now(), runs, 0, "")
 
 	oneThird := float64(1.0) / float64(3.0)
 	assert.Equal(t, 0.0, cost.GetCostBy("app-1").CostPercentageByCPU)
@@ -70,7 +69,7 @@ func Test_cost_one_app_no_requested(t *testing.T) {
 
 func Test_cost_newest_wbs_selected(t *testing.T) {
 	runs := getTestRuns()
-	cost := cost_models.NewApplicationCostSet(time.Now().Add(-1), time.Now(), runs, 0, "")
+	cost := buildApplicationCostSetFromRuns(time.Now().Add(-1), time.Now(), runs, 0, "")
 
 	assert.Equal(t, runs[1].Resources[0].WBS, cost.GetCostBy("app-1").WBS)
 }
@@ -78,19 +77,19 @@ func Test_cost_newest_wbs_selected(t *testing.T) {
 func Test_future_cost_distributed_equally(t *testing.T) {
 
 	run1 := getTestRunForSingleApp("app-1")
-	costApp1, _ := cost_models.NewFutureCostEstimate("app-1", run1, subscriptionCost, subscriptionCostCurrency)
+	costApp1, _ := buildFutureCostEstimateFromRun("app-1", run1, subscriptionCost, subscriptionCostCurrency)
 	assert.Equal(t, costApp1.Cost, float64(25000))
 
 	run2 := getTestRunForSingleApp("app-2")
-	costApp2, _ := cost_models.NewFutureCostEstimate("app-2", run2, subscriptionCost, subscriptionCostCurrency)
+	costApp2, _ := buildFutureCostEstimateFromRun("app-2", run2, subscriptionCost, subscriptionCostCurrency)
 	assert.Equal(t, costApp2.Cost, float64(25000))
 
 	run3 := getTestRunForSingleApp("app-3")
-	costApp3, _ := cost_models.NewFutureCostEstimate("app-3", run3, subscriptionCost, subscriptionCostCurrency)
+	costApp3, _ := buildFutureCostEstimateFromRun("app-3", run3, subscriptionCost, subscriptionCostCurrency)
 	assert.Equal(t, costApp3.Cost, float64(25000))
 
 	run4 := getTestRunForSingleApp("app-4")
-	costApp4, _ := cost_models.NewFutureCostEstimate("app-4", run4, subscriptionCost, subscriptionCostCurrency)
+	costApp4, _ := buildFutureCostEstimateFromRun("app-4", run4, subscriptionCost, subscriptionCostCurrency)
 	assert.Equal(t, costApp4.Cost, float64(25000))
 
 	// Check that the cost for all applications together covers the total subscription cost
@@ -100,7 +99,7 @@ func Test_future_cost_distributed_equally(t *testing.T) {
 func Test_total_cost_subscription_cost_covered(t *testing.T) {
 	runs := getTestRuns()
 
-	cost := cost_models.NewApplicationCostSet(time.Now().Add(-30), time.Now(), runs, subscriptionCost, subscriptionCostCurrency)
+	cost := buildApplicationCostSetFromRuns(time.Now().Add(-30), time.Now(), runs, subscriptionCost, subscriptionCostCurrency)
 
 	totalCost := float64(0)
 	for _, c := range cost.ApplicationCosts {
@@ -113,7 +112,7 @@ func Test_total_cost_subscription_cost_covered(t *testing.T) {
 func Test_total_cost_distributed_equally(t *testing.T) {
 	runs := getTestRunsWithUnequallyDistributedResources()
 
-	cost := cost_models.NewApplicationCostSet(time.Now().Add(-30), time.Now(), runs, subscriptionCost, subscriptionCostCurrency)
+	cost := buildApplicationCostSetFromRuns(time.Now().Add(-30), time.Now(), runs, subscriptionCost, subscriptionCostCurrency)
 
 	totalRequestPercentage := float64(0)
 	for _, a := range cost.ApplicationCosts {
@@ -130,7 +129,7 @@ func Test_total_cost_distributed_equally(t *testing.T) {
 
 }
 
-func getTestRunForSingleApp(appName string) cost_models.Run {
+func getTestRunForSingleApp(appName string) models.Run {
 	runs := getTestRuns()
 
 	sort.Slice(runs, func(i, j int) bool {
@@ -140,13 +139,13 @@ func getTestRunForSingleApp(appName string) cost_models.Run {
 	return runs[0]
 }
 
-func getTestRunsWithUnequallyDistributedResources() []cost_models.Run {
-	return []cost_models.Run{
+func getTestRunsWithUnequallyDistributedResources() []models.Run {
+	return []models.Run{
 		{
 			ID:                    1,
 			ClusterCPUMillicore:   20000,
 			ClusterMemoryMegaByte: 30000,
-			Resources: []cost_models.RequiredResources{
+			Resources: []models.RequiredResources{
 				{
 					Application:     "app-1-0.5",
 					Environment:     "env-1",
@@ -184,14 +183,14 @@ func getTestRunsWithUnequallyDistributedResources() []cost_models.Run {
 	}
 }
 
-func getTestRuns() []cost_models.Run {
-	return []cost_models.Run{
+func getTestRuns() []models.Run {
+	return []models.Run{
 		{
 			ID:                    1,
 			ClusterCPUMillicore:   1000,
 			ClusterMemoryMegaByte: 1000,
 			MeasuredTimeUTC:       time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
-			Resources: []cost_models.RequiredResources{
+			Resources: []models.RequiredResources{
 				{
 					Application:     "app-1",
 					Environment:     "env-1",
@@ -232,7 +231,7 @@ func getTestRuns() []cost_models.Run {
 			ClusterCPUMillicore:   1000,
 			ClusterMemoryMegaByte: 1000,
 			MeasuredTimeUTC:       time.Date(2020, 1, 1, 0, 0, 10, 0, time.UTC),
-			Resources: []cost_models.RequiredResources{
+			Resources: []models.RequiredResources{
 				{
 					Application:     "app-1",
 					Environment:     "env-1",
@@ -273,7 +272,7 @@ func getTestRuns() []cost_models.Run {
 			ClusterCPUMillicore:   2000,
 			ClusterMemoryMegaByte: 2000,
 			MeasuredTimeUTC:       time.Date(2020, 1, 1, 0, 0, 5, 0, time.UTC),
-			Resources: []cost_models.RequiredResources{
+			Resources: []models.RequiredResources{
 				{
 					Application:     "app-1",
 					Environment:     "env-1",

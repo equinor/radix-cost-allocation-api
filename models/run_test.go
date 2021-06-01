@@ -1,14 +1,13 @@
-package cost_models_test
+package models
 
 import (
-	costmodels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func getTestRun() costmodels.Run {
-	return costmodels.Run{
+func getTestRun() Run {
+	return Run{
 		ID:                    1,
 		ClusterCPUMillicore:   1000,
 		ClusterMemoryMegaByte: 1000,
@@ -31,7 +30,7 @@ func Test_run_memory_weight_in_period(t *testing.T) {
 
 func Test_run_total_cpu_no_resources(t *testing.T) {
 	run := getTestRun()
-	run.Resources = []costmodels.RequiredResources{}
+	run.Resources = []RequiredResources{}
 
 	totalRequestedCPUByApp := run.RequestedCPUByApplications()
 	assert.Equal(t, 0, totalRequestedCPUByApp)
@@ -39,7 +38,7 @@ func Test_run_total_cpu_no_resources(t *testing.T) {
 
 func Test_run_total_cpu_requested(t *testing.T) {
 	run := getTestRun()
-	run.Resources = []costmodels.RequiredResources{
+	run.Resources = []RequiredResources{
 		{
 			CPUMillicore: 100,
 			Replicas:     2,
@@ -60,7 +59,7 @@ func Test_run_total_cpu_requested(t *testing.T) {
 
 func Test_run_total_memory_no_resources(t *testing.T) {
 	run := getTestRun()
-	run.Resources = []costmodels.RequiredResources{}
+	run.Resources = []RequiredResources{}
 
 	totalRequestedMemoryByApp := run.RequestedMemoryByApplications()
 	assert.Equal(t, 0, totalRequestedMemoryByApp)
@@ -68,7 +67,7 @@ func Test_run_total_memory_no_resources(t *testing.T) {
 
 func Test_run_total_memory_requested(t *testing.T) {
 	run := getTestRun()
-	run.Resources = []costmodels.RequiredResources{
+	run.Resources = []RequiredResources{
 		{
 			MemoryMegaBytes: 100,
 			Replicas:        2,
@@ -110,8 +109,8 @@ func Test_get_application_requested_resources(t *testing.T) {
 
 }
 
-func loadDefaultResources(run costmodels.Run) costmodels.Run {
-	run.Resources = []costmodels.RequiredResources{
+func loadDefaultResources(run Run) Run {
+	run.Resources = []RequiredResources{
 		{
 			Application:     "app-1",
 			Environment:     "env-1",

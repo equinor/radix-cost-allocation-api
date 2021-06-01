@@ -1,8 +1,9 @@
-package cost_models
+package models
 
 import (
-	"strings"
 	"time"
+
+	sliceUtil "github.com/equinor/radix-cost-allocation-api/utils/slice"
 )
 
 // Run holds all required resources for a time
@@ -102,19 +103,9 @@ func (run Run) GetApplicationsRequiredResource() []Application {
 func (run *Run) RemoveWhitelistedApplications(whiteList *Whitelist) {
 	cleanedResources := make([]RequiredResources, 0)
 	for _, resource := range run.Resources {
-		if !find(whiteList.List, resource.Application) {
+		if !sliceUtil.StringSliceContains(whiteList.List, resource.Application) {
 			cleanedResources = append(cleanedResources, resource)
 		}
 	}
 	run.Resources = cleanedResources
-}
-
-func find(list []string, val string) bool {
-	for _, item := range list {
-		if strings.EqualFold(val, item) {
-			return true
-		}
-	}
-
-	return false
 }

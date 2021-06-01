@@ -20,12 +20,27 @@ Clone the repo into your `GOPATH` and run `go mod download`.
 
 ### Generating mocks
 We use gomock to generate mocks used in unit test.
-You need to regenerate mocks if you make changes to any of the interface types used by the application, e.g. **CostRepository**, **RadixAPIClient**, **AuthProvider** or **IDToken**
-For example, regenerate **CostRepository** by executing
+You need to regenerate mocks if you make changes to any of the interface types used by the application; **CostRepository**, **Repository**, **RadixAPIClient**, **AuthProvider**, **IDToken** and **CostService**
+CostRepository:
 ```
 $ mockgen -source ./models/sql.go -destination ./api/test/mock/db_mock.go -package mock
 ```
-
+Repository:
+```
+$ mockgen -source ./repository/repository.go -destination ./repository/mock/repository_mock.go -package mock
+```
+RadixAPIClient:
+```
+$ mockgen -source ./models/radix_api/client.go -destination ./api/test/mock/radix_api_client_mock.go -package mock
+```
+AuthProvider and IDToken:
+```
+$ mockgen -source ./api/utils/auth/auth_provider.go -destination ./api/test/mock/auth_provider_mock.go -package mock
+```
+CostService:
+```
+$ mockgen -source ./service/costservice.go -destination ./service/mock/costservice.go -package mock
+```
 
 ### Dependencies - go modules
 
@@ -56,7 +71,7 @@ The following env var is needed. Useful default values in brackets.
 * `RADIX_DNS_ZONE` - Radix DNS zone (ex. `dev.radix.equinor.com`)
 * `SUBSCRIPTION_COST_VALUE` - Azure subscription monthly cost (ex. 10000)
 * `SUBSCRIPTION_COST_CURRENCY` - Azure subscription cost currency (ex. `NOK`)
-* `WHITELIST` - List of applications, not included for cost report `ex. {"whiteList": ["canarycicd-test","canarycicd-test1","canarycicd-test2","canarycicd-test3","radix-api","radix-canary-golang","radix-cost-allocation-api","radix-github-webhook","radix-platform","radix-web-console"]}`)
+* `WHITELIST` - List of applications, not included for cost report `ex. {"whiteList": ["canarycicd-test","canarycicd-test1","canarycicd-test2","canarycicd-test3","canarycicd-test4","radix-api","radix-canary-golang","radix-cost-allocation-api","radix-github-webhook","radix-platform","radix-web-console"]}`)
 * `AD_REPORT_READERS` - Azure AD group for user, allowed to get an overall cost report (ex. `{"groups": ["d59ab0b8-2b2c-11eb-adc1-0242ac120002"]}`)
 * `TOKEN_ISSUER` - Azure tennant ID (ex. `https://sts.windows.net/f08f9cda-2b2c-11eb-adc1-0242ac120002/`)
 * `USE_LOCAL_RADIX_API`
@@ -68,7 +83,9 @@ The following env var is needed. Useful default values in brackets.
     ```
         go tool pprof -http=:6070 http://localhost:7070/debug/pprof/heap
     ```
-
+* `USE_RUN_COST_SERVICE`
+  * `false`, `no` or `not set` - use the new container based service to calculate application cost
+  * `true` or `yes` - use the old run based service to callculate cost
 #### Common errors running locally
 
 - **Problem**: `panic: statik/fs: no zip data registered`
