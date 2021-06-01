@@ -1,4 +1,4 @@
-FROM golang:1.13.10-alpine3.10 as builder
+FROM golang:1.16.4-alpine3.13 as builder
 ENV GO111MODULE=on
 
 RUN apk update && \
