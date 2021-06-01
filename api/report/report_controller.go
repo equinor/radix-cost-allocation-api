@@ -7,6 +7,7 @@ import (
 
 	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	models "github.com/equinor/radix-cost-allocation-api/models"
+	"github.com/equinor/radix-cost-allocation-api/service"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -14,13 +15,12 @@ const rootPath = ""
 
 type reportController struct {
 	*models.DefaultController
-	repo models.CostRepository
-	env  *models.Env
+	costService service.CostService
 }
 
 // NewReportController constructor
-func NewReportController(env *models.Env, repo models.CostRepository) models.Controller {
-	return &reportController{repo: repo, env: env}
+func NewReportController(costService service.CostService) models.Controller {
+	return &reportController{costService: costService}
 }
 
 func (rc *reportController) GetRoutes() models.Routes {
@@ -49,7 +49,7 @@ func (rc *reportController) GetCostReport(accounts models.Accounts, w http.Respo
 	//   "404":
 	//     description: "Not found"
 
-	handler := NewReportHandler(rc.repo, rc.env)
+	handler := NewReportHandler(rc.costService)
 	fromDate, toDate := utils.GetFirstAndLastOfPreviousMonth()
 	file, err := os.Create(fmt.Sprintf("%s-%s.csv", fromDate.Format("2006-01-02"), toDate.Format("2006-01-02")))
 	defer os.Remove(file.Name())

@@ -3,7 +3,7 @@ package test
 import (
 	"time"
 
-	costModels "github.com/equinor/radix-cost-allocation-api/api/cost/models"
+	"github.com/equinor/radix-cost-allocation-api/models"
 )
 
 // RunBuilder handles construction of runs
@@ -12,14 +12,14 @@ type RunBuilder interface {
 	WithMeasuredTimeUTC(time time.Time) RunBuilder
 	WithClusterCPUMillicore(cpu int) RunBuilder
 	WithClusterMemoryMegaByte(mem int) RunBuilder
-	WithResources(rr []costModels.RequiredResources) RunBuilder
-	BuildRun() *costModels.Run
+	WithResources(rr []models.RequiredResources) RunBuilder
+	BuildRun() *models.Run
 }
 
 // RunBuilderList handles construction of run lists
 type RunBuilderList interface {
 	WithBuilders(builders []RunBuilder) RunBuilderList
-	BuildRuns() []costModels.Run
+	BuildRuns() []models.Run
 }
 
 // RunBuilderStruct instance variables
@@ -28,7 +28,7 @@ type RunBuilderStruct struct {
 	time time.Time
 	cpu  int
 	mem  int
-	rr   []costModels.RequiredResources
+	rr   []models.RequiredResources
 }
 
 // RunBuilderListStruct instance variables
@@ -67,14 +67,14 @@ func (rb *RunBuilderStruct) WithClusterMemoryMegaByte(mem int) RunBuilder {
 }
 
 // WithResources sets resources
-func (rb *RunBuilderStruct) WithResources(resources []costModels.RequiredResources) RunBuilder {
+func (rb *RunBuilderStruct) WithResources(resources []models.RequiredResources) RunBuilder {
 	rb.rr = resources
 	return rb
 }
 
 // BuildRun builds the run
-func (rb *RunBuilderStruct) BuildRun() *costModels.Run {
-	return &costModels.Run{
+func (rb *RunBuilderStruct) BuildRun() *models.Run {
+	return &models.Run{
 		ClusterCPUMillicore:   rb.cpu,
 		ClusterMemoryMegaByte: rb.mem,
 		ID:                    rb.id,
@@ -84,8 +84,8 @@ func (rb *RunBuilderStruct) BuildRun() *costModels.Run {
 }
 
 // BuildRuns build the run list
-func (rbl *RunBuilderListStruct) BuildRuns() []costModels.Run {
-	var runs []costModels.Run
+func (rbl *RunBuilderListStruct) BuildRuns() []models.Run {
+	var runs []models.Run
 
 	for _, r := range rbl.builders {
 		runs = append(runs, *r.BuildRun())
