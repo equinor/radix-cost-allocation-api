@@ -180,7 +180,8 @@ func JSONResponse(w http.ResponseWriter, r *http.Request, result interface{}) {
 	w.Write(body)
 }
 
-// FileResponse creates a response with file
+// ReaderFileResponse writes the content from the reader to the response,
+// and sets Content-Disposition=attachment; filename=<filename arg>
 func ReaderFileResponse(w http.ResponseWriter, r *http.Request, reader io.Reader, fileName, contentType string) {
 	w.Header().Set("Content-Disposition", "attachment; filename="+fileName)
 	w.Header().Set("Content-Type", contentType)
