@@ -2,9 +2,9 @@ package report
 
 import (
 	"io"
+	"time"
 
 	reportModels "github.com/equinor/radix-cost-allocation-api/api/report/models"
-	"github.com/equinor/radix-cost-allocation-api/api/utils"
 	"github.com/equinor/radix-cost-allocation-api/service"
 )
 
@@ -21,10 +21,9 @@ func NewReportHandler(costService service.CostService) *ReportHandler {
 }
 
 // GetCostReport creates a CostReport
-func (rh *ReportHandler) GetCostReport(out io.Writer) error {
-	from, to := utils.GetFirstAndLastOfPreviousMonth()
+func (rh *ReportHandler) GetCostReport(out io.Writer, from, to time.Time) error {
 
-	costSet, err := rh.costService.GetCostForPeriod(*from, *to)
+	costSet, err := rh.costService.GetCostForPeriod(from, to)
 	if err != nil {
 		return err
 	}
