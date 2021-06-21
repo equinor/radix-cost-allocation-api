@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -95,7 +94,7 @@ func (s *containerCostService) GetFutureCost(appName string) (*models.Applicatio
 		}
 	}
 
-	return nil, errors.New("application not found or not running")
+	return &models.ApplicationCost{Name: appName}, nil
 }
 
 func (s *containerCostService) getApplicationCostList(from, to time.Time) ([]models.ApplicationCost, error) {
