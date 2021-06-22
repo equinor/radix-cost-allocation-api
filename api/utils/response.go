@@ -8,9 +8,9 @@ import (
 	"net/url"
 	"sort"
 
+	"github.com/golang/gddo/httputil/header"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/golang/gddo/httputil/header"
 	"github.com/pkg/errors"
 )
 
@@ -22,7 +22,7 @@ import (
 type Error struct {
 	Type Type
 	// a message that can be printed out for the user
-	Message string `json:"message"`
+	Message string
 	// the underlying error that can be e.g., logged for developers to look at
 	Err error
 }
@@ -51,18 +51,12 @@ const (
 
 // MarshalJSON Writes error as json
 func (e *Error) MarshalJSON() ([]byte, error) {
-	var errMsg string
-	if e.Err != nil {
-		errMsg = e.Err.Error()
-	}
 	jsonable := &struct {
 		Type    string `json:"type"`
 		Message string `json:"message"`
-		Err     string `json:"error,omitempty"`
 	}{
 		Type:    string(e.Type),
 		Message: e.Message,
-		Err:     errMsg,
 	}
 	return json.Marshal(jsonable)
 }
@@ -72,16 +66,12 @@ func (e *Error) UnmarshalJSON(data []byte) error {
 	jsonable := &struct {
 		Type    string `json:"type"`
 		Message string `json:"message"`
-		Err     string `json:"error,omitempty"`
 	}{}
 	if err := json.Unmarshal(data, &jsonable); err != nil {
 		return err
 	}
 	e.Type = Type(jsonable.Type)
 	e.Message = jsonable.Message
-	if jsonable.Err != "" {
-		e.Err = errors.New(jsonable.Err)
-	}
 	return nil
 }
 
@@ -90,24 +80,6 @@ func UnexpectedError(message string, underlyingError error) error {
 	return &Error{
 		Type:    Server,
 		Err:     underlyingError,
-		Message: message,
-	}
-}
-
-// TypeMissingError indication of underlying type missing
-func TypeMissingError(message string, underlyingError error) error {
-	return &Error{
-		Type:    Missing,
-		Err:     underlyingError,
-		Message: message,
-	}
-}
-
-// ValidationError Used for indication of validation errors
-func ValidationError(kind, message string) error {
-	return &Error{
-		Type:    User,
-		Err:     fmt.Errorf("%s failed validation", kind),
 		Message: message,
 	}
 }
@@ -124,9 +96,9 @@ func ApplicationNotFoundError(message string, underlyingError error) error {
 // CoverAllError Cover all other errors
 func CoverAllError(err error) *Error {
 	return &Error{
-		Type:    User,
+		Type:    Server,
 		Err:     err,
-		Message: `Error: ` + err.Error(),
+		Message: "Internal server error",
 	}
 }
 
@@ -194,12 +166,12 @@ func ErrorResponse(w http.ResponseWriter, r *http.Request, apiError error) {
 	var code int
 	var ok bool
 
+	log.Error(apiError)
+
 	err := errors.Cause(apiError)
 	if outErr, ok = err.(*Error); !ok {
 		outErr = CoverAllError(apiError)
 	}
-
-	log.Error(outErr.Message)
 
 	switch apiError.(type) {
 	case *url.Error:
