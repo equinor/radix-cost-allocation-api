@@ -11,6 +11,8 @@ spec:
       build:
         from: master
     - name: dev
+      build:
+        from: v2
     - name: v2
   components:
     - name: "server"
