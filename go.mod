@@ -6,12 +6,12 @@ require (
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/denisenkom/go-mssqldb v0.10.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/equinor/radix-common v1.0.0
 	github.com/go-openapi/errors v0.20.0
 	github.com/go-openapi/runtime v0.19.28
 	github.com/go-openapi/strfmt v0.20.1
 	github.com/go-openapi/swag v0.19.14
 	github.com/go-openapi/validate v0.20.2
-	github.com/golang/gddo v0.0.0-20210115222349-20d68f94ee1f
 	github.com/golang/mock v1.5.0
 	github.com/gorilla/mux v1.8.0
 	github.com/pkg/errors v0.9.1
@@ -30,3 +30,5 @@ require (
 	gorm.io/gorm v1.21.10
 	gotest.tools v2.2.0+incompatible
 )
+
+replace github.com/equinor/radix-common v1.0.0 => /home/user1/go/src/github.com/equinor/radix-common

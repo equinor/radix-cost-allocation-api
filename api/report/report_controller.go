@@ -61,7 +61,7 @@ func (rc *reportController) GetCostReport(accounts models.Accounts, w http.Respo
 		utils.ErrorResponse(w, r, err)
 	}
 
-	utils.ReaderFileResponse(w, r, &b, fileName, "text/plain; charset=utf-8")
+	utils.ReaderFileResponse(w, &b, fileName, "text/plain; charset=utf-8")
 }
 
 // from is the first day of the previous month

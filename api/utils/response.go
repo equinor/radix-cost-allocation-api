@@ -8,10 +8,9 @@ import (
 	"net/url"
 	"sort"
 
-	"github.com/golang/gddo/httputil/header"
-	log "github.com/sirupsen/logrus"
-
+	httpUtils "github.com/equinor/radix-common/utils/net/http"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 // Error Representation of errors in the API. These are divided into a small
@@ -154,7 +153,7 @@ func JSONResponse(w http.ResponseWriter, r *http.Request, result interface{}) {
 
 // ReaderFileResponse writes the content from the reader to the response,
 // and sets Content-Disposition=attachment; filename=<filename arg>
-func ReaderFileResponse(w http.ResponseWriter, r *http.Request, reader io.Reader, fileName, contentType string) {
+func ReaderFileResponse(w http.ResponseWriter, reader io.Reader, fileName, contentType string) {
 	w.Header().Set("Content-Disposition", "attachment; filename="+fileName)
 	w.Header().Set("Content-Type", contentType)
 	io.Copy(w, reader)
@@ -200,12 +199,15 @@ func ErrorResponse(w http.ResponseWriter, r *http.Request, apiError error) {
 // (`q`) parameter is chosen; if there are a number of those, the one
 // that appears first in the available types is chosen.
 func negotiateContentType(r *http.Request, orderedPref []string) string {
-	specs := header.ParseAccept(r.Header, "Accept")
+	specs, err := httpUtils.GetAccepts(r.Header)
+	if err != nil {
+		log.Errorf("error getting header Accept: %v", err)
+	}
 	if len(specs) == 0 {
 		return orderedPref[0]
 	}
 
-	preferred := []header.AcceptSpec{}
+	preferred := []httpUtils.AcceptSpec{}
 	for _, spec := range specs {
 		if indexOf(orderedPref, spec.Value) < len(orderedPref) {
 			preferred = append(preferred, spec)
@@ -220,7 +222,7 @@ func negotiateContentType(r *http.Request, orderedPref []string) string {
 
 // sortAccept Holds accepted response types
 type sortAccept struct {
-	specs []header.AcceptSpec
+	specs []httpUtils.AcceptSpec
 	prefs []string
 }
 
