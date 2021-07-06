@@ -153,7 +153,7 @@ func addHandlerRoute(router *mux.Router, route models.Route) {
 		radixnet.NewRadixMiddleware(path, route.Method, route.HandlerFunc,
 			func(handler *radixnet.RadixMiddleware, w http.ResponseWriter, r *http.Request, started time.Time) {
 				httpDuration := time.Since(started)
-				metrics.AddRequestDuration(handler.Path, handler.Method, httpDuration)
+				metrics.AddRequestDuration(handler.path, handler.method, httpDuration)
 			}).Handle).
 		Methods(route.Method)
 }

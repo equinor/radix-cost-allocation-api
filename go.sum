@@ -83,8 +83,8 @@ github.com/emicklei/go-restful v0.0.0-20170410110728-ff4f55a20633/go.mod h1:otzb
 github.com/envoyproxy/go-control-plane v0.6.9/go.mod h1:SBwIajubJHhxtWwsL9s8ss4safvEdbitLhGGK48rN6g=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
-github.com/equinor/radix-common v1.1.1 h1:5wppeE0B3ziqxHWECdTnn4U2s9FuPA8QPt6py80no5g=
-github.com/equinor/radix-common v1.1.1/go.mod h1:doThGik0n51Aq68ZAWF7sigd0iUMYudo8ARqfgWGXPc=
+github.com/equinor/radix-common v1.1.2 h1:DCqfI7SQUY/veIFUc8xcnLcLwq38sQuMtx7XiU7UkyI=
+github.com/equinor/radix-common v1.1.2/go.mod h1:tmQHfaNDJLxGaFlV5pTPgi8kTh5W5XFGbo+DZpkKKus=
 github.com/evanphx/json-patch v4.9.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db/go.mod h1:7dvUGVsVBjqR7JHJk0brhHOZYGmfBYOrK0ZhYMEtBr4=
