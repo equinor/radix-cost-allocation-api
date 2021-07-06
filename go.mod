@@ -30,5 +30,3 @@ require (
 	gorm.io/gorm v1.21.10
 	gotest.tools v2.2.0+incompatible
 )
-
-replace github.com/equinor/radix-common v1.0.0 => /home/user1/go/src/github.com/equinor/radix-common
