@@ -6,11 +6,12 @@ import (
 	"strings"
 	"time"
 
+	radixhttp "github.com/equinor/radix-common/net/http"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
 	"github.com/equinor/radix-cost-allocation-api/service"
 
-	"github.com/equinor/radix-cost-allocation-api/api/utils"
-	models "github.com/equinor/radix-cost-allocation-api/models"
+	"github.com/equinor/radix-common/models"
+	"github.com/equinor/radix-common/utils"
 	"github.com/gorilla/mux"
 )
 
@@ -174,40 +175,40 @@ func (costController *costController) getFutureCost(accounts models.Accounts, w 
 	cost, err := handler.GetFutureCost(appName)
 
 	if err != nil {
-		utils.ErrorResponse(w, r, err)
+		radixhttp.ErrorResponse(w, r, err)
 		return
 	}
 
-	utils.JSONResponse(w, r, &cost)
+	radixhttp.JSONResponse(w, r, &cost)
 }
 
 func (costController *costController) getTotalCosts(accounts models.Accounts, w http.ResponseWriter, r *http.Request, appName *string) {
 	fromTime, toTime, err := getCostPeriod(w, r)
 	if err != nil {
-		utils.ErrorResponse(w, r, err)
+		radixhttp.ErrorResponse(w, r, err)
 		return
 	}
 
 	handler := NewCostHandler(accounts, costController.radixapi, costController.costService)
 	cost, err := handler.GetTotalCost(fromTime, toTime, appName)
 	if err != nil {
-		utils.ErrorResponse(w, r, err)
+		radixhttp.ErrorResponse(w, r, err)
 		return
 	}
 
-	utils.JSONResponse(w, r, cost)
+	radixhttp.JSONResponse(w, r, cost)
 }
 
 func getCostPeriod(w http.ResponseWriter, r *http.Request) (*time.Time, *time.Time, error) {
 	fromTime, err := getTimeFromRequest(r, "fromTime")
 	if err != nil {
-		utils.ErrorResponse(w, r, err)
+		radixhttp.ErrorResponse(w, r, err)
 		return nil, nil, err
 	}
 
 	toTime, err := getTimeFromRequest(r, "toTime")
 	if err != nil {
-		utils.ErrorResponse(w, r, err)
+		radixhttp.ErrorResponse(w, r, err)
 		return nil, nil, err
 	}
 

@@ -4,14 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/equinor/radix-cost-allocation-api/metrics"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
+	"github.com/equinor/radix-common/models"
+	radixnet "github.com/equinor/radix-common/net"
+	radixhttp "github.com/equinor/radix-common/net/http"
 	"github.com/equinor/radix-cost-allocation-api/api/utils/auth"
 
-	"github.com/equinor/radix-cost-allocation-api/api/utils"
-	"github.com/equinor/radix-cost-allocation-api/models"
 	_ "github.com/equinor/radix-cost-allocation-api/swaggerui" // statik files
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -147,14 +150,19 @@ func initializeHealthEndpoint(router *mux.Router) {
 func addHandlerRoute(router *mux.Router, route models.Route) {
 	path := apiVersionRoute + route.Path
 	router.HandleFunc(path,
-		utils.NewRadixMiddleware(path, route.Method, route.HandlerFunc).Handle).Methods(route.Method)
+		radixnet.NewRadixMiddleware(path, route.Method, route.HandlerFunc,
+			func(handler *radixnet.RadixMiddleware, w http.ResponseWriter, r *http.Request, started time.Time) {
+				httpDuration := time.Since(started)
+				metrics.AddRequestDuration(handler.Path, handler.Method, httpDuration)
+			}).Handle).
+		Methods(route.Method)
 }
 
 func newAuthenticationMiddleware(authProvider auth.AuthProvider) negroni.HandlerFunc {
 	ctx := context.Background()
 
-	return negroni.HandlerFunc(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-		token, err := utils.GetBearerTokenFromHeader(r)
+	return func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+		token, err := radixhttp.GetBearerTokenFromHeader(r)
 
 		if err != nil {
 			log.Info("Could not get token from header")
@@ -171,7 +179,7 @@ func newAuthenticationMiddleware(authProvider auth.AuthProvider) negroni.Handler
 		}
 
 		next(w, r)
-	})
+	}
 }
 
 func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider auth.AuthProvider) negroni.HandlerFunc {
@@ -181,10 +189,13 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider auth
 		List []string `json:"groups"`
 	}
 
-	json.Unmarshal([]byte(allowedADGroups), &allowedGroups)
+	err := json.Unmarshal([]byte(allowedADGroups), &allowedGroups)
+	if err != nil {
+		log.Errorf("could not parse json for allowedADGroups")
+	}
 
-	return negroni.HandlerFunc(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-		token, err := utils.GetBearerTokenFromHeader(r)
+	return func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+		token, err := radixhttp.GetBearerTokenFromHeader(r)
 
 		if err != nil {
 			log.Info("Could not get token from header")
@@ -220,7 +231,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider auth
 		w.WriteHeader(http.StatusForbidden)
 		return
 
-	})
+	}
 }
 
 func find(list []string, val string) bool {

@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/equinor/radix-cost-allocation-api/api/utils"
-	models "github.com/equinor/radix-cost-allocation-api/models"
+	"github.com/equinor/radix-common/models"
+	radixhttp "github.com/equinor/radix-common/net/http"
 	"github.com/equinor/radix-cost-allocation-api/service"
 	log "github.com/sirupsen/logrus"
 )
@@ -36,7 +36,7 @@ func (rc *reportController) GetRoutes() models.Routes {
 }
 
 // GetCostReport creates a report for all applications for the previous month
-func (rc *reportController) GetCostReport(accounts models.Accounts, w http.ResponseWriter, r *http.Request) {
+func (rc *reportController) GetCostReport(_ models.Accounts, w http.ResponseWriter, r *http.Request) {
 	// swagger:operation GET /report report getCostReport
 	// ---
 	// summary: Get cost-report for all applications for the previous month
@@ -58,10 +58,10 @@ func (rc *reportController) GetCostReport(accounts models.Accounts, w http.Respo
 	err := handler.GetCostReport(&b, fromDate, toDate)
 	if err != nil {
 		log.Debugf("Failed to get report. Error: %v", err)
-		utils.ErrorResponse(w, r, err)
+		radixhttp.ErrorResponse(w, r, err)
 	}
 
-	utils.ReaderFileResponse(w, &b, fileName, "text/plain; charset=utf-8")
+	radixhttp.ReaderFileResponse(w, &b, fileName, "text/plain; charset=utf-8")
 }
 
 // from is the first day of the previous month
