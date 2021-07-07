@@ -5,8 +5,9 @@ import (
 	"time"
 
 	_ "github.com/denisenkom/go-mssqldb"
-	"github.com/equinor/radix-cost-allocation-api/api/utils"
-	models "github.com/equinor/radix-cost-allocation-api/models"
+	radixmodels "github.com/equinor/radix-common/models"
+	radixhttp "github.com/equinor/radix-common/net/http"
+	"github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/application"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/platform"
@@ -16,13 +17,13 @@ import (
 
 // CostHandler Instance variables
 type CostHandler struct {
-	accounts    models.Accounts
+	accounts    radixmodels.Accounts
 	radixapi    radix_api.RadixAPIClient
 	costService service.CostService
 }
 
 // NewCostHandler Constructor
-func NewCostHandler(accounts models.Accounts, radixapi radix_api.RadixAPIClient, costService service.CostService) CostHandler {
+func NewCostHandler(accounts radixmodels.Accounts, radixapi radix_api.RadixAPIClient, costService service.CostService) CostHandler {
 	return CostHandler{
 		accounts:    accounts,
 		radixapi:    radixapi,
@@ -78,8 +79,9 @@ func (costHandler *CostHandler) GetFutureCost(appName string) (*models.Applicati
 		return &filteredByAccess[0], nil
 	}
 
-	log.Debugf("User does not have access to application '%s'.", appName)
-	return nil, utils.ApplicationNotFoundError("Application was not found.", fmt.Errorf("User does not have access to application %s", appName))
+	err = fmt.Errorf("user does not have access to application %s", appName)
+	log.Debugf("Error: %s", err.Error())
+	return nil, radixhttp.ApplicationNotFoundError("Application was not found.", err)
 }
 
 func (costHandler *CostHandler) filterApplicationCostsBy(appName *string, cost *models.ApplicationCostSet) []models.ApplicationCost {

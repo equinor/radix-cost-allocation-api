@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/equinor/radix-common/utils"
 	"github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/equinor/radix-cost-allocation-api/repository"
-	sliceUtil "github.com/equinor/radix-cost-allocation-api/utils/slice"
 )
 
 func ContainerMissingNodeError(containerId string) error {
@@ -160,7 +160,7 @@ func excludeApplicationNames(containers []models.ContainerDto, applicationNames 
 
 	var i int
 	for _, c := range containers {
-		if sliceUtil.StringSliceContains(applicationNames, c.ApplicationName) {
+		if utils.ContainsString(applicationNames, c.ApplicationName) {
 			continue
 		}
 		containers[i] = c
