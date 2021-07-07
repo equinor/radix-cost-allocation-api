@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/denisenkom/go-mssqldb v0.10.0
-	github.com/equinor/radix-common v1.1.3
+	github.com/equinor/radix-common v1.1.5
 	github.com/go-openapi/errors v0.20.0
 	github.com/go-openapi/runtime v0.19.28
 	github.com/go-openapi/strfmt v0.20.1
