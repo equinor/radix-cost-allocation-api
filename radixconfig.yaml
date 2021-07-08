@@ -11,6 +11,9 @@ spec:
       build:
         from: master
     - name: dev
+      build:
+        from: v2
+    - name: v2
   components:
     - name: "server"
       src: "."
@@ -54,3 +57,8 @@ spec:
           variables:
             PIPELINE_IMG_TAG: "release-latest"
             LOG_LEVEL: INFO
+        - environment: v2
+          runAsNonRoot: true
+          replicas: 1
+          variables:
+            PIPELINE_IMG_TAG: "release-latest"

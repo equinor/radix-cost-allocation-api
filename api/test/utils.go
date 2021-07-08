@@ -9,9 +9,8 @@ import (
 	"net/http/httptest"
 	"os"
 
-	"github.com/equinor/radix-cost-allocation-api/api/utils"
+	"github.com/equinor/radix-common/models"
 	"github.com/equinor/radix-cost-allocation-api/api/utils/auth"
-	"github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/equinor/radix-cost-allocation-api/router"
 	log "github.com/sirupsen/logrus"
 )
@@ -81,26 +80,10 @@ func (tu *Utils) ExecuteRequestWithParameters(method, endpoint string, parameter
 
 }
 
-// GetErrorResponse Gets error repsonse
-func GetErrorResponse(response *httptest.ResponseRecorder) (*utils.Error, error) {
-	errorResponse := &utils.Error{}
-	err := GetResponseBody(response, errorResponse)
-	if err != nil {
-		log.Infof("%v", err)
-		return nil, err
-	}
-
-	return errorResponse, nil
-}
-
 // GetResponseBody Gets response payload as type
 func GetResponseBody(response *httptest.ResponseRecorder, target interface{}) error {
 	body, _ := ioutil.ReadAll(response.Body)
 	log.Infof(string(body))
 
 	return json.Unmarshal(body, target)
-}
-
-func GetFileResponse(response *httptest.ResponseRecorder, target io.Writer) {
-	io.Copy(target, response.Body)
 }
