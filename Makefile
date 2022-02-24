@@ -19,3 +19,11 @@ swagger:
 	swagger generate spec -o ./swagger.json --scan-models
 	mv swagger.json ./swaggerui_src/swagger.json
 	statik -src=./swaggerui_src/ -p swaggerui
+
+.PHONY: mocks
+mocks:
+	mockgen -source ./models/sql.go -destination ./api/test/mock/db_mock.go -package mock
+	mockgen -source ./repository/repository.go -destination ./repository/mock/repository_mock.go -package mock
+	mockgen -source ./models/radix_api/client.go -destination ./api/test/mock/radix_api_client_mock.go -package mock
+	mockgen -source ./api/utils/auth/auth_provider.go -destination ./api/test/mock/auth_provider_mock.go -package mock
+	mockgen -source ./service/costservice.go -destination ./service/mock/costservice.go -package mock
