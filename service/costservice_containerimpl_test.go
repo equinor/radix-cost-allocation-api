@@ -541,31 +541,33 @@ func Test_getContainerResourcesUsageInNodePoolCost(t *testing.T) {
 	c4 := models.ContainerDto{StartedAt: time.Date(2020, 1, 12, 0, 0, 0, 0, time.UTC), LastKnownRunningAt: time.Date(2020, 1, 15, 0, 0, 0, 0, time.UTC), MemoryRequestedBytes: memReq, CpuRequestedMillicores: cpuReq, Node: &models.NodeDto{NodePoolId: &nodePoolId}}
 	c5 := models.ContainerDto{StartedAt: time.Date(2020, 1, 18, 0, 0, 0, 0, time.UTC), LastKnownRunningAt: time.Date(2020, 1, 22, 0, 0, 0, 0, time.UTC), MemoryRequestedBytes: memReq, CpuRequestedMillicores: cpuReq, Node: &models.NodeDto{NodePoolId: &nodePoolId}}
 	c6 := models.ContainerDto{StartedAt: time.Date(2020, 1, 20, 0, 0, 0, 0, time.UTC), LastKnownRunningAt: time.Date(2020, 1, 22, 0, 0, 0, 0, time.UTC), MemoryRequestedBytes: memReq, CpuRequestedMillicores: cpuReq, Node: &models.NodeDto{NodePoolId: &nodePoolId}}
-	cMissingNode := models.ContainerDto{ContainerId: "c_id"}
-	cMissingNodePoolId := models.ContainerDto{ContainerId: "c_id", Node: &models.NodeDto{}}
+	cMissingNode := models.ContainerDto{StartedAt: time.Date(2020, 1, 7, 0, 0, 0, 0, time.UTC), LastKnownRunningAt: time.Date(2020, 1, 12, 0, 0, 0, 0, time.UTC), MemoryRequestedBytes: memReq, CpuRequestedMillicores: cpuReq}
+	cMissingNodePoolId := models.ContainerDto{StartedAt: time.Date(2020, 1, 7, 0, 0, 0, 0, time.UTC), LastKnownRunningAt: time.Date(2020, 1, 12, 0, 0, 0, 0, time.UTC), MemoryRequestedBytes: memReq, CpuRequestedMillicores: cpuReq, Node: &models.NodeDto{}}
 
-	cpuSec, memSec, _ := getContainerResourcesUsageInNodePoolCost(cost, c1)
+	cpuSec, memSec := getContainerResourcesUsageInNodePoolCost(cost, c1)
 	assert.Equal(t, float64(0), cpuSec)
 	assert.Equal(t, float64(0), memSec)
-	cpuSec, memSec, _ = getContainerResourcesUsageInNodePoolCost(cost, c2)
+	cpuSec, memSec = getContainerResourcesUsageInNodePoolCost(cost, c2)
 	assert.Equal(t, (2*day).Seconds()*float64(cpuReq), cpuSec)
 	assert.Equal(t, (2*day).Seconds()*float64(memReq), memSec)
-	cpuSec, memSec, _ = getContainerResourcesUsageInNodePoolCost(cost, c3)
+	cpuSec, memSec = getContainerResourcesUsageInNodePoolCost(cost, c3)
 	assert.Equal(t, (10*day).Seconds()*float64(cpuReq), cpuSec)
 	assert.Equal(t, (10*day).Seconds()*float64(memReq), memSec)
-	cpuSec, memSec, _ = getContainerResourcesUsageInNodePoolCost(cost, c4)
+	cpuSec, memSec = getContainerResourcesUsageInNodePoolCost(cost, c4)
 	assert.Equal(t, (3*day).Seconds()*float64(cpuReq), cpuSec)
 	assert.Equal(t, (3*day).Seconds()*float64(memReq), memSec)
-	cpuSec, memSec, _ = getContainerResourcesUsageInNodePoolCost(cost, c5)
+	cpuSec, memSec = getContainerResourcesUsageInNodePoolCost(cost, c5)
 	assert.Equal(t, (2*day).Seconds()*float64(cpuReq), cpuSec)
 	assert.Equal(t, (2*day).Seconds()*float64(memReq), memSec)
-	cpuSec, memSec, _ = getContainerResourcesUsageInNodePoolCost(cost, c6)
+	cpuSec, memSec = getContainerResourcesUsageInNodePoolCost(cost, c6)
 	assert.Equal(t, float64(0), cpuSec)
 	assert.Equal(t, float64(0), memSec)
-	_, _, err := getContainerResourcesUsageInNodePoolCost(cost, cMissingNode)
-	assert.Equal(t, ContainerMissingNodeError("c_id"), err)
-	_, _, err = getContainerResourcesUsageInNodePoolCost(cost, cMissingNodePoolId)
-	assert.Equal(t, ContainerMissingNodePoolIdError("c_id"), err)
+	cpuSec, memSec = getContainerResourcesUsageInNodePoolCost(cost, cMissingNode)
+	assert.Equal(t, float64(0), cpuSec)
+	assert.Equal(t, float64(0), memSec)
+	cpuSec, memSec = getContainerResourcesUsageInNodePoolCost(cost, cMissingNodePoolId)
+	assert.Equal(t, float64(0), cpuSec)
+	assert.Equal(t, float64(0), memSec)
 }
 
 func Test_getAllocatedResourcesForNodePoolCost(t *testing.T) {
@@ -600,7 +602,7 @@ func Test_getAllocatedResourcesForNodePoolCost(t *testing.T) {
 		CpuRequestedMillicores: 16, MemoryRequestedBytes: 26, Node: &models.NodeDto{NodePoolId: &nodePoolId1}}
 	c7 := models.ContainerDto{ContainerId: "c7", StartedAt: time.Date(2020, 1, 12, 0, 0, 0, 0, time.UTC), LastKnownRunningAt: time.Date(2020, 1, 15, 0, 0, 0, 0, time.UTC),
 		CpuRequestedMillicores: 17, MemoryRequestedBytes: 27, Node: &models.NodeDto{NodePoolId: &nodePoolId2}}
-	actual, err := getAllocatedResourcesForNodePoolCost(cost, []models.ContainerDto{c1, c2, c3, c4, c5, c6, c7})
+	actual := getAllocatedResourcesForNodePoolCost(cost, []models.ContainerDto{c1, c2, c3, c4, c5, c6, c7})
 	expectedTotalCpu := 2*day*12 + 10*day*13 + 3*day*14 + 4*day*15 // c2+c3+c4+c5
 	expectedTotalMem := 2*day*22 + 10*day*23 + 3*day*24 + 4*day*25 // c2+c3+c4+c5
 	expectedContainerResources := []containerResourceUsage{
@@ -609,7 +611,7 @@ func Test_getAllocatedResourcesForNodePoolCost(t *testing.T) {
 		{containerID: "c4", cpuMillicoreSeconds: (3 * day * 14).Seconds(), memoryBytesSeconds: (3 * day * 24).Seconds()},
 		{containerID: "c5", cpuMillicoreSeconds: (4 * day * 15).Seconds(), memoryBytesSeconds: (4 * day * 25).Seconds()},
 	}
-	assert.Nil(t, err)
+
 	assert.Equal(t, expectedTotalCpu.Seconds(), actual.cpuMillicoreSeconds)
 	assert.Equal(t, expectedTotalMem.Seconds(), actual.memoryBytesSeconds)
 	assert.Equal(t, float64(1000), actual.cost)
