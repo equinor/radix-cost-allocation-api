@@ -11,14 +11,6 @@ import (
 	"github.com/equinor/radix-cost-allocation-api/repository"
 )
 
-func ContainerMissingNodeError(containerId string) error {
-	return fmt.Errorf("container %s, node is nil", containerId)
-}
-
-func ContainerMissingNodePoolIdError(containerId string) error {
-	return fmt.Errorf("container %s, node pool Id is nil", containerId)
-}
-
 func CurrencyMismatchError(expected, actual string) error {
 	return fmt.Errorf("expected currency %s but got %s", expected, actual)
 }
@@ -115,10 +107,7 @@ func (s *containerCostService) getApplicationCostList(from, to time.Time) ([]mod
 
 	containers = excludeApplicationNames(containers, s.applicationExcludeList)
 	poolCost := buildNodePoolCost(from, to, nodePools, nodePoolCost)
-	containerCostList, err := calculateContainerCost(poolCost, containers)
-	if err != nil {
-		return nil, err
-	}
+	containerCostList := calculateContainerCost(poolCost, containers)
 
 	aggregatedContainerCost, err := aggregateContainerCost(containerCostList, containers)
 	if err != nil {
@@ -196,20 +185,16 @@ func aggregateContainerCost(containerCostList []containerCost, containers []mode
 	return containerTotalCostList, nil
 }
 
-func calculateContainerCost(poolCosts []models.NodePoolCostDto, containers []models.ContainerDto) ([]containerCost, error) {
+func calculateContainerCost(poolCosts []models.NodePoolCostDto, containers []models.ContainerDto) []containerCost {
 	var containerCostList []containerCost
 
 	for _, cost := range poolCosts {
-		nodePoolCostResource, err := getAllocatedResourcesForNodePoolCost(cost, containers)
-		if err != nil {
-			return nil, err
-		}
-
+		nodePoolCostResource := getAllocatedResourcesForNodePoolCost(cost, containers)
 		nodePoolContainerCost := calculateNodePoolContainerResourceCost(nodePoolCostResource)
 		containerCostList = append(containerCostList, nodePoolContainerCost...)
 	}
 
-	return containerCostList, nil
+	return containerCostList
 }
 
 func calculateNodePoolContainerResourceCost(nodePoolCostResource nodePoolCostAllocatedResources) (containerCostList []containerCost) {
@@ -237,17 +222,13 @@ func calculateContainerResourceCost(nodepoolCpuSeconds, nodepoolMemorySeconds, c
 	return cpuCost + memCost
 }
 
-func getAllocatedResourcesForNodePoolCost(cost models.NodePoolCostDto, containers []models.ContainerDto) (nodePoolCostResource nodePoolCostAllocatedResources, err error) {
+func getAllocatedResourcesForNodePoolCost(cost models.NodePoolCostDto, containers []models.ContainerDto) (nodePoolCostResource nodePoolCostAllocatedResources) {
 	var cpuSec, memSec float64
 	nodePoolCostResource.cost = cost.Cost
 	nodePoolCostResource.currency = cost.Currency
 
 	for _, cont := range containers {
-		contCpuSec, contMemSec, callErr := getContainerResourcesUsageInNodePoolCost(cost, cont)
-		if callErr != nil {
-			err = callErr
-			return
-		}
+		contCpuSec, contMemSec := getContainerResourcesUsageInNodePoolCost(cost, cont)
 
 		if contCpuSec > 0 || contMemSec > 0 {
 			cru := containerResourceUsage{containerID: cont.ContainerId, cpuMillicoreSeconds: contCpuSec, memoryBytesSeconds: contMemSec}
@@ -263,14 +244,12 @@ func getAllocatedResourcesForNodePoolCost(cost models.NodePoolCostDto, container
 	return
 }
 
-func getContainerResourcesUsageInNodePoolCost(cost models.NodePoolCostDto, container models.ContainerDto) (cpuSec float64, memSec float64, err error) {
+func getContainerResourcesUsageInNodePoolCost(cost models.NodePoolCostDto, container models.ContainerDto) (cpuSec float64, memSec float64) {
 	if container.Node == nil {
-		err = ContainerMissingNodeError(container.ContainerId)
 		return
 	}
 
 	if container.Node.NodePoolId == nil {
-		err = ContainerMissingNodePoolIdError(container.ContainerId)
 		return
 	}
 
