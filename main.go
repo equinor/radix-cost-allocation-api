@@ -61,15 +61,7 @@ func main() {
 }
 
 func getCostService(env *models.Env) service.CostService {
-	if env.UseRunCostService {
-		return createRunCostService(env)
-	}
 	return createContainerCostService(env)
-}
-
-func createRunCostService(env *models.Env) service.CostService {
-	costRepository := models.NewSQLCostRepository(env.DbCredentials)
-	return service.NewRunCostService(costRepository, *env.Whitelist, env.SubscriptionCost, env.SubscriptionCurrency)
 }
 
 func createContainerCostService(env *models.Env) service.CostService {

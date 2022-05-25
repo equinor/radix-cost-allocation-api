@@ -53,7 +53,7 @@ func (costHandler *CostHandler) GetTotalCost(fromTime, toTime *time.Time, appNam
 		return nil, err
 	}
 
-	filteredCosts := costHandler.filterApplicationsByAccess(*rrMap, applicationCostSet.ApplicationCosts)
+	filteredCosts := costHandler.filterApplicationsByAccess(rrMap, applicationCostSet.ApplicationCosts)
 	applicationCostSet.ApplicationCosts = filteredCosts
 
 	return applicationCostSet, nil
@@ -73,7 +73,7 @@ func (costHandler *CostHandler) GetFutureCost(appName string) (*models.Applicati
 		return nil, err
 	}
 
-	filteredByAccess := costHandler.filterApplicationsByAccess(*rrMap, []models.ApplicationCost{*cost})
+	filteredByAccess := costHandler.filterApplicationsByAccess(rrMap, []models.ApplicationCost{*cost})
 
 	if hasAccessToApp := len(filteredByAccess) > 0; hasAccessToApp {
 		return &filteredByAccess[0], nil
@@ -104,14 +104,14 @@ func (costHandler *CostHandler) filterApplicationsByAccess(rrMap map[string]*rad
 	return filteredApplicationCosts
 }
 
-func (costHandler *CostHandler) getRadixRegistrationMap(appName *string) (*map[string]*radix_api.RadixApplicationDetails, error) {
+func (costHandler *CostHandler) getRadixRegistrationMap(appName *string) (map[string]*radix_api.RadixApplicationDetails, error) {
 
 	if appName != nil {
 		app, err := costHandler.getRadixApplicationDetails(*appName)
 		if err != nil {
 			return nil, err
 		}
-		return &map[string]*radix_api.RadixApplicationDetails{app.Name: app}, nil
+		return map[string]*radix_api.RadixApplicationDetails{app.Name: app}, nil
 	}
 
 	showApplicationParams := platform.NewShowApplicationsParams()

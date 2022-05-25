@@ -20,7 +20,6 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/negroni v1.0.0
-	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
 	gorm.io/driver/sqlserver v1.3.1
 	gorm.io/gorm v1.23.1
 )
@@ -63,6 +62,7 @@ require (
 	github.com/prometheus/common v0.32.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
 	go.mongodb.org/mongo-driver v1.8.3 // indirect
+	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c // indirect
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
