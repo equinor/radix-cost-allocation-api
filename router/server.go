@@ -1,14 +1,14 @@
 package router
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/equinor/radix-cost-allocation-api/metrics"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/equinor/radix-cost-allocation-api/metrics"
 
 	"github.com/equinor/radix-common/models"
 	radixnet "github.com/equinor/radix-common/net"
@@ -68,7 +68,6 @@ func NewServer(clusterName string, authProvider auth.AuthProvider, controllers .
 	))
 
 	serveMux.Handle("/api/v1/report", negroni.New(
-		authenticationMiddleware,
 		authorizationMiddleware,
 		negroni.Wrap(router),
 	))
@@ -159,8 +158,6 @@ func addHandlerRoute(router *mux.Router, route models.Route) {
 }
 
 func newAuthenticationMiddleware(authProvider auth.AuthProvider) negroni.HandlerFunc {
-	ctx := context.Background()
-
 	return func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 		token, err := radixhttp.GetBearerTokenFromHeader(r)
 
@@ -170,7 +167,7 @@ func newAuthenticationMiddleware(authProvider auth.AuthProvider) negroni.Handler
 			return
 		}
 
-		verified, err := authProvider.VerifyToken(ctx, token)
+		verified, err := authProvider.VerifyToken(r.Context(), token)
 
 		if err != nil || verified == nil {
 			log.Debugf("Could not verify token. Error: %v", err)
@@ -183,8 +180,6 @@ func newAuthenticationMiddleware(authProvider auth.AuthProvider) negroni.Handler
 }
 
 func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider auth.AuthProvider) negroni.HandlerFunc {
-	ctx := context.Background()
-
 	var allowedGroups struct {
 		List []string `json:"groups"`
 	}
@@ -204,7 +199,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider auth
 		}
 
 		var verified auth.IDToken
-		verified, err = authProvider.VerifyToken(ctx, token)
+		verified, err = authProvider.VerifyToken(r.Context(), token)
 
 		if err != nil || verified == nil {
 			log.Debugf("Unable to verify token. Error: %v", err)

@@ -1,54 +1,33 @@
 package reportmodels
 
 import (
+	"bytes"
 	"encoding/csv"
-	"os"
 	"testing"
 
-	reportUtils "github.com/equinor/radix-cost-allocation-api/api/test"
+	"github.com/equinor/radix-cost-allocation-api/models"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func setup() (*reportUtils.ReportUtils, func()) {
-	utils := reportUtils.NewReportTestUtils()
-
-	teardown := func() {
-		utils.File.Close()
-		os.Remove(utils.File.Name())
-	}
-
-	return &utils, teardown
-}
-
 func Test_Created_Report_Exists(t *testing.T) {
+	report := NewCostReport(&models.ApplicationCostSet{
+		ApplicationCosts: []models.ApplicationCost{
+			{Name: "name1"},
+			{Name: "name2"},
+		},
+	})
+	fileData := &bytes.Buffer{}
 
-	utils, teardown := setup()
-	defer teardown()
-
-	appCostSet := reportUtils.AnApplicationCostSet().BuildApplicationCostSet()
-
-	report := NewCostReport(appCostSet)
-
-	err := report.Create(utils.File)
+	err := report.Create(fileData)
 
 	assert.Nil(t, err)
-	assert.NotNil(t, utils.File)
 
 	// Add assertion that reads the CSV report and verifies the content
-	createdReport, _ := os.Open(utils.File.Name())
-	reader := csv.NewReader(createdReport)
+	reader := csv.NewReader(fileData)
 	reader.Comma = ';'
 	allContent, err := reader.ReadAll()
 
-	assert.NotNil(t, allContent)
-
-	for _, cols := range allContent {
-		for _, rows := range cols {
-			assert.NotEmpty(t, rows)
-		}
-	}
-
-	assert.Nil(t, err)
+	assert.Len(t, allContent, 3)
 
 }

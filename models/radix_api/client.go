@@ -12,7 +12,7 @@ import (
 // RadixAPIClient interface
 type RadixAPIClient interface {
 	GetRadixApplicationDetails(appParams *application.GetApplicationParams, token string) (*RadixApplicationDetails, error)
-	ShowRadixApplications(appParams *platform.ShowApplicationsParams, token string) (*map[string]*RadixApplicationDetails, error)
+	ShowRadixApplications(appParams *platform.ShowApplicationsParams, token string) (map[string]*RadixApplicationDetails, error)
 }
 
 // RadixApplicationDetails instance variables
@@ -38,14 +38,11 @@ func NewRadixAPIClient(env *models.Env) RadixAPIClient {
 	}
 }
 
-func (c radixAPIClientStruct) ShowRadixApplications(appParams *platform.ShowApplicationsParams, token string) (*map[string]*RadixApplicationDetails, error) {
-	// Set token in transport
-	c.setTransportWithBearerToken(token)
-
-	resp, err := c.client.Platform.ShowApplications(appParams, nil)
+func (c radixAPIClientStruct) ShowRadixApplications(appParams *platform.ShowApplicationsParams, token string) (map[string]*RadixApplicationDetails, error) {
+	resp, err := c.client.Platform.ShowApplications(appParams, httptransport.BearerToken(token))
 
 	if err != nil || resp == nil {
-		return &map[string]*RadixApplicationDetails{}, err
+		return map[string]*RadixApplicationDetails{}, err
 	}
 
 	radixAppMap := make(map[string]*RadixApplicationDetails)
@@ -56,15 +53,11 @@ func (c radixAPIClientStruct) ShowRadixApplications(appParams *platform.ShowAppl
 		}
 	}
 
-	return &radixAppMap, nil
+	return radixAppMap, nil
 }
 
 func (c radixAPIClientStruct) GetRadixApplicationDetails(appParams *application.GetApplicationParams, token string) (*RadixApplicationDetails, error) {
-
-	// Set token in transport
-	c.setTransportWithBearerToken(token)
-
-	resp, err := c.client.Application.GetApplication(appParams, nil)
+	resp, err := c.client.Application.GetApplication(appParams, httptransport.BearerToken(token))
 
 	if err != nil || resp == nil {
 		return &RadixApplicationDetails{}, err
@@ -77,12 +70,6 @@ func (c radixAPIClientStruct) GetRadixApplicationDetails(appParams *application.
 		Owner:   *appRegistration.Owner,
 		WBS:     appRegistration.WBS,
 	}, nil
-}
-
-func (c *radixAPIClientStruct) setTransportWithBearerToken(token string) {
-	transport := getRadixApiTransport(c.env)
-	transport.DefaultAuthentication = httptransport.BearerToken(token)
-	c.client.SetTransport(transport)
 }
 
 func getRadixApiTransport(env *models.Env) *httptransport.Runtime {

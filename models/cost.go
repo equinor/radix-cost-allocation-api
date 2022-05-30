@@ -25,12 +25,12 @@ type ApplicationCostSet struct {
 
 	// TotalRequestedCPU within the period.
 	//
-	// required: true
+	// required: false
 	TotalRequestedCPU int `json:"totalRequestedCpu"`
 
 	// TotalRequestedMemory within the period.
 	//
-	// required: true
+	// required: false
 	TotalRequestedMemory int `json:"totalRequestedMemory"`
 }
 
@@ -80,12 +80,12 @@ type ApplicationCost struct {
 
 	// CostPercentageByCPU is cost percentage by CPU for the application.
 	//
-	// required: true
+	// required: false
 	CostPercentageByCPU float64 `json:"costPercentageByCpu"`
 
 	// CostPercentageByMemory is cost percentage by memory for the application
 	//
-	// required: true
+	// required: false
 	CostPercentageByMemory float64 `json:"costPercentageByMemory"`
 
 	// Comment regarding cost
@@ -102,13 +102,4 @@ type ApplicationCost struct {
 	//
 	// required: true
 	Currency string `json:"currency"`
-}
-
-// AddWBS set WBS to application cost from the run
-func (appCost ApplicationCost) AddWBS(run Run) {
-	for _, resource := range run.Resources {
-		if resource.Application == appCost.Name {
-			appCost.WBS = resource.WBS
-		}
-	}
 }

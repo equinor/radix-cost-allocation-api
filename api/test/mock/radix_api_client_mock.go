@@ -52,10 +52,10 @@ func (mr *MockRadixAPIClientMockRecorder) GetRadixApplicationDetails(appParams, 
 }
 
 // ShowRadixApplications mocks base method.
-func (m *MockRadixAPIClient) ShowRadixApplications(appParams *platform.ShowApplicationsParams, token string) (*map[string]*radix_api.RadixApplicationDetails, error) {
+func (m *MockRadixAPIClient) ShowRadixApplications(appParams *platform.ShowApplicationsParams, token string) (map[string]*radix_api.RadixApplicationDetails, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ShowRadixApplications", appParams, token)
-	ret0, _ := ret[0].(*map[string]*radix_api.RadixApplicationDetails)
+	ret0, _ := ret[0].(map[string]*radix_api.RadixApplicationDetails)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
