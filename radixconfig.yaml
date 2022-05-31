@@ -30,8 +30,6 @@ spec:
         - SQL_DATABASE
         - SQL_USER
         - SQL_PASSWORD
-        - SUBSCRIPTION_COST_VALUE
-        - SUBSCRIPTION_COST_CURRENCY
         - WHITELIST
         - AD_REPORT_READERS
         - TOKEN_ISSUER

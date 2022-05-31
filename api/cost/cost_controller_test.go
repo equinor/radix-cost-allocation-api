@@ -8,14 +8,16 @@ import (
 	"time"
 
 	"github.com/equinor/radix-cost-allocation-api/models"
-	"github.com/equinor/radix-cost-allocation-api/service"
+	serviceMock "github.com/equinor/radix-cost-allocation-api/service/mock"
 
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
+	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/application"
+	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/platform"
 
 	controllertest "github.com/equinor/radix-cost-allocation-api/api/test"
 	"github.com/equinor/radix-cost-allocation-api/api/test/mock"
 	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 const (
@@ -24,189 +26,140 @@ const (
 	applicationIDontHaveAccessTo = "other-app"
 )
 
-var env *models.Env
-
-func setupTest() {
-	// Set necessary environment variables
-	os.Setenv("WHITELIST", "{\"whiteList\": [\"canarycicd-test\",\"canarycicd-test1\",\"canarycicd-test2\",\"canarycicd-test3\",\"canarycicd-test4\",\"radix-api\",\"radix-canary-golang\",\"radix-cost-allocation-api\",\"radix-github-webhook\",\"radix-platform\",\"radix-web-console\"]}")
-	os.Setenv("SUBSCRIPTION_COST_VALUE", "100000")
-	os.Setenv("SUBSCRIPTION_COST_CURRENCY", "NOK")
-	env = models.NewEnv()
+func Test_ControllerTestSuite(t *testing.T) {
+	suite.Run(t, new(controllerTestSuite))
 }
 
-func TestCostController_Application(t *testing.T) {
-	setupTest()
+type controllerTestSuite struct {
+	suite.Suite
+	env            *models.Env
+	authProvider   *mock.MockAuthProvider
+	idToken        *mock.MockIDToken
+	radixAPIClient *mock.MockRadixAPIClient
+	costService    *serviceMock.MockCostService
+}
 
-	// Mock setup
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (s *controllerTestSuite) SetupTest() {
+	os.Setenv("WHITELIST", "{\"whiteList\": [\"canarycicd-test\",\"canarycicd-test1\",\"canarycicd-test2\",\"canarycicd-test3\",\"canarycicd-test4\",\"radix-api\",\"radix-canary-golang\",\"radix-cost-allocation-api\",\"radix-github-webhook\",\"radix-platform\",\"radix-web-console\"]}")
+	s.env = models.NewEnv()
+	ctrl := gomock.NewController(s.T())
+	s.authProvider = mock.NewMockAuthProvider(ctrl)
+	s.idToken = mock.NewMockIDToken(ctrl)
+	s.radixAPIClient = mock.NewMockRadixAPIClient(ctrl)
+	s.costService = serviceMock.NewMockCostService(ctrl)
+}
 
-	// Create mock auth provider
-	fakeAuthProvider := mock.NewMockAuthProvider(ctrl)
+func (s *controllerTestSuite) TearDownTest() {
+	os.Clearenv()
+}
 
-	// Create mock idtoken
-	fakeIDToken := mock.NewMockIDToken(ctrl)
+func (s *controllerTestSuite) Test_FutureCost_ApplicationExist() {
+	expected := models.ApplicationCost{Name: appName, WBS: "anywbs"}
 
-	// Create radix_api_client mock
-	fakeRadixClient := mock.NewMockRadixAPIClient(ctrl)
-
-	fakeRadixClient.EXPECT().
-		GetRadixApplicationDetails(gomock.Any(), gomock.Any()).
-		Return(&radix_api.RadixApplicationDetails{Name: appName}, nil).
-		AnyTimes()
-
-	applicationDetailsMap := make(map[string]*radix_api.RadixApplicationDetails)
-	applicationDetailsMap[appName] = &radix_api.RadixApplicationDetails{Name: appName}
-	fakeRadixClient.EXPECT().
-		ShowRadixApplications(gomock.Any(), gomock.Any()).
-		Return(&applicationDetailsMap, nil).
-		AnyTimes()
-
-	fakeIDToken.EXPECT().
-		GetClaims(gomock.Any()).
-		Return(nil).
-		AnyTimes()
-
-	fakeAuthProvider.EXPECT().
+	s.authProvider.EXPECT().
 		VerifyToken(gomock.Any(), gomock.Any()).
-		Return(fakeIDToken, nil).
-		AnyTimes()
+		Return(s.idToken, nil).
+		Times(1)
+	s.costService.EXPECT().
+		GetFutureCost(appName).
+		Return(&expected, nil).
+		Times(1)
+	s.radixAPIClient.EXPECT().
+		GetRadixApplicationDetails(application.NewGetApplicationParams().WithAppName(appName), gomock.Any()).
+		Return(&radix_api.RadixApplicationDetails{Name: appName}, nil).
+		Times(1)
 
-	// Creates a mock Repository
-	fakeCostRepo := mock.NewMockCostRepository(ctrl)
-
-	// Generate run with test data
-	run := controllertest.ARun().BuildRun()
-
-	// Generate runs with test data
-	runs := controllertest.
-		AListOfRuns().
-		BuildRuns()
-
-	// GetLatestRun() returns a mock run with test data
-	fakeCostRepo.EXPECT().
-		GetLatestRun().
-		Return(*run, nil).
-		AnyTimes()
-
-	// GetRunsBetweenTimes() returns mock runs
-	fakeCostRepo.EXPECT().
-		GetRunsBetweenTimes(gomock.Any(), gomock.Any()).
-		Return(runs, nil).
-		AnyTimes()
-
-	costService := service.NewRunCostService(fakeCostRepo, *env.Whitelist, env.SubscriptionCost, env.SubscriptionCurrency)
-	controllerTestUtils := controllertest.NewTestUtils(NewCostController(fakeRadixClient, costService))
-	controllerTestUtils.SetAuthProvider(fakeAuthProvider)
+	controllerTestUtils := controllertest.NewTestUtils(NewCostController(s.radixAPIClient, s.costService))
+	controllerTestUtils.SetAuthProvider(s.authProvider)
 
 	// Test that futurecost endpoint returns cost for requested application
-	t.Run("Futurecost application exists", func(t *testing.T) {
-		responseChannel := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/futurecost/%s", appName))
-		response := <-responseChannel
-		applicationCost := models.ApplicationCost{}
-		err := controllertest.GetResponseBody(response, &applicationCost)
+	response := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/futurecost/%s", appName))
+	actual := models.ApplicationCost{}
+	err := controllertest.GetResponseBody(response, &actual)
 
-		assert.Nil(t, err)
-		assert.NotNil(t, applicationCost)
-		assert.Equal(t, applicationCost.Name, appName)
-	})
-
-	// Test that totalcost endpoint returns cost for requested application
-	t.Run("Totalcost application exists", func(t *testing.T) {
-		from, to := getTimePeriod()
-		url := fmt.Sprintf("/api/v1/totalcost/%s?fromTime=%s&toTime=%s", appName, from, to)
-		responseChannel := controllerTestUtils.ExecuteRequest("GET", url)
-		response := <-responseChannel
-
-		applicationCostSet := models.ApplicationCostSet{}
-		controllertest.GetResponseBody(response, &applicationCostSet)
-		assert.NotNil(t, applicationCostSet)
-		applicationCost := applicationCostSet.ApplicationCosts[0]
-		assert.Equal(t, applicationCost.Name, appName)
-	})
-
-	t.Run("Futurecost estimate is not 0", func(t *testing.T) {
-		responseChannel := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/futurecost/%s", appName))
-		response := <-responseChannel
-		applicationCost := models.ApplicationCost{}
-		err := controllertest.GetResponseBody(response, &applicationCost)
-
-		assert.Nil(t, err)
-		assert.NotNil(t, applicationCost.Cost)
-		assert.NotEqual(t, applicationCost.Cost, 0)
-	})
-
-	t.Run("No access to application not owned by me", func(t *testing.T) {
-		responseChannel := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/futurecost/%s", applicationIDontHaveAccessTo))
-		response := <-responseChannel
-
-		// Requesting cost for an application the user does not have access to, results in 404 - Not Found.
-		assert.Equal(t, response.Code, http.StatusNotFound)
-	})
-
-	t.Run("Only access to owned applications", func(t *testing.T) {
-		fromTime, toTime := getTimePeriod()
-		responseChannel := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/totalcosts?fromTime=%s&toTime=%s", fromTime, toTime))
-		response := <-responseChannel
-		applicationCostSet := models.ApplicationCostSet{}
-		err := controllertest.GetResponseBody(response, &applicationCostSet)
-
-		assert.Nil(t, err)
-
-		// Check that application we don't have access to is not in the list of returned applications
-		for _, appCost := range applicationCostSet.ApplicationCosts {
-			assert.NotEqual(t, appCost.Name, applicationIDontHaveAccessTo)
-		}
-	})
+	s.Nil(err)
+	s.NotNil(actual)
+	s.Equal(expected, actual)
 }
 
-func TestCostController_Authentication(t *testing.T) {
-	setupTest()
-
-	// Mock setup
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	// Create mock cost repo
-	fakeCostRepo := mock.NewMockCostRepository(ctrl)
-
-	// Create mock auth provider
-	fakeAuthProvider := mock.NewMockAuthProvider(ctrl)
-
-	// Create radix_api_client mock
-	fakeRadixClient := mock.NewMockRadixAPIClient(ctrl)
-
-	fakeRadixClient.EXPECT().
-		GetRadixApplicationDetails(gomock.Any(), gomock.Any()).
+func (s *controllerTestSuite) Test_TotalCost_ApplicationExist() {
+	from, to := getTimePeriod()
+	expected := &models.ApplicationCostSet{
+		ApplicationCosts: []models.ApplicationCost{{Name: appName, WBS: "anywbs"}},
+	}
+	s.authProvider.EXPECT().
+		VerifyToken(gomock.Any(), gomock.Any()).
+		Return(s.idToken, nil).
+		Times(1)
+	s.costService.EXPECT().
+		GetCostForPeriod(from, to).
+		Return(expected, nil).
+		Times(1)
+	s.radixAPIClient.EXPECT().
+		GetRadixApplicationDetails(application.NewGetApplicationParams().WithAppName(appName), gomock.Any()).
 		Return(&radix_api.RadixApplicationDetails{Name: appName}, nil).
-		AnyTimes()
+		Times(1)
 
-	applicationDetailsMap := make(map[string]*radix_api.RadixApplicationDetails)
-	applicationDetailsMap[appName] = &radix_api.RadixApplicationDetails{Name: appName}
-	fakeRadixClient.EXPECT().
-		ShowRadixApplications(gomock.Any(), gomock.Any()).
-		Return(&applicationDetailsMap, nil).
-		AnyTimes()
+	controllerTestUtils := controllertest.NewTestUtils(NewCostController(s.radixAPIClient, s.costService))
+	controllerTestUtils.SetAuthProvider(s.authProvider)
 
-	fakeAuthProvider.EXPECT().
+	url := fmt.Sprintf("/api/v1/totalcost/%s?fromTime=%s&toTime=%s", appName, from.Format(timeLayout), to.Format(timeLayout))
+	response := controllerTestUtils.ExecuteRequest("GET", url)
+
+	applicationCostSet := models.ApplicationCostSet{}
+	controllertest.GetResponseBody(response, &applicationCostSet)
+	s.NotNil(applicationCostSet)
+	s.Equal(expected.ApplicationCosts[0], applicationCostSet.ApplicationCosts[0])
+}
+
+func (s *controllerTestSuite) Test_TotalCost_OnlyAppsWithAccess() {
+	from, to := getTimePeriod()
+	expected := &models.ApplicationCostSet{
+		ApplicationCosts: []models.ApplicationCost{{Name: appName}, {Name: applicationIDontHaveAccessTo}},
+	}
+
+	s.authProvider.EXPECT().
+		VerifyToken(gomock.Any(), gomock.Any()).
+		Return(s.idToken, nil).
+		Times(1)
+	s.costService.EXPECT().
+		GetCostForPeriod(from, to).
+		Return(expected, nil).
+		Times(1)
+	s.radixAPIClient.EXPECT().
+		ShowRadixApplications(platform.NewShowApplicationsParams(), gomock.Any()).
+		Return(map[string]*radix_api.RadixApplicationDetails{appName: {Name: appName}}, nil).
+		Times(1)
+
+	controllerTestUtils := controllertest.NewTestUtils(NewCostController(s.radixAPIClient, s.costService))
+	controllerTestUtils.SetAuthProvider(s.authProvider)
+
+	response := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/totalcosts?fromTime=%s&toTime=%s", from.Format(timeLayout), to.Format(timeLayout)))
+
+	applicationCostSet := models.ApplicationCostSet{}
+	err := controllertest.GetResponseBody(response, &applicationCostSet)
+	s.Nil(err)
+	s.Equal([]models.ApplicationCost{expected.ApplicationCosts[0]}, applicationCostSet.ApplicationCosts)
+}
+
+func (s *controllerTestSuite) Test_Unauthorized() {
+	s.authProvider.EXPECT().
 		VerifyToken(gomock.Any(), gomock.Any()).
 		Return(nil, fmt.Errorf("Invalid token")).
 		AnyTimes()
 
-	costService := service.NewRunCostService(fakeCostRepo, *env.Whitelist, env.SubscriptionCost, env.SubscriptionCurrency)
-	controllerTestUtils := controllertest.NewTestUtils(NewCostController(fakeRadixClient, costService))
-	controllerTestUtils.SetAuthProvider(fakeAuthProvider)
+	controllerTestUtils := controllertest.NewTestUtils(NewCostController(s.radixAPIClient, s.costService))
+	controllerTestUtils.SetAuthProvider(s.authProvider)
 
-	t.Run("Invalid auth header", func(t *testing.T) {
-		url := fmt.Sprintf("/api/")
-		responseChannel := controllerTestUtils.ExecuteRequest("GET", url)
-		response := <-responseChannel
+	url := fmt.Sprintf("/api/")
+	response := controllerTestUtils.ExecuteRequest("GET", url)
 
-		assert.Equal(t, response.Code, http.StatusUnauthorized)
-	})
+	s.Equal(response.Code, http.StatusUnauthorized)
 
 }
 
-func getTimePeriod() (from, to string) {
-	return time.Now().AddDate(0, 0, -30).Format(timeLayout), time.Now().Format(timeLayout)
+func getTimePeriod() (from, to time.Time) {
+
+	f, t := time.Now().AddDate(0, 0, -30), time.Now()
+	return f.Truncate(24 * time.Hour).UTC(), t.Truncate(24 * time.Hour).UTC()
 }

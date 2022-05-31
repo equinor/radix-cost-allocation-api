@@ -1,6 +1,7 @@
 package report
 
 import (
+	"bytes"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -9,13 +10,13 @@ import (
 	"testing"
 
 	"github.com/equinor/radix-cost-allocation-api/models"
-	"github.com/equinor/radix-cost-allocation-api/service"
 
 	controllerTest "github.com/equinor/radix-cost-allocation-api/api/test"
 	mock "github.com/equinor/radix-cost-allocation-api/api/test/mock"
 	"github.com/equinor/radix-cost-allocation-api/api/utils/auth"
+	serviceMock "github.com/equinor/radix-cost-allocation-api/service/mock"
 	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 const (
@@ -27,146 +28,93 @@ const (
 
 var env *models.Env
 
-func setupTest() {
-	os.Setenv("WHITELIST", "{\"whiteList\": [\"canarycicd-test\",\"canarycicd-test1\",\"canarycicd-test2\",\"canarycicd-test3\",\"canarycicd-test4\",\"radix-api\",\"radix-canary-golang\",\"radix-cost-allocation-api\",\"radix-github-webhook\",\"radix-platform\",\"radix-web-console\"]}")
-	os.Setenv("SUBSCRIPTION_COST_VALUE", "100000")
-	os.Setenv("SUBSCRIPTION_COST_CURRENCY", "NOK")
-	os.Setenv("AD_REPORT_READERS", fmt.Sprintf("{\"groups\": [\"%s\"]}", validADGroup))
-	env = models.NewEnv()
+func Test_ControllerTestSuite(t *testing.T) {
+	suite.Run(t, new(controllerTestSuite))
 }
 
-func TestReportController_UnAuthorizedUser_NoAccess(t *testing.T) {
-	setupTest()
+type controllerTestSuite struct {
+	suite.Suite
+	env            *models.Env
+	authProvider   *mock.MockAuthProvider
+	idToken        *mock.MockIDToken
+	radixAPIClient *mock.MockRadixAPIClient
+	costService    *serviceMock.MockCostService
+}
 
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (s *controllerTestSuite) SetupTest() {
+	os.Setenv("WHITELIST", "{\"whiteList\": [\"canarycicd-test\",\"canarycicd-test1\",\"canarycicd-test2\",\"canarycicd-test3\",\"canarycicd-test4\",\"radix-api\",\"radix-canary-golang\",\"radix-cost-allocation-api\",\"radix-github-webhook\",\"radix-platform\",\"radix-web-console\"]}")
+	os.Setenv("AD_REPORT_READERS", fmt.Sprintf("{\"groups\": [\"%s\"]}", validADGroup))
+	s.env = models.NewEnv()
+	ctrl := gomock.NewController(s.T())
+	s.authProvider = mock.NewMockAuthProvider(ctrl)
+	s.idToken = mock.NewMockIDToken(ctrl)
+	s.radixAPIClient = mock.NewMockRadixAPIClient(ctrl)
+	s.costService = serviceMock.NewMockCostService(ctrl)
+}
+
+func (s *controllerTestSuite) TearDownTest() {
+	os.Clearenv()
+}
+
+func (s *controllerTestSuite) TestReportController_UnAuthorizedUser_NoAccess() {
 
 	// Create mock auth provider
-	fakeAuthProvider := mock.NewMockAuthProvider(ctrl)
-
-	// Create mock idtoken
-	fakeIDToken := mock.NewMockIDToken(ctrl)
 
 	c := auth.Claims{Email: "radix_test@equinor.com", Groups: []string{notValidADGroup}}
 
-	fakeIDToken.EXPECT().
+	s.idToken.EXPECT().
 		GetClaims(gomock.Any()).
 		SetArg(0, c).
 		Return(nil).
 		Times(1)
 
-	fakeAuthProvider.EXPECT().
+	s.authProvider.EXPECT().
 		VerifyToken(gomock.Any(), gomock.Any()).
-		Return(fakeIDToken, nil).
+		Return(s.idToken, nil).
 		AnyTimes()
 
-	// Creates a mock Repository
-	fakeCostRepo := mock.NewMockCostRepository(ctrl)
+	controllerTestUtils := controllerTest.NewTestUtils(NewReportController(s.costService))
+	controllerTestUtils.SetAuthProvider(s.authProvider)
 
-	// Generate run with test data
-	run := controllerTest.ARun().BuildRun()
+	response := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/report"))
 
-	// Generate runs with test data
-	runs := controllerTest.
-		AListOfRuns().
-		BuildRuns()
-
-	// GetLatestRun() returns a mock run with test data
-	fakeCostRepo.EXPECT().
-		GetLatestRun().
-		Return(*run, nil).
-		AnyTimes()
-
-	// GetRunsBetweenTimes() returns mock runs
-	fakeCostRepo.EXPECT().
-		GetRunsBetweenTimes(gomock.Any(), gomock.Any()).
-		Return(runs, nil).
-		Times(0)
-
-	costService := service.NewRunCostService(fakeCostRepo, *env.Whitelist, env.SubscriptionCost, env.SubscriptionCurrency)
-	controllerTestUtils := controllerTest.NewTestUtils(NewReportController(costService))
-	controllerTestUtils.SetAuthProvider(fakeAuthProvider)
-
-	t.Run("User without required AD group can't download report", func(t *testing.T) {
-		responseChannel := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/report"))
-		response := <-responseChannel
-
-		assert.Equal(t, response.Code, http.StatusForbidden)
-	})
+	s.Equal(response.Code, http.StatusForbidden)
 
 }
 
-func TestReportController_AuthorizedUser_CanDownload(t *testing.T) {
-	setupTest()
-
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	// Create mock auth provider
-	fakeAuthProvider := mock.NewMockAuthProvider(ctrl)
-
-	// Create mock idtoken
-	fakeIDToken := mock.NewMockIDToken(ctrl)
-
+func (s *controllerTestSuite) TestReportController_AuthorizedUser_CanDownload() {
 	c := auth.Claims{Email: "radix_test@equinor.com", Groups: []string{validADGroup}}
+	cost := &models.ApplicationCostSet{
+		ApplicationCosts: []models.ApplicationCost{
+			{Name: "app-1", Cost: 100},
+			{Name: "app-2", Cost: 200},
+		},
+	}
 
-	fakeIDToken.EXPECT().
+	s.idToken.EXPECT().
 		GetClaims(gomock.Any()).
 		SetArg(0, c).
 		Return(nil).
 		Times(1)
-
-	fakeAuthProvider.EXPECT().
+	s.authProvider.EXPECT().
 		VerifyToken(gomock.Any(), gomock.Any()).
-		Return(fakeIDToken, nil).
-		AnyTimes()
-
-	// Creates a mock Repository
-	fakeCostRepo := mock.NewMockCostRepository(ctrl)
-
-	// Generate run with test data
-	run := controllerTest.ARun().BuildRun()
-
-	// Generate runs with test data
-	runs := controllerTest.
-		AListOfRuns().
-		BuildRuns()
-
-	// GetLatestRun() returns a mock run with test data
-	fakeCostRepo.EXPECT().
-		GetLatestRun().
-		Return(*run, nil).
-		AnyTimes()
-
-	// GetRunsBetweenTimes() returns mock runs
-	fakeCostRepo.EXPECT().
-		GetRunsBetweenTimes(gomock.Any(), gomock.Any()).
-		Return(runs, nil).
+		Return(s.idToken, nil).
+		Times(1)
+	s.costService.EXPECT().
+		GetCostForPeriod(gomock.Any(), gomock.Any()).
+		Return(cost, nil).
 		Times(1)
 
-	costService := service.NewRunCostService(fakeCostRepo, *env.Whitelist, env.SubscriptionCost, env.SubscriptionCurrency)
-	controllerTestUtils := controllerTest.NewTestUtils(NewReportController(costService))
-	controllerTestUtils.SetAuthProvider(fakeAuthProvider)
+	controllerTestUtils := controllerTest.NewTestUtils(NewReportController(s.costService))
+	controllerTestUtils.SetAuthProvider(s.authProvider)
 
-	t.Run("User with correct AD group can download report", func(t *testing.T) {
-		responseChannel := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/report"))
-		response := <-responseChannel
-
-		assert.Equal(t, response.Code, http.StatusOK)
-
-		returnedReport, err := os.Create("response-file.csv")
-		defer returnedReport.Close()
-		defer os.Remove(returnedReport.Name())
-		io.Copy(returnedReport, response.Body)
-
-		openedFile, _ := os.Open(returnedReport.Name())
-		reader := csv.NewReader(openedFile)
-		reader.Comma = ';'
-		allContent, err := reader.ReadAll()
-
-		assert.NotNil(t, allContent)
-		assert.Nil(t, err)
-		assert.NotNil(t, returnedReport)
-	})
-
+	response := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/report"))
+	s.Equal(response.Code, http.StatusOK)
+	returnedReport := bytes.Buffer{}
+	io.Copy(&returnedReport, response.Body)
+	reader := csv.NewReader(&returnedReport)
+	reader.Comma = ';'
+	allContent, err := reader.ReadAll()
+	s.Require().NoError(err)
+	s.Len(allContent, 3)
 }
