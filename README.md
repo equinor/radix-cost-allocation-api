@@ -42,7 +42,6 @@ Run once after cloning of the GitHub repository:
 The following env var is needed. Useful default values in brackets.
 
 * `RADIX_CONTAINER_REGISTRY` - (ex. `radixdev.azurecr.io`)
-* `K8S_API_HOST` - Kubernetes cluster endpoint (ex. `https://weekly-28-clusters-16ede4-8e6342f8.hcp.northeurope.azmk8s.io")
 * `SQL_SERVER` - SQL server name
 * `SQL_DATABASE` - SQL database name
 * `SQL_USER` - SQL server user name
