@@ -8,12 +8,10 @@
       "mode": "auto",
       "program": "${workspaceFolder}/main.go",
       "env": {
-        "RADIX_CONTAINER_REGISTRY":"radixdev.azurecr.io",
         // "SQL_SERVER": "<SQL_SERVER>",
         // "SQL_DATABASE": "<SQL_DATABASE>",
         // "SQL_USER": "<USER>",
         // "SQL_PASSWORD": "<PASSWORD>",
-        "RADIX_CLUSTER_TYPE": "development",
         "RADIX_ENVIRONMENT": "qa",
         // "RADIX_CLUSTERNAME": "weekly-33",
         "RADIX_DNS_ZONE": "dev.radix.equinor.com",

@@ -41,12 +41,10 @@ Run once after cloning of the GitHub repository:
 
 The following env var is needed. Useful default values in brackets.
 
-* `RADIX_CONTAINER_REGISTRY` - (ex. `radixdev.azurecr.io`)
 * `SQL_SERVER` - SQL server name
 * `SQL_DATABASE` - SQL database name
 * `SQL_USER` - SQL server user name
 * `SQL_PASSWORD` - SQL server user password
-* `RADIX_CLUSTER_TYPE` - cluster type (ex. `development`)
 * `RADIX_ENVIRONMENT` - Radix environment (ex. `qa`)
 * `RADIX_CLUSTERNAME` - Radix cluster name (ex. `weekly-33`)
 * `RADIX_DNS_ZONE` - Radix DNS zone (ex. `dev.radix.equinor.com`)
