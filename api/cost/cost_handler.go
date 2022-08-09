@@ -84,15 +84,6 @@ func (costHandler *CostHandler) GetFutureCost(appName string) (*models.Applicati
 	return nil, radixhttp.ApplicationNotFoundError("Application was not found.", err)
 }
 
-func (costHandler *CostHandler) filterApplicationCostsBy(appName *string, cost *models.ApplicationCostSet) []models.ApplicationCost {
-	for _, applicationCost := range (*cost).ApplicationCosts {
-		if applicationCost.Name == *appName {
-			return []models.ApplicationCost{applicationCost}
-		}
-	}
-	return []models.ApplicationCost{}
-}
-
 func (costHandler *CostHandler) filterApplicationsByAccess(rrMap map[string]*radix_api.RadixApplicationDetails, applicationCosts []models.ApplicationCost) []models.ApplicationCost {
 	filteredApplicationCosts := make([]models.ApplicationCost, 0)
 	for _, applicationCost := range applicationCosts {

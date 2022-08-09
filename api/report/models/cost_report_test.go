@@ -26,8 +26,7 @@ func Test_Created_Report_Exists(t *testing.T) {
 	// Add assertion that reads the CSV report and verifies the content
 	reader := csv.NewReader(fileData)
 	reader.Comma = ';'
-	allContent, err := reader.ReadAll()
-
+	allContent, _ := reader.ReadAll()
 	assert.Len(t, allContent, 3)
 
 }

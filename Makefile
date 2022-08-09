@@ -4,7 +4,7 @@ build: $(BINS)
 
 .PHONY: test
 test:
-	go test -cover `go list ./...`
+	go test -cover ./...
 
 
 .PHONY: generate-radix-api-client
@@ -16,7 +16,8 @@ generate-radix-api-client:
 .PHONY: swagger
 swagger:
 	rm -f ./swaggerui_src/swagger.json ./swaggerui/statik.go
-	swagger generate spec -o ./swagger.json --scan-models --exclude=github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/models
+	swagger generate spec -o ./swagger.json --scan-models --exclude-deps --exclude=github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/models
+	swagger validate ./swagger.json && \
 	mv swagger.json ./swaggerui_src/swagger.json
 	statik -src=./swaggerui_src/ -p swaggerui
 
