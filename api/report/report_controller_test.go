@@ -26,8 +26,6 @@ const (
 	validADGroup    = "VALID-AD-GROUP"
 )
 
-var env *models.Env
-
 func Test_ControllerTestSuite(t *testing.T) {
 	suite.Run(t, new(controllerTestSuite))
 }
@@ -76,7 +74,7 @@ func (s *controllerTestSuite) TestReportController_UnAuthorizedUser_NoAccess() {
 	controllerTestUtils := controllerTest.NewTestUtils(NewReportController(s.costService))
 	controllerTestUtils.SetAuthProvider(s.authProvider)
 
-	response := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/report"))
+	response := controllerTestUtils.ExecuteRequest("GET", "/api/v1/report")
 
 	s.Equal(response.Code, http.StatusForbidden)
 
@@ -108,7 +106,7 @@ func (s *controllerTestSuite) TestReportController_AuthorizedUser_CanDownload() 
 	controllerTestUtils := controllerTest.NewTestUtils(NewReportController(s.costService))
 	controllerTestUtils.SetAuthProvider(s.authProvider)
 
-	response := controllerTestUtils.ExecuteRequest("GET", fmt.Sprintf("/api/v1/report"))
+	response := controllerTestUtils.ExecuteRequest("GET", "/api/v1/report")
 	s.Equal(response.Code, http.StatusOK)
 	returnedReport := bytes.Buffer{}
 	io.Copy(&returnedReport, response.Body)

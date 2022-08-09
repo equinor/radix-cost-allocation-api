@@ -151,7 +151,7 @@ func (s *controllerTestSuite) Test_Unauthorized() {
 	controllerTestUtils := controllertest.NewTestUtils(NewCostController(s.radixAPIClient, s.costService))
 	controllerTestUtils.SetAuthProvider(s.authProvider)
 
-	url := fmt.Sprintf("/api/")
+	url := "/api/"
 	response := controllerTestUtils.ExecuteRequest("GET", url)
 
 	s.Equal(response.Code, http.StatusUnauthorized)
