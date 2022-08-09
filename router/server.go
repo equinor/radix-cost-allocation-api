@@ -204,6 +204,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider auth
 		if err != nil || verified == nil {
 			log.Debugf("Unable to verify token. Error: %v", err)
 			w.WriteHeader(http.StatusUnauthorized)
+			return
 		}
 
 		claims := &auth.Claims{}
