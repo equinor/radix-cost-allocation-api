@@ -13,8 +13,6 @@ import (
 	"github.com/equinor/radix-cost-allocation-api/router"
 )
 
-const reportName = "report.csv"
-
 // Utils Instance variables
 type Utils struct {
 	controllers  []models.Controller

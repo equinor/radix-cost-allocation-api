@@ -21,7 +21,7 @@ import (
 	"github.com/rakyll/statik/fs"
 	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
-	"github.com/urfave/negroni"
+	"github.com/urfave/negroni/v2"
 )
 
 const (
@@ -204,6 +204,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider auth
 		if err != nil || verified == nil {
 			log.Debugf("Unable to verify token. Error: %v", err)
 			w.WriteHeader(http.StatusUnauthorized)
+			return
 		}
 
 		claims := &auth.Claims{}
@@ -224,8 +225,6 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider auth
 
 		log.Debugf("User does not have correct AD group access. Logged AD groups for user: %v ", claims.Groups)
 		w.WriteHeader(http.StatusForbidden)
-		return
-
 	}
 }
 

@@ -13,8 +13,8 @@ You need Go installed. Make sure `GOPATH` and `GOROOT` are properly set up.
 Also needed:
 
 - [`go-swagger`](https://github.com/go-swagger/go-swagger) (on a Mac, you can install it with Homebrew: `brew install go-swagger`)
-- [`statik`](https://github.com/rakyll/statik) (install with `go get github.com/rakyll/statik`)
-- [`gomock`](https://github.com/golang/mock) (GO111MODULE=on go get github.com/golang/mock/mockgen@v1.4.4)
+- [`statik`](https://github.com/rakyll/statik) (install with `go install github.com/rakyll/statik@v0.1.7`)
+- [`gomock`](https://github.com/golang/mock) (install with `go install github.com/golang/mock/mockgen@v1.6.0`)
 
 Clone the repo into your `GOPATH` and run `go mod download`.
 
@@ -41,13 +41,10 @@ Run once after cloning of the GitHub repository:
 
 The following env var is needed. Useful default values in brackets.
 
-* `RADIX_CONTAINER_REGISTRY` - (ex. `radixdev.azurecr.io`)
-* `K8S_API_HOST` - Kubernetes cluster endpoint (ex. `https://weekly-28-clusters-16ede4-8e6342f8.hcp.northeurope.azmk8s.io")
 * `SQL_SERVER` - SQL server name
 * `SQL_DATABASE` - SQL database name
 * `SQL_USER` - SQL server user name
 * `SQL_PASSWORD` - SQL server user password
-* `RADIX_CLUSTER_TYPE` - cluster type (ex. `development`)
 * `RADIX_ENVIRONMENT` - Radix environment (ex. `qa`)
 * `RADIX_CLUSTERNAME` - Radix cluster name (ex. `weekly-33`)
 * `RADIX_DNS_ZONE` - Radix DNS zone (ex. `dev.radix.equinor.com`)
