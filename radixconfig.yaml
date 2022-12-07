@@ -19,10 +19,10 @@ spec:
           port: 3003
       resources:
         requests:
-          memory: "1000Mi"
+          memory: "1500Mi"
           cpu: "20m"
         limits:
-          memory: "1000Mi"
+          memory: "2000Mi"
           cpu: "1000m"
       public: true
       secrets:
