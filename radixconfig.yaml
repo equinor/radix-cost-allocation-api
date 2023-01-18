@@ -46,7 +46,7 @@ spec:
             LOG_LEVEL: INFO
         - environment: prod
           runAsNonRoot: true
-          replicas: 1
+          replicas: 2
           monitoring: true
           variables:
             PIPELINE_IMG_TAG: "release-latest"
