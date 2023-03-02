@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/coreos/go-oidc/v3 v3.2.0
 	github.com/denisenkom/go-mssqldb v0.12.2
-	github.com/equinor/radix-common v1.2.0
+	github.com/equinor/radix-common v1.2.9
 	github.com/go-openapi/errors v0.20.2
 	github.com/go-openapi/runtime v0.23.1
 	github.com/go-openapi/strfmt v0.21.3

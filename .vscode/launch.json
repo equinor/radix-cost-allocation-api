@@ -16,6 +16,7 @@
         // "RADIX_CLUSTERNAME": "weekly-33",
         "RADIX_DNS_ZONE": "dev.radix.equinor.com",
         "WHITELIST": "{\"whiteList\": [\"canarycicd-test\",\"canarycicd-test1\",\"canarycicd-test2\",\"canarycicd-test3\",\"canarycicd-test4\",\"radix-api\",\"radix-canary-golang\",\"radix-cost-allocation-api\",\"radix-github-webhook\",\"radix-platform\",\"radix-web-console\"]}",
+        "RADIX_CLUSTERNAME": "weekly-07",
         // "AD_REPORT_READERS": "{\"groups\": [\"<AUTHORIZED-AD-GROUP>\"]}",
         // "TOKEN_ISSUER": "https://sts.windows.net/<TENANT-ID>"
       },
