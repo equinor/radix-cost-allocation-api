@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 
@@ -58,6 +57,6 @@ func (tu *Utils) ExecuteRequestWithParameters(method, endpoint string, parameter
 
 // GetResponseBody Gets response payload as type
 func GetResponseBody(response *httptest.ResponseRecorder, target interface{}) error {
-	body, _ := ioutil.ReadAll(response.Body)
+	body, _ := io.ReadAll(response.Body)
 	return json.Unmarshal(body, target)
 }
