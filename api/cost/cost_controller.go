@@ -6,13 +6,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/equinor/radix-common/models"
 	radixhttp "github.com/equinor/radix-common/net/http"
+	"github.com/equinor/radix-common/utils"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
 	"github.com/equinor/radix-cost-allocation-api/service"
-
-	"github.com/equinor/radix-common/models"
-	"github.com/equinor/radix-common/utils"
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 )
 
 const rootPath = ""
@@ -175,7 +175,8 @@ func (costController *costController) getFutureCost(accounts models.Accounts, w 
 	cost, err := handler.GetFutureCost(appName)
 
 	if err != nil {
-		radixhttp.ErrorResponse(w, r, err)
+		log.Errorf("failed to get future cost. Error: %v", err)
+		radixhttp.ErrorResponseForServer(w, r, fmt.Errorf("failed to get future cost"))
 		return
 	}
 
@@ -183,33 +184,33 @@ func (costController *costController) getFutureCost(accounts models.Accounts, w 
 }
 
 func (costController *costController) getTotalCosts(accounts models.Accounts, w http.ResponseWriter, r *http.Request, appName *string) {
-	fromTime, toTime, err := getCostPeriod(w, r)
+	fromTime, toTime, err := getCostPeriod(r)
 	if err != nil {
-		radixhttp.ErrorResponse(w, r, err)
+		log.Errorf("failed to get total cost period. Error: %v", err)
+		radixhttp.ErrorResponseForServer(w, r, fmt.Errorf("failed to get total cost period"))
 		return
 	}
 
 	handler := NewCostHandler(accounts, costController.radixapi, costController.costService)
 	cost, err := handler.GetTotalCost(fromTime, toTime, appName)
 	if err != nil {
-		radixhttp.ErrorResponse(w, r, err)
+		log.Errorf("failed to get total cost. Error: %v", err)
+		radixhttp.ErrorResponseForServer(w, r, fmt.Errorf("failed to get total cost"))
 		return
 	}
 
 	radixhttp.JSONResponse(w, r, cost)
 }
 
-func getCostPeriod(w http.ResponseWriter, r *http.Request) (*time.Time, *time.Time, error) {
+func getCostPeriod(r *http.Request) (*time.Time, *time.Time, error) {
 	fromTime, err := getTimeFromRequest(r, "fromTime")
 	if err != nil {
-		radixhttp.ErrorResponse(w, r, err)
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to get cost period. Error: %v", err)
 	}
 
 	toTime, err := getTimeFromRequest(r, "toTime")
 	if err != nil {
-		radixhttp.ErrorResponse(w, r, err)
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to get cost period time to. Error: %v", err)
 	}
 
 	return fromTime, toTime, nil

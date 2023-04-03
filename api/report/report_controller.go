@@ -57,8 +57,8 @@ func (rc *reportController) GetCostReport(_ models.Accounts, w http.ResponseWrit
 
 	err := handler.GetCostReport(&b, fromDate, toDate)
 	if err != nil {
-		log.Debugf("Failed to get report. Error: %v", err)
-		radixhttp.ErrorResponseForServer(w, r, err)
+		log.Errorf("Failed to get report. Error: %v", err)
+		radixhttp.ErrorResponseForServer(w, r, fmt.Errorf("failed to get report"))
 	}
 
 	radixhttp.ReaderFileResponse(w, &b, fileName, "text/plain; charset=utf-8")

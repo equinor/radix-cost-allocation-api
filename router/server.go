@@ -21,7 +21,7 @@ import (
 	"github.com/rakyll/statik/fs"
 	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
-	"github.com/urfave/negroni/v2"
+	"github.com/urfave/negroni/v3"
 )
 
 const (

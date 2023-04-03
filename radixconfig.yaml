@@ -19,10 +19,10 @@ spec:
           port: 3003
       resources:
         requests:
-          memory: "1000Mi"
+          memory: "1500Mi"
           cpu: "20m"
         limits:
-          memory: "1000Mi"
+          memory: "2000Mi"
           cpu: "1000m"
       public: true
       secrets:
@@ -46,7 +46,7 @@ spec:
             LOG_LEVEL: INFO
         - environment: prod
           runAsNonRoot: true
-          replicas: 1
+          replicas: 2
           monitoring: true
           variables:
             PIPELINE_IMG_TAG: "release-latest"
