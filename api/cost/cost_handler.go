@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	_ "github.com/denisenkom/go-mssqldb"
 	radixmodels "github.com/equinor/radix-common/models"
 	radixhttp "github.com/equinor/radix-common/net/http"
 	"github.com/equinor/radix-cost-allocation-api/models"
@@ -12,6 +11,7 @@ import (
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/application"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/platform"
 	"github.com/equinor/radix-cost-allocation-api/service"
+	_ "github.com/microsoft/go-mssqldb"
 	log "github.com/sirupsen/logrus"
 )
 
