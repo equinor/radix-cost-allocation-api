@@ -1,10 +1,18 @@
+PROD ![prod](https://api.radix.equinor.com/api/v1/applications/radix-cost-allocation-api/environments/prod/buildstatus)  
+QA   ![qa](https://api.radix.equinor.com/api/v1/applications/radix-cost-allocation-api/environments/qa/buildstatus)
+
 # radix-cost-allocation-api
+
 API for Radix Cost Allocation
 The Radix Cost Allocation API is an HTTP server for accessing functionality on the cost allocation for [Radix](https://www.radix.equinor.com) platform. This document is for Radix developers, or anyone interested in poking around.
 
 ## Security
 
 Authentication and authorisation are performed through an HTTP bearer token, which is (in most cases) relayed to the Kubernetes API. The Kubernetes AAD integration then performs its authentication and resource authorisation checks, and the result is relayed to the the user.
+
+## Contribution
+
+Want to contribute? Read our [Contributing guidelines](./CONTRIBUTING.md)
 
 ## Developing
 
@@ -144,4 +152,7 @@ To install with `install_base_components.sh`, mentioned above - add RadixRegistr
     -n radix-cost-allocation-api-secrets \
     --vault-name "<KEYVAULT>" 
     ```
- 
+
+-----------------
+
+[Security notification](./SECURITY.md) 
