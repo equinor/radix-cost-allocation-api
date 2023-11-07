@@ -1,4 +1,4 @@
-FROM golang:1.20-alpine3.18 as builder
+FROM golang:1.21-alpine3.18 as builder
 ENV GO111MODULE=on
 
 RUN apk update && \
@@ -20,9 +20,6 @@ RUN go mod download
 
 # copy api code
 COPY . .
-
-# Generate radix-api client
-RUN swagger generate client -t ./models/radix_api/generated_client -f https://api.radix.equinor.com/swaggerui/swagger.json -A radixapi
 
 # Generate swagger
 RUN swagger generate spec -o ./swaggerui_src/swagger.json --scan-models --exclude-deps --exclude=github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/models && \
