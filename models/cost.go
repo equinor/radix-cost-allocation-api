@@ -11,11 +11,13 @@ type ApplicationCostSet struct {
 	// ApplicationCostSet period started From
 	//
 	// required: true
+	// swagger:strfmt date
 	From time.Time `json:"from"`
 
 	// ApplicationCostSet period continued To
 	//
 	// required: true
+	// swagger:strfmt date
 	To time.Time `json:"to"`
 
 	// ApplicationCosts with costs.

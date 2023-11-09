@@ -21,11 +21,6 @@ RUN go mod download
 # copy api code
 COPY . .
 
-# Generate swagger
-RUN swagger generate spec -o ./swaggerui_src/swagger.json --scan-models --exclude-deps --exclude=github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/models && \
-    swagger validate ./swaggerui_src/swagger.json && \
-    statik -src=./swaggerui_src/ -p swaggerui
-
 # lint and unit tests
 RUN staticcheck ./... && \
     go vet ./... && \
