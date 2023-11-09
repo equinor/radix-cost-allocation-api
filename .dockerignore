@@ -11,5 +11,3 @@ Makefile
 charts
 .idea/
 debug
-swaggerui_src/swagger.json
-swaggerui/statik.go
