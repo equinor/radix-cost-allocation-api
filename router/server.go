@@ -26,6 +26,7 @@ const (
 	apiVersionRoute                 = "/api/v1"
 	healthControllerPath            = "/health/"
 	radixDNSZoneEnvironmentVariable = "RADIX_DNS_ZONE"
+	swaggerUIPath                   = "/swaggerui"
 )
 
 // Server Holds instance variables
@@ -38,10 +39,9 @@ type Server struct {
 // NewServer Constructor function
 func NewServer(clusterName string, authProvider auth.AuthProvider, controllers ...models.Controller) http.Handler {
 	router := mux.NewRouter().StrictSlash(true)
-	swaggerui.HandleSwagger(router)
 
+	initializeSwaggerUI(router)
 	initializeAPIServer(router, controllers)
-
 	initializeHealthEndpoint(router)
 
 	serveMux := http.NewServeMux()
@@ -120,6 +120,12 @@ func getActiveClusterHostName(componentName, namespace, radixDNSZone string) str
 
 func getHostName(componentName, namespace, clustername, radixDNSZone string) string {
 	return fmt.Sprintf("https://%s-%s.%s.%s", componentName, namespace, clustername, radixDNSZone)
+}
+
+func initializeSwaggerUI(router *mux.Router) {
+	swaggerFsHandler := http.FileServer(http.FS(swaggerui.FS()))
+	swaggerui := http.StripPrefix(swaggerUIPath, swaggerFsHandler)
+	router.PathPrefix(swaggerUIPath).Handler(swaggerui)
 }
 
 func initializeAPIServer(router *mux.Router, controllers []models.Controller) {
