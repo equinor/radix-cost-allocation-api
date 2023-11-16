@@ -8,17 +8,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/equinor/radix-cost-allocation-api/metrics"
-
 	"github.com/equinor/radix-common/models"
 	radixnet "github.com/equinor/radix-common/net"
 	radixhttp "github.com/equinor/radix-common/net/http"
 	"github.com/equinor/radix-cost-allocation-api/api/utils/auth"
+	"github.com/equinor/radix-cost-allocation-api/metrics"
+	"github.com/equinor/radix-cost-allocation-api/swaggerui"
 
-	_ "github.com/equinor/radix-cost-allocation-api/swaggerui" // statik files
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/rakyll/statik/fs"
 	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/negroni/v3"
@@ -28,6 +26,7 @@ const (
 	apiVersionRoute                 = "/api/v1"
 	healthControllerPath            = "/health/"
 	radixDNSZoneEnvironmentVariable = "RADIX_DNS_ZONE"
+	swaggerUIPath                   = "/swaggerui"
 )
 
 // Server Holds instance variables
@@ -41,17 +40,8 @@ type Server struct {
 func NewServer(clusterName string, authProvider auth.AuthProvider, controllers ...models.Controller) http.Handler {
 	router := mux.NewRouter().StrictSlash(true)
 
-	statikFS, err := fs.New()
-	if err != nil {
-		panic(err)
-	}
-
-	staticServer := http.FileServer(statikFS)
-	sh := http.StripPrefix("/swaggerui/", staticServer)
-	router.PathPrefix("/swaggerui/").Handler(sh)
-
+	initializeSwaggerUI(router)
 	initializeAPIServer(router, controllers)
-
 	initializeHealthEndpoint(router)
 
 	serveMux := http.NewServeMux()
@@ -130,6 +120,12 @@ func getActiveClusterHostName(componentName, namespace, radixDNSZone string) str
 
 func getHostName(componentName, namespace, clustername, radixDNSZone string) string {
 	return fmt.Sprintf("https://%s-%s.%s.%s", componentName, namespace, clustername, radixDNSZone)
+}
+
+func initializeSwaggerUI(router *mux.Router) {
+	swaggerFsHandler := http.FileServer(http.FS(swaggerui.FS()))
+	swaggerui := http.StripPrefix(swaggerUIPath, swaggerFsHandler)
+	router.PathPrefix(swaggerUIPath).Handler(swaggerui)
 }
 
 func initializeAPIServer(router *mux.Router, controllers []models.Controller) {
