@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/equinor/radix-common/models"
-	radixhttp "github.com/equinor/radix-common/net/http"
 	"github.com/equinor/radix-common/utils"
+	internalutils "github.com/equinor/radix-cost-allocation-api/api/internal/utils"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
 	"github.com/equinor/radix-cost-allocation-api/service"
 	"github.com/gorilla/mux"
@@ -176,18 +176,18 @@ func (costController *costController) getFutureCost(accounts models.Accounts, w 
 
 	if err != nil {
 		log.Errorf("failed to get future cost. Error: %v", err)
-		radixhttp.ErrorResponseForServer(w, r, fmt.Errorf("failed to get future cost"))
+		internalutils.ErrorResponseForServer(w, r, fmt.Errorf("failed to get future cost"))
 		return
 	}
 
-	radixhttp.JSONResponse(w, r, &cost)
+	internalutils.JSONResponse(w, r, &cost)
 }
 
 func (costController *costController) getTotalCosts(accounts models.Accounts, w http.ResponseWriter, r *http.Request, appName *string) {
 	fromTime, toTime, err := getCostPeriod(r)
 	if err != nil {
 		log.Errorf("failed to get total cost period. Error: %v", err)
-		radixhttp.ErrorResponseForServer(w, r, fmt.Errorf("failed to get total cost period"))
+		internalutils.ErrorResponseForServer(w, r, fmt.Errorf("failed to get total cost period"))
 		return
 	}
 
@@ -195,11 +195,11 @@ func (costController *costController) getTotalCosts(accounts models.Accounts, w 
 	cost, err := handler.GetTotalCost(fromTime, toTime, appName)
 	if err != nil {
 		log.Errorf("failed to get total cost. Error: %v", err)
-		radixhttp.ErrorResponseForServer(w, r, fmt.Errorf("failed to get total cost"))
+		internalutils.ErrorResponseForServer(w, r, fmt.Errorf("failed to get total cost"))
 		return
 	}
 
-	radixhttp.JSONResponse(w, r, cost)
+	internalutils.JSONResponse(w, r, cost)
 }
 
 func getCostPeriod(r *http.Request) (*time.Time, *time.Time, error) {
