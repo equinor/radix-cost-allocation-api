@@ -40,7 +40,7 @@ type controllerTestSuite struct {
 }
 
 func (s *controllerTestSuite) SetupTest() {
-	os.Setenv("WHITELIST", "{\"whiteList\": [\"canarycicd-test\",\"canarycicd-test1\",\"canarycicd-test2\",\"canarycicd-test3\",\"canarycicd-test4\",\"radix-api\",\"radix-canary-golang\",\"radix-cost-allocation-api\",\"radix-github-webhook\",\"radix-platform\",\"radix-web-console\"]}")
+	_ = os.Setenv("WHITELIST", "{\"whiteList\": [\"canarycicd-test\",\"canarycicd-test1\",\"canarycicd-test2\",\"canarycicd-test3\",\"canarycicd-test4\",\"radix-api\",\"radix-canary-golang\",\"radix-cost-allocation-api\",\"radix-github-webhook\",\"radix-platform\",\"radix-web-console\"]}")
 	s.env = models.NewEnv()
 	ctrl := gomock.NewController(s.T())
 	s.authProvider = mock.NewMockAuthProvider(ctrl)
@@ -107,7 +107,8 @@ func (s *controllerTestSuite) Test_TotalCost_ApplicationExist() {
 	response := controllerTestUtils.ExecuteRequest("GET", url)
 
 	applicationCostSet := models.ApplicationCostSet{}
-	controllertest.GetResponseBody(response, &applicationCostSet)
+	err := controllertest.GetResponseBody(response, &applicationCostSet)
+	s.Require().NoError(err)
 	s.NotNil(applicationCostSet)
 	s.Equal(expected.ApplicationCosts[0], applicationCostSet.ApplicationCosts[0])
 }

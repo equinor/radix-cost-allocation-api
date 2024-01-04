@@ -4,7 +4,6 @@ ENV GO111MODULE=on
 RUN apk update && \
     apk add bash jq alpine-sdk sed gawk git ca-certificates curl mc && \
     apk add --no-cache gcc musl-dev
-RUN go install honnef.co/go/tools/cmd/staticcheck@2023.1.3
 
 WORKDIR /go/src/github.com/equinor/radix-cost-allocation-api/
 
@@ -14,11 +13,6 @@ RUN go mod download
 
 # copy api code
 COPY . .
-
-# lint and unit tests
-RUN staticcheck ./... && \
-    go vet ./... && \
-    CGO_ENABLED=0 GOOS=linux go test ./...
 
 # Build radix cost allocation API go project
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-s -w" -a -installsuffix cgo -o /usr/local/bin/radix-cost-allocation-api
