@@ -57,12 +57,10 @@ jobs:
           go-version: '1.21'
       - name: Install dependencies
         run: go mod download
-      - name: Install Swagger
-        run: go install github.com/go-swagger/go-swagger/cmd/swagger@v0.30.5
       - name: Generate Swagger
-        run: swagger generate spec -o ./swagger.json --scan-models --exclude-deps
+        run: make swagger
       - name: Validate no changes
-        run: diff swagger.json ./swaggerui/html/swagger.json
+        run: diff ./swaggerui/html/swagger.json <(git show master:swaggerui/html/swagger.json)
       - name: Check breaking changes
         if: always()
         id: breaking
