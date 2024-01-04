@@ -60,9 +60,9 @@ jobs:
       - name: Install Swagger
         run: go install github.com/go-swagger/go-swagger/cmd/swagger@v0.30.5
       - name: Generate Swagger
-        run: swagger generate spec -o ./swaggerui/html/swagger.json --scan-models --exclude-deps --exclude=github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/models
+        run: swagger generate spec -o ./swagger.json --scan-models --exclude-deps --exclude=github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/models
       - name: Validate no changes
-        run: diff ./swaggerui/html/swagger.json <(git show master:swaggerui/html/swagger.json)
+        run: diff ./swagger.json ./swaggerui/html/swagger.json
       - name: Check breaking changes
         if: always()
         id: breaking
