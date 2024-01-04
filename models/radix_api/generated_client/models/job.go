@@ -21,7 +21,7 @@ import (
 // swagger:model Job
 type Job struct {
 
-	// Branch branch to build from
+	// Branch to build from
 	// Example: master
 	Branch string `json:"branch,omitempty"`
 
@@ -45,18 +45,25 @@ type Job struct {
 	// Example: 2006-01-02T15:04:05Z
 	Ended string `json:"ended,omitempty"`
 
+	// Image tags names for components - if empty will use default logic
+	// Example: component1: tag1,component2: tag2
+	ImageTagNames map[string]string `json:"imageTagNames,omitempty"`
+
 	// Name of the job
 	// Example: radix-pipeline-20181029135644-algpv-6hznh
 	Name string `json:"name,omitempty"`
 
 	// Name of the pipeline
 	// Example: build-deploy
-	// Enum: [build-deploy]
+	// Enum: [build build-deploy promote deploy]
 	Pipeline string `json:"pipeline,omitempty"`
 
 	// PromotedDeploymentName the name of the deployment that was promoted
 	// Example: component-6hznh
 	PromotedDeploymentName string `json:"promotedDeploymentName,omitempty"`
+
+	// RadixDeployment name, which is promoted
+	PromotedFromDeployment string `json:"promotedFromDeployment,omitempty"`
 
 	// PromotedFromEnvironment the name of the environment that was promoted from
 	// Example: dev
@@ -66,13 +73,17 @@ type Job struct {
 	// Example: qa
 	PromotedToEnvironment string `json:"promotedToEnvironment,omitempty"`
 
+	// RerunFromJob The source name of the job if this job was restarted from it
+	// Example: radix-pipeline-20231011104617-urynf
+	RerunFromJob string `json:"rerunFromJob,omitempty"`
+
 	// Started timestamp
 	// Example: 2006-01-02T15:04:05Z
 	Started string `json:"started,omitempty"`
 
 	// Status of the job
 	// Example: Waiting
-	// Enum: [Waiting Running Succeeded Stopping Stopped Failed StoppedNoChanges]
+	// Enum: [Queued Waiting Running Succeeded Failed Stopped Stopping StoppedNoChanges]
 	Status string `json:"status,omitempty"`
 
 	// Array of steps
@@ -169,7 +180,7 @@ var jobTypePipelinePropEnum []interface{}
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["build-deploy"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["build","build-deploy","promote","deploy"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -179,8 +190,17 @@ func init() {
 
 const (
 
+	// JobPipelineBuild captures enum value "build"
+	JobPipelineBuild string = "build"
+
 	// JobPipelineBuildDashDeploy captures enum value "build-deploy"
 	JobPipelineBuildDashDeploy string = "build-deploy"
+
+	// JobPipelinePromote captures enum value "promote"
+	JobPipelinePromote string = "promote"
+
+	// JobPipelineDeploy captures enum value "deploy"
+	JobPipelineDeploy string = "deploy"
 )
 
 // prop value enum
@@ -208,7 +228,7 @@ var jobTypeStatusPropEnum []interface{}
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["Waiting","Running","Succeeded","Stopping","Stopped","Failed","StoppedNoChanges"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["Queued","Waiting","Running","Succeeded","Failed","Stopped","Stopping","StoppedNoChanges"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -217,6 +237,9 @@ func init() {
 }
 
 const (
+
+	// JobStatusQueued captures enum value "Queued"
+	JobStatusQueued string = "Queued"
 
 	// JobStatusWaiting captures enum value "Waiting"
 	JobStatusWaiting string = "Waiting"
@@ -227,14 +250,14 @@ const (
 	// JobStatusSucceeded captures enum value "Succeeded"
 	JobStatusSucceeded string = "Succeeded"
 
-	// JobStatusStopping captures enum value "Stopping"
-	JobStatusStopping string = "Stopping"
+	// JobStatusFailed captures enum value "Failed"
+	JobStatusFailed string = "Failed"
 
 	// JobStatusStopped captures enum value "Stopped"
 	JobStatusStopped string = "Stopped"
 
-	// JobStatusFailed captures enum value "Failed"
-	JobStatusFailed string = "Failed"
+	// JobStatusStopping captures enum value "Stopping"
+	JobStatusStopping string = "Stopping"
 
 	// JobStatusStoppedNoChanges captures enum value "StoppedNoChanges"
 	JobStatusStoppedNoChanges string = "StoppedNoChanges"
