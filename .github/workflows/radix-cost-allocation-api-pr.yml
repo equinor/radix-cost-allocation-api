@@ -57,8 +57,10 @@ jobs:
           go-version: '1.21'
       - name: Install dependencies
         run: go mod download
+      - name: Install Swagger
+        run: go install github.com/go-swagger/go-swagger/cmd/swagger@v0.30.5
       - name: Generate Swagger
-        run: make swagger
+        run: swagger generate spec -o ./swaggerui/html/swagger.json --scan-models --exclude-deps --exclude=github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/models
       - name: Validate no changes
         run: diff ./swaggerui/html/swagger.json <(git show master:swaggerui/html/swagger.json)
       - name: Check breaking changes
