@@ -26,22 +26,22 @@ func main() {
 	fs := initializeFlagSet()
 	port := fs.StringP("port", "p", defaultPort(), "Port where API will be served")
 
-	log.Debug().Msgf("Port: %s\n", *port)
-	log.Debug().Msgf("Cluster: %s\n", env.ClusterName)
+	log.Debug().Msgf("Port: %s", *port)
+	log.Debug().Msgf("Cluster: %s", env.ClusterName)
 
 	parseFlagsFromArgs(fs)
 
 	errs := make(chan error)
 
 	ctx := context.Background()
-	authProvider := auth.NewAuthProvider(ctx)
+	authProvider := auth.NewAuthProvider(ctx, env.OidcIssuer, env.OidcAudience)
 	radixAPIClient := radix_api.NewRadixAPIClient(env)
 	costService := getCostService(env)
 
 	go func() {
 		log.Info().Msgf("API is serving on port %s", *port)
 		addr := fmt.Sprintf(":%s", *port)
-		handler := router.NewServer(env.ClusterName, authProvider,
+		handler := router.NewServer(env.ClusterName, env.OidcAllowedAdGroups, authProvider,
 			cost.NewCostController(radixAPIClient, costService),
 			report.NewReportController(costService))
 		errs <- http.ListenAndServe(addr, handler)

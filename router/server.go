@@ -1,7 +1,6 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -37,7 +36,7 @@ type Server struct {
 }
 
 // NewServer Constructor function
-func NewServer(clusterName string, authProvider auth.AuthProvider, controllers ...models.Controller) http.Handler {
+func NewServer(clusterName string, allowedAdGroups []string, authProvider auth.AuthProvider, controllers ...models.Controller) http.Handler {
 	router := mux.NewRouter().StrictSlash(true)
 
 	initializeSwaggerUI(router)
@@ -50,7 +49,7 @@ func NewServer(clusterName string, authProvider auth.AuthProvider, controllers .
 	))
 
 	authenticationMiddleware := newAuthenticationMiddleware(authProvider)
-	authorizationMiddleware := newADGroupAuthorizationMiddleware(os.Getenv("AD_REPORT_READERS"), authProvider)
+	authorizationMiddleware := newADGroupAuthorizationMiddleware(allowedAdGroups, authProvider)
 
 	serveMux.Handle("/api/", negroni.New(
 		authenticationMiddleware,
@@ -164,7 +163,7 @@ func newAuthenticationMiddleware(authProvider auth.AuthProvider) negroni.Handler
 		}
 
 		verified, err := authProvider.VerifyToken(r.Context(), token)
-		// TODO: Validate token against issuer
+		// TODO: Validate token audience
 		if err != nil || verified == nil {
 			log.Debug().Err(err).Msg("Could not verify token")
 			w.WriteHeader(http.StatusUnauthorized)
@@ -175,16 +174,7 @@ func newAuthenticationMiddleware(authProvider auth.AuthProvider) negroni.Handler
 	}
 }
 
-func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider auth.AuthProvider) negroni.HandlerFunc {
-	var allowedGroups struct {
-		List []string `json:"groups"`
-	}
-
-	err := json.Unmarshal([]byte(allowedADGroups), &allowedGroups)
-	if err != nil {
-		log.Error().Msg("could not parse json for allowedADGroups")
-	}
-
+func newADGroupAuthorizationMiddleware(allowedADGroups []string, authProvider auth.AuthProvider) negroni.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 		token, err := radixhttp.GetBearerTokenFromHeader(r)
 
@@ -214,12 +204,12 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider auth
 		}
 
 		for _, group := range claims.Groups {
-			if find(allowedGroups.List, group) {
+			if find(allowedADGroups, group) {
 				next(w, r)
 			}
 		}
 
-		log.Debug().Msgf("User does not have correct AD group access. Logged AD groups for user: %v ", claims.Groups)
+		log.Debug().Strs("ad-groups", claims.Groups).Msgf("User does not have correct AD group access")
 		w.WriteHeader(http.StatusForbidden)
 	}
 }
