@@ -6,8 +6,10 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 // Env instance variables
@@ -24,12 +26,17 @@ type Env struct {
 
 // NewEnv Constructor
 func NewEnv() *Env {
+	zerolog.DurationFieldInteger = true
 	switch os.Getenv("LOG_LEVEL") {
 	case "DEBUG":
-		log.SetLevel(log.DebugLevel)
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	default:
-		log.SetLevel(log.InfoLevel)
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
+	if envVarIsTrueOrYes(os.Getenv("PRETTY_PRINT")) {
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.TimeOnly})
+	}
+
 	var (
 		apiEnv           = os.Getenv("RADIX_ENVIRONMENT")
 		clusterName      = os.Getenv("RADIX_CLUSTERNAME")
@@ -40,20 +47,20 @@ func NewEnv() *Env {
 		useProfiler      = envVarIsTrueOrYes(os.Getenv("USE_PROFILER"))
 	)
 	if apiEnv == "" {
-		log.Error("'API-Environment' environment variable is not set")
+		log.Error().Msg("'API-Environment' environment variable is not set")
 	}
 	if clusterName == "" {
-		log.Error("'Cluster' environment variables is not set")
+		log.Error().Msg("'Cluster' environment variables is not set")
 	}
 	if dnsZone == "" {
-		log.Error("'DNS Zone' environment variables is not set")
+		log.Error().Msg("'DNS Zone' environment variables is not set")
 	}
 
 	list := &Whitelist{}
 	err := json.Unmarshal([]byte(whiteList), list)
 
 	if err != nil {
-		log.Info("Whitelist is not set. ", err)
+		log.Info().Err(err).Msg("Whitelist is not set")
 	}
 
 	return &Env{

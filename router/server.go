@@ -18,7 +18,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	"github.com/urfave/negroni/v3"
 )
 
@@ -158,15 +158,15 @@ func newAuthenticationMiddleware(authProvider auth.AuthProvider) negroni.Handler
 		token, err := radixhttp.GetBearerTokenFromHeader(r)
 
 		if err != nil {
-			log.Info("Could not get token from header")
+			log.Info().Msg("Could not get token from header")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
 		verified, err := authProvider.VerifyToken(r.Context(), token)
-
+		// TODO: Validate token against issuer
 		if err != nil || verified == nil {
-			log.Debugf("Could not verify token. Error: %v", err)
+			log.Debug().Err(err).Msg("Could not verify token")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -182,14 +182,14 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider auth
 
 	err := json.Unmarshal([]byte(allowedADGroups), &allowedGroups)
 	if err != nil {
-		log.Errorf("could not parse json for allowedADGroups")
+		log.Error().Msg("could not parse json for allowedADGroups")
 	}
 
 	return func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 		token, err := radixhttp.GetBearerTokenFromHeader(r)
 
 		if err != nil {
-			log.Info("Could not get token from header")
+			log.Info().Msg("Could not get token from header")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -198,7 +198,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider auth
 		verified, err = authProvider.VerifyToken(r.Context(), token)
 
 		if err != nil || verified == nil {
-			log.Debugf("Unable to verify token. Error: %v", err)
+			log.Debug().Err(err).Msg("Unable to verify token")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -208,7 +208,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider auth
 		err = verified.GetClaims(claims)
 
 		if err != nil {
-			log.Debugf("Could not get claims from token. Error: %v", err)
+			log.Debug().Err(err).Msg("Could not get claims from token")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -219,7 +219,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups string, authProvider auth
 			}
 		}
 
-		log.Debugf("User does not have correct AD group access. Logged AD groups for user: %v ", claims.Groups)
+		log.Debug().Msgf("User does not have correct AD group access. Logged AD groups for user: %v ", claims.Groups)
 		w.WriteHeader(http.StatusForbidden)
 	}
 }

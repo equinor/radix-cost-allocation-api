@@ -12,7 +12,7 @@ import (
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
 	"github.com/equinor/radix-cost-allocation-api/service"
 	"github.com/gorilla/mux"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 )
 
 const rootPath = ""
@@ -175,7 +175,7 @@ func (costController *costController) getFutureCost(accounts models.Accounts, w 
 	cost, err := handler.GetFutureCost(appName)
 
 	if err != nil {
-		log.Errorf("failed to get future cost. Error: %v", err)
+		zerolog.Ctx(r.Context()).Error().Err(err).Msg("failed to get future cost")
 		internalutils.ErrorResponseForServer(w, r, fmt.Errorf("failed to get future cost"))
 		return
 	}
@@ -186,7 +186,7 @@ func (costController *costController) getFutureCost(accounts models.Accounts, w 
 func (costController *costController) getTotalCosts(accounts models.Accounts, w http.ResponseWriter, r *http.Request, appName *string) {
 	fromTime, toTime, err := getCostPeriod(r)
 	if err != nil {
-		log.Errorf("failed to get total cost period. Error: %v", err)
+		zerolog.Ctx(r.Context()).Error().Err(err).Msg("failed to get total cost period")
 		internalutils.ErrorResponseForServer(w, r, fmt.Errorf("failed to get total cost period"))
 		return
 	}
@@ -194,7 +194,7 @@ func (costController *costController) getTotalCosts(accounts models.Accounts, w 
 	handler := NewCostHandler(accounts, costController.radixapi, costController.costService)
 	cost, err := handler.GetTotalCost(fromTime, toTime, appName)
 	if err != nil {
-		log.Errorf("failed to get total cost. Error: %v", err)
+		zerolog.Ctx(r.Context()).Error().Err(err).Msg("failed to get total cost")
 		internalutils.ErrorResponseForServer(w, r, fmt.Errorf("failed to get total cost"))
 		return
 	}

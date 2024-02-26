@@ -2,22 +2,22 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
 	"github.com/equinor/radix-cost-allocation-api/repository"
 	"github.com/equinor/radix-cost-allocation-api/service"
 
-	_ "net/http/pprof"
-
 	"github.com/equinor/radix-cost-allocation-api/api/cost"
 	"github.com/equinor/radix-cost-allocation-api/api/report"
 	"github.com/equinor/radix-cost-allocation-api/api/utils/auth"
 	models "github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/equinor/radix-cost-allocation-api/router"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/pflag"
 )
 
@@ -26,8 +26,8 @@ func main() {
 	fs := initializeFlagSet()
 	port := fs.StringP("port", "p", defaultPort(), "Port where API will be served")
 
-	log.Debugf("Port: %s\n", *port)
-	log.Debugf("Cluster: %s\n", env.ClusterName)
+	log.Debug().Msgf("Port: %s\n", *port)
+	log.Debug().Msgf("Cluster: %s\n", env.ClusterName)
 
 	parseFlagsFromArgs(fs)
 
@@ -39,7 +39,7 @@ func main() {
 	costService := getCostService(env)
 
 	go func() {
-		log.Infof("API is serving on port %s", *port)
+		log.Info().Msgf("API is serving on port %s", *port)
 		addr := fmt.Sprintf(":%s", *port)
 		handler := router.NewServer(env.ClusterName, authProvider,
 			cost.NewCostController(radixAPIClient, costService),
@@ -49,14 +49,14 @@ func main() {
 
 	if env.UseProfiler {
 		go func() {
-			log.Infof("Profiler endpoint is serving on port 7070")
+			log.Info().Msgf("Profiler endpoint is serving on port 7070")
 			errs <- http.ListenAndServe("localhost:7070", nil)
 		}()
 	}
 
 	err := <-errs
 	if err != nil {
-		log.Fatalf("Radix cost allocation api server crashed: %v", err)
+		log.Fatal().Err(err).Msg("Radix cost allocation api server crashed")
 	}
 }
 
@@ -69,7 +69,7 @@ func createContainerCostService(env *models.Env) service.CostService {
 		repository.GetSqlServerDsn(env.DbCredentials.Server, env.DbCredentials.Database, env.DbCredentials.UserID, env.DbCredentials.Password, env.DbCredentials.Port),
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("failed to open db repository")
 	}
 
 	repo := repository.NewGormRepository(gormdb)
@@ -80,10 +80,10 @@ func initializeFlagSet() *pflag.FlagSet {
 	// Flag domain.
 	fs := pflag.NewFlagSet("default", pflag.ContinueOnError)
 	fs.Usage = func() {
-		fmt.Fprintf(os.Stderr, "DESCRIPTION\n")
-		fmt.Fprintf(os.Stderr, "Radix cost allocation api server.\n")
-		fmt.Fprintf(os.Stderr, "\n")
-		fmt.Fprintf(os.Stderr, "FLAGS\n")
+		_, _ = fmt.Fprintf(os.Stderr, "DESCRIPTION\n")
+		_, _ = fmt.Fprintf(os.Stderr, "Radix cost allocation api server.\n")
+		_, _ = fmt.Fprintf(os.Stderr, "\n")
+		_, _ = fmt.Fprintf(os.Stderr, "FLAGS\n")
 		fs.PrintDefaults()
 	}
 	return fs
@@ -92,10 +92,10 @@ func initializeFlagSet() *pflag.FlagSet {
 func parseFlagsFromArgs(fs *pflag.FlagSet) {
 	err := fs.Parse(os.Args[1:])
 	switch {
-	case err == pflag.ErrHelp:
+	case errors.Is(err, pflag.ErrHelp):
 		os.Exit(0)
 	case err != nil:
-		fmt.Fprintf(os.Stderr, "Error: %s\n\n", err.Error())
+		_, _ = fmt.Fprintf(os.Stderr, "Error: %s\n\n", err.Error())
 		fs.Usage()
 		os.Exit(2)
 	}

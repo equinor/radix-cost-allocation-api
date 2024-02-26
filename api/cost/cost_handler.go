@@ -12,7 +12,7 @@ import (
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/platform"
 	"github.com/equinor/radix-cost-allocation-api/service"
 	_ "github.com/microsoft/go-mssqldb"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 // CostHandler Instance variables
@@ -49,7 +49,7 @@ func (costHandler *CostHandler) GetTotalCost(fromTime, toTime *time.Time, appNam
 	rrMap, err := costHandler.getRadixRegistrationMap(appName)
 
 	if err != nil {
-		log.Info("Could not get application details. ", err)
+		log.Info().Err(err).Msg("Could not get application details")
 		return nil, err
 	}
 
@@ -69,7 +69,7 @@ func (costHandler *CostHandler) GetFutureCost(appName string) (*models.Applicati
 	rrMap, err := costHandler.getRadixRegistrationMap(&appName)
 
 	if err != nil {
-		log.Debugf("Unable to get application details. Error: %v", err)
+		log.Debug().Err(err).Msg("Unable to get application details")
 		return nil, err
 	}
 
@@ -80,7 +80,7 @@ func (costHandler *CostHandler) GetFutureCost(appName string) (*models.Applicati
 	}
 
 	err = fmt.Errorf("user does not have access to application %s", appName)
-	log.Debugf("Error: %s", err.Error())
+	log.Debug().Msgf(err.Error())
 	return nil, radixhttp.ApplicationNotFoundError("Application was not found.", err)
 }
 
