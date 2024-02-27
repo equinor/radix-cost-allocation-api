@@ -54,6 +54,4 @@ func (l Logger) Trace(ctx context.Context, begin time.Time, f func() (string, in
 	}
 
 	event.Send()
-
-	return
 }
