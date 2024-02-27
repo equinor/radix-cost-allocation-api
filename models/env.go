@@ -61,19 +61,19 @@ func NewEnv() (*Env, context.Context, error) {
 		errs = append(errs, fmt.Errorf("environment variable RADIX_ENVIRONMENT is not set"))
 	}
 	if clusterName == "" {
-		errs = append(errs, fmt.Errorf("environment variables RADIX_CLUSTERNAME is not set"))
+		errs = append(errs, fmt.Errorf("environment variable RADIX_CLUSTERNAME is not set"))
 	}
 	if dnsZone == "" {
-		errs = append(errs, fmt.Errorf("environment variables RADIX_DNS_ZONE is not set"))
+		errs = append(errs, fmt.Errorf("environment variable RADIX_DNS_ZONE is not set"))
 	}
 	if issuer == "" {
-		errs = append(errs, fmt.Errorf("environment variables TOKEN_ISSUER is not set"))
+		errs = append(errs, fmt.Errorf("environment variable TOKEN_ISSUER is not set"))
 	}
 	if audience == "" {
-		errs = append(errs, fmt.Errorf("environment variables TOKEN_AUDIENCE is not set"))
+		errs = append(errs, fmt.Errorf("environment variable TOKEN_AUDIENCE is not set"))
 	}
 	if allowedAdGroupsJson == "" {
-		errs = append(errs, fmt.Errorf("environment variables AD_REPORT_READERS is not set"))
+		errs = append(errs, fmt.Errorf("environment variable AD_REPORT_READERS is not set"))
 	}
 	var allowedGroups struct {
 		List []string `json:"groups"`
