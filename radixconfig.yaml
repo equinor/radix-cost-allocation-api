@@ -35,6 +35,8 @@ spec:
         - WHITELIST
         - AD_REPORT_READERS
         - TOKEN_ISSUER
+      variables:
+        TOKEN_AUDIENCE: "6dae42f8-4368-4678-94ff-3960e28e3630"
       environmentConfig:
         - environment: qa
           runAsNonRoot: true
