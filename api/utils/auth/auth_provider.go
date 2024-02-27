@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"log"
-	"os"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 )
@@ -56,16 +55,14 @@ func (p *oidcProvider) VerifyToken(ctx context.Context, token string) (IDToken, 
 }
 
 // NewAuthProvider creates a new auth provider
-func NewAuthProvider(ctx context.Context) AuthProvider {
-	verifier := getTokenVerifier(ctx)
+func NewAuthProvider(ctx context.Context, issuer, audience string) AuthProvider {
+	verifier := getTokenVerifier(ctx, issuer, audience)
 	return &oidcProvider{
 		verifier: verifier,
 	}
 }
 
-func getTokenVerifier(ctx context.Context) *oidc.IDTokenVerifier {
-
-	issuer := os.Getenv("TOKEN_ISSUER")
+func getTokenVerifier(ctx context.Context, issuer, audience string) *oidc.IDTokenVerifier {
 
 	provider, err := oidc.NewProvider(ctx, issuer)
 
@@ -74,7 +71,7 @@ func getTokenVerifier(ctx context.Context) *oidc.IDTokenVerifier {
 	}
 
 	oidcConfig := &oidc.Config{
-		SkipClientIDCheck: true,
+		ClientID: audience,
 	}
 
 	return provider.Verifier(oidcConfig)

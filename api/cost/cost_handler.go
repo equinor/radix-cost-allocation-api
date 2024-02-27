@@ -1,6 +1,7 @@
 package cost
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -12,7 +13,7 @@ import (
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/platform"
 	"github.com/equinor/radix-cost-allocation-api/service"
 	_ "github.com/microsoft/go-mssqldb"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 )
 
 // CostHandler Instance variables
@@ -36,7 +37,7 @@ func (costHandler *CostHandler) getToken() string {
 }
 
 // GetTotalCost handler for GetTotalCost
-func (costHandler *CostHandler) GetTotalCost(fromTime, toTime *time.Time, appName *string) (*models.ApplicationCostSet, error) {
+func (costHandler *CostHandler) GetTotalCost(ctx context.Context, fromTime, toTime *time.Time, appName *string) (*models.ApplicationCostSet, error) {
 	applicationCostSet, err := costHandler.costService.GetCostForPeriod(*fromTime, *toTime)
 	if err != nil {
 		return nil, err
@@ -49,7 +50,7 @@ func (costHandler *CostHandler) GetTotalCost(fromTime, toTime *time.Time, appNam
 	rrMap, err := costHandler.getRadixRegistrationMap(appName)
 
 	if err != nil {
-		log.Info("Could not get application details. ", err)
+		zerolog.Ctx(ctx).Info().Err(err).Msg("Could not get application details")
 		return nil, err
 	}
 
@@ -60,7 +61,7 @@ func (costHandler *CostHandler) GetTotalCost(fromTime, toTime *time.Time, appNam
 }
 
 // GetFutureCost estimates cost for the next 30 days based on last run
-func (costHandler *CostHandler) GetFutureCost(appName string) (*models.ApplicationCost, error) {
+func (costHandler *CostHandler) GetFutureCost(ctx context.Context, appName string) (*models.ApplicationCost, error) {
 	cost, err := costHandler.costService.GetFutureCost(appName)
 	if err != nil {
 		return nil, err
@@ -69,7 +70,7 @@ func (costHandler *CostHandler) GetFutureCost(appName string) (*models.Applicati
 	rrMap, err := costHandler.getRadixRegistrationMap(&appName)
 
 	if err != nil {
-		log.Debugf("Unable to get application details. Error: %v", err)
+		zerolog.Ctx(ctx).Debug().Err(err).Msg("Unable to get application details")
 		return nil, err
 	}
 
@@ -80,7 +81,7 @@ func (costHandler *CostHandler) GetFutureCost(appName string) (*models.Applicati
 	}
 
 	err = fmt.Errorf("user does not have access to application %s", appName)
-	log.Debugf("Error: %s", err.Error())
+	zerolog.Ctx(ctx).Debug().Msgf(err.Error())
 	return nil, radixhttp.ApplicationNotFoundError("Application was not found.", err)
 }
 

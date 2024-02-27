@@ -14,8 +14,9 @@ import (
 
 // Utils Instance variables
 type Utils struct {
-	controllers  []models.Controller
-	authProvider auth.AuthProvider
+	controllers     []models.Controller
+	authProvider    auth.AuthProvider
+	allowedAdGroups []string
 }
 
 // NewTestUtils Constructor
@@ -23,12 +24,17 @@ func NewTestUtils(controllers ...models.Controller) Utils {
 	return Utils{
 		controllers,
 		nil,
+		make([]string, 0),
 	}
 }
 
 // SetAuthProvider sets auth provider
 func (tu *Utils) SetAuthProvider(ap auth.AuthProvider) {
 	tu.authProvider = ap
+}
+
+func (tu *Utils) SetAllowedADGroups(adGroups []string) {
+	tu.allowedAdGroups = adGroups
 }
 
 // ExecuteRequest Helper method to issue a http request
@@ -50,7 +56,7 @@ func (tu *Utils) ExecuteRequestWithParameters(method, endpoint string, parameter
 	req.Header.Add("Accept", "application/json")
 
 	rr := httptest.NewRecorder()
-	router.NewServer("anyClusterName", tu.authProvider, tu.controllers...).ServeHTTP(rr, req)
+	router.NewServer("anyClusterName", tu.allowedAdGroups, tu.authProvider, tu.controllers...).ServeHTTP(rr, req)
 	return rr
 
 }

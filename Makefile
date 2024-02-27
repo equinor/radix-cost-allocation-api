@@ -4,7 +4,7 @@ build: $(BINS)
 
 .PHONY: test
 test:
-	go test -cover ./...
+	PRETTY_PRINT=yes go test -cover ./...
 
 .PHONY: lint
 lint: bootstrap

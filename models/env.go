@@ -1,71 +1,105 @@
 package models
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 // Env instance variables
 type Env struct {
-	APIEnvironment   string
-	ClusterName      string
-	DNSZone          string
-	UseLocalRadixApi bool
-	UseProfiler      bool
-	DbCredentials    *DBCredentials
-	Whitelist        *Whitelist
-	Cluster          string
+	APIEnvironment      string
+	ClusterName         string
+	DNSZone             string
+	UseLocalRadixApi    bool
+	UseProfiler         bool
+	DbCredentials       *DBCredentials
+	Whitelist           *Whitelist
+	Cluster             string
+	OidcIssuer          string
+	OidcAudience        string
+	OidcAllowedAdGroups []string
 }
 
 // NewEnv Constructor
-func NewEnv() *Env {
+func NewEnv() (*Env, context.Context) {
+	ctx := context.Background()
+	zerolog.DurationFieldUnit = time.Millisecond
 	switch os.Getenv("LOG_LEVEL") {
 	case "DEBUG":
-		log.SetLevel(log.DebugLevel)
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	default:
-		log.SetLevel(log.InfoLevel)
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
+	if envVarIsTrueOrYes(os.Getenv("PRETTY_PRINT")) {
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.TimeOnly})
+	}
+	ctx = log.Logger.WithContext(ctx)
+
 	var (
-		apiEnv           = os.Getenv("RADIX_ENVIRONMENT")
-		clusterName      = os.Getenv("RADIX_CLUSTERNAME")
-		dnsZone          = os.Getenv("RADIX_DNS_ZONE")
-		whiteList        = os.Getenv("WHITELIST")
-		cluster          = os.Getenv("RADIX_CLUSTER_NAME")
-		useLocalRadixApi = envVarIsTrueOrYes(os.Getenv("USE_LOCAL_RADIX_API"))
-		useProfiler      = envVarIsTrueOrYes(os.Getenv("USE_PROFILER"))
+		apiEnv              = os.Getenv("RADIX_ENVIRONMENT")
+		clusterName         = os.Getenv("RADIX_CLUSTERNAME")
+		dnsZone             = os.Getenv("RADIX_DNS_ZONE")
+		whiteList           = os.Getenv("WHITELIST")
+		cluster             = os.Getenv("RADIX_CLUSTER_NAME")
+		useLocalRadixApi    = envVarIsTrueOrYes(os.Getenv("USE_LOCAL_RADIX_API"))
+		useProfiler         = envVarIsTrueOrYes(os.Getenv("USE_PROFILER"))
+		issuer              = os.Getenv("TOKEN_ISSUER")
+		audience            = os.Getenv("TOKEN_AUDIENCE")
+		allowedAdGroupsJson = os.Getenv("AD_REPORT_READERS")
 	)
 	if apiEnv == "" {
-		log.Error("'API-Environment' environment variable is not set")
+		log.Error().Msg("'API-Environment' environment variable is not set")
 	}
 	if clusterName == "" {
-		log.Error("'Cluster' environment variables is not set")
+		log.Error().Msg("'Cluster' environment variables is not set")
 	}
 	if dnsZone == "" {
-		log.Error("'DNS Zone' environment variables is not set")
+		log.Error().Msg("'DNS Zone' environment variables is not set")
+	}
+	if issuer == "" {
+		log.Error().Msg("'TOKEN_ISSUER' environment variables is not set")
+	}
+	if audience == "" {
+		log.Error().Msg("'TOKEN_AUDIENCE' environment variables is not set")
+	}
+	if allowedAdGroupsJson == "" {
+		log.Error().Msg("'AD_REPORT_READERS' environment variables is not set")
+	}
+	var allowedGroups struct {
+		List []string `json:"groups"`
+	}
+	err := json.Unmarshal([]byte(allowedAdGroupsJson), &allowedGroups)
+	if err != nil {
+		log.Error().Err(err).Msg("could not parse json for allowedADGroups")
 	}
 
 	list := &Whitelist{}
-	err := json.Unmarshal([]byte(whiteList), list)
-
+	err = json.Unmarshal([]byte(whiteList), list)
 	if err != nil {
-		log.Info("Whitelist is not set. ", err)
+		log.Info().Err(err).Msg("could not parse json for WHITELIST")
 	}
 
 	return &Env{
-		APIEnvironment:   apiEnv,
-		ClusterName:      clusterName,
-		DNSZone:          dnsZone,
-		Whitelist:        list,
-		Cluster:          cluster,
-		UseLocalRadixApi: useLocalRadixApi,
-		UseProfiler:      useProfiler,
-		DbCredentials:    getDBCredentials(),
-	}
+		APIEnvironment:      apiEnv,
+		ClusterName:         clusterName,
+		DNSZone:             dnsZone,
+		Whitelist:           list,
+		Cluster:             cluster,
+		UseLocalRadixApi:    useLocalRadixApi,
+		UseProfiler:         useProfiler,
+		DbCredentials:       getDBCredentials(),
+		OidcAudience:        audience,
+		OidcIssuer:          issuer,
+		OidcAllowedAdGroups: allowedGroups.List,
+	}, ctx
 }
 
 func envVarIsTrueOrYes(envVar string) bool {
