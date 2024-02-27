@@ -41,7 +41,7 @@ type controllerTestSuite struct {
 
 func (s *controllerTestSuite) SetupTest() {
 	_ = os.Setenv("WHITELIST", "{\"whiteList\": [\"canarycicd-test\",\"canarycicd-test1\",\"canarycicd-test2\",\"canarycicd-test3\",\"canarycicd-test4\",\"radix-api\",\"radix-canary-golang\",\"radix-cost-allocation-api\",\"radix-github-webhook\",\"radix-platform\",\"radix-web-console\"]}")
-	s.env, _ = models.NewEnv()
+	s.env, _, _ = models.NewEnv()
 	ctrl := gomock.NewController(s.T())
 	s.authProvider = mock.NewMockAuthProvider(ctrl)
 	s.idToken = mock.NewMockIDToken(ctrl)

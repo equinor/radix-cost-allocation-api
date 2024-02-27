@@ -21,7 +21,12 @@ import (
 )
 
 func main() {
-	env, ctx := models.NewEnv()
+	env, ctx, err := models.NewEnv()
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "Error:\n%s\n\n", err.Error())
+		os.Exit(3)
+	}
+
 	fs := initializeFlagSet()
 	port := fs.StringP("port", "p", defaultPort(), "Port where API will be served")
 
@@ -52,7 +57,7 @@ func main() {
 		}()
 	}
 
-	err := <-errs
+	err = <-errs
 	if err != nil {
 		log.Fatal().Err(err).Msg("Radix cost allocation api server crashed")
 	}
