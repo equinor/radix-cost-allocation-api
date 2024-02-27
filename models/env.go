@@ -65,7 +65,7 @@ func NewEnv() (*Env, context.Context) {
 		log.Error().Msg("'DNS Zone' environment variables is not set")
 	}
 	if issuer == "" {
-		log.Error().Msg("'TOKEN_AUDIENCE' environment variables is not set")
+		log.Error().Msg("'TOKEN_ISSUER' environment variables is not set")
 	}
 	if audience == "" {
 		log.Error().Msg("'TOKEN_AUDIENCE' environment variables is not set")
