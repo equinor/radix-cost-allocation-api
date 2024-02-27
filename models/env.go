@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -29,7 +30,8 @@ type Env struct {
 }
 
 // NewEnv Constructor
-func NewEnv() (*Env, context.Context) {
+func NewEnv() (*Env, context.Context, error) {
+	var errs []error
 	ctx := context.Background()
 	zerolog.DurationFieldUnit = time.Millisecond
 	switch os.Getenv("LOG_LEVEL") {
@@ -56,35 +58,35 @@ func NewEnv() (*Env, context.Context) {
 		allowedAdGroupsJson = os.Getenv("AD_REPORT_READERS")
 	)
 	if apiEnv == "" {
-		log.Error().Msg("'API-Environment' environment variable is not set")
+		errs = append(errs, fmt.Errorf("environment variable RADIX_ENVIRONMENT is not set"))
 	}
 	if clusterName == "" {
-		log.Error().Msg("'Cluster' environment variables is not set")
+		errs = append(errs, fmt.Errorf("environment variable RADIX_CLUSTERNAME is not set"))
 	}
 	if dnsZone == "" {
-		log.Error().Msg("'DNS Zone' environment variables is not set")
+		errs = append(errs, fmt.Errorf("environment variable RADIX_DNS_ZONE is not set"))
 	}
 	if issuer == "" {
-		log.Error().Msg("'TOKEN_ISSUER' environment variables is not set")
+		errs = append(errs, fmt.Errorf("environment variable TOKEN_ISSUER is not set"))
 	}
 	if audience == "" {
-		log.Error().Msg("'TOKEN_AUDIENCE' environment variables is not set")
+		errs = append(errs, fmt.Errorf("environment variable TOKEN_AUDIENCE is not set"))
 	}
 	if allowedAdGroupsJson == "" {
-		log.Error().Msg("'AD_REPORT_READERS' environment variables is not set")
+		errs = append(errs, fmt.Errorf("environment variable AD_REPORT_READERS is not set"))
 	}
 	var allowedGroups struct {
 		List []string `json:"groups"`
 	}
 	err := json.Unmarshal([]byte(allowedAdGroupsJson), &allowedGroups)
 	if err != nil {
-		log.Error().Err(err).Msg("could not parse json for allowedADGroups")
+		errs = append(errs, fmt.Errorf("could not parse AD_REPORT_READERS json"))
 	}
 
 	list := &Whitelist{}
 	err = json.Unmarshal([]byte(whiteList), list)
 	if err != nil {
-		log.Info().Err(err).Msg("could not parse json for WHITELIST")
+		errs = append(errs, fmt.Errorf("could not parse WHITELIST json"))
 	}
 
 	return &Env{
@@ -99,7 +101,7 @@ func NewEnv() (*Env, context.Context) {
 		OidcAudience:        audience,
 		OidcIssuer:          issuer,
 		OidcAllowedAdGroups: allowedGroups.List,
-	}, ctx
+	}, ctx, errors.Join(errs...)
 }
 
 func envVarIsTrueOrYes(envVar string) bool {
