@@ -26,7 +26,7 @@ func GetSqlServerDsn(server, database, userID, password string, port int) string
 }
 
 func OpenGormSqlServerDB(dsn string) (*gorm.DB, error) {
-	return gorm.Open(sqlserver.Open(dsn), &gorm.Config{DisableAutomaticPing: true})
+	return gorm.Open(sqlserver.Open(dsn), &gorm.Config{DisableAutomaticPing: true, Logger: NewLogger()})
 }
 
 func NewGormRepository(db *gorm.DB) Repository {

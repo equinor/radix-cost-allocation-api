@@ -225,28 +225,3 @@ func find(list []string, val string) bool {
 
 	return false
 }
-
-// NewZerologHandler injects and logs requests.
-func NewZerologHandler(log zerolog.Logger) negroni.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-		l := log.With().Logger()
-		if ua := r.Header.Get("User-Agent"); ua != "" {
-			l.UpdateContext(func(c zerolog.Context) zerolog.Context {
-				return c.Str("user-agent", ua)
-			})
-		}
-		if r.RemoteAddr != "" {
-			l.UpdateContext(func(c zerolog.Context) zerolog.Context {
-				return c.Str("remote-addr", r.RemoteAddr)
-			})
-		}
-		l.UpdateContext(func(c zerolog.Context) zerolog.Context {
-			return c.Str("request", r.Method+" "+r.URL.String())
-		})
-		start := time.Now()
-		r = r.WithContext(l.WithContext(r.Context()))
-		next.ServeHTTP(w, r)
-		duration := time.Since(start)
-		l.Info().Dur("duration", duration).Msg("Handled")
-	}
-}

@@ -6,7 +6,7 @@ toolchain go1.21.0
 
 require (
 	github.com/coreos/go-oidc/v3 v3.9.0
-	github.com/equinor/radix-common v1.7.1
+	github.com/equinor/radix-common v1.8.0
 	github.com/go-openapi/errors v0.21.0
 	github.com/go-openapi/runtime v0.26.2
 	github.com/go-openapi/strfmt v0.22.0
@@ -17,6 +17,7 @@ require (
 	github.com/microsoft/go-mssqldb v1.6.0
 	github.com/prometheus/client_golang v1.18.0
 	github.com/rs/cors v1.10.1
+	github.com/rs/xid v1.5.0
 	github.com/rs/zerolog v1.31.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
@@ -30,6 +31,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/elnormous/contenttype v1.0.4 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.1 // indirect
 	github.com/go-logr/logr v1.3.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
