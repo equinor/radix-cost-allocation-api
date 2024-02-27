@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -22,7 +21,7 @@ import (
 )
 
 func main() {
-	env := models.NewEnv()
+	env, ctx := models.NewEnv()
 	fs := initializeFlagSet()
 	port := fs.StringP("port", "p", defaultPort(), "Port where API will be served")
 
@@ -33,7 +32,6 @@ func main() {
 
 	errs := make(chan error)
 
-	ctx := context.Background()
 	authProvider := auth.NewAuthProvider(ctx, env.OidcIssuer, env.OidcAudience)
 	radixAPIClient := radix_api.NewRadixAPIClient(env)
 	costService := getCostService(env)

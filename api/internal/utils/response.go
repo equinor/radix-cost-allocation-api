@@ -5,14 +5,14 @@ import (
 	"net/http"
 
 	radixhttp "github.com/equinor/radix-common/net/http"
-	"github.com/rs/zerolog/log"
+	"github.com/rs/zerolog"
 )
 
 // ErrorResponseForServer Marshals error for server requester
 func ErrorResponseForServer(w http.ResponseWriter, r *http.Request, apiError error) {
 	err := radixhttp.ErrorResponseForServer(w, r, apiError)
 	if err != nil {
-		log.Error().Err(err).Msgf("%s %s: failed to write server response", r.Method, r.URL.Path)
+		zerolog.Ctx(r.Context()).Error().Err(err).Msgf("%s %s: failed to write server response", r.Method, r.URL.Path)
 	}
 }
 
@@ -20,7 +20,7 @@ func ErrorResponseForServer(w http.ResponseWriter, r *http.Request, apiError err
 func JSONResponse(w http.ResponseWriter, r *http.Request, result interface{}) {
 	err := radixhttp.JSONResponse(w, r, result)
 	if err != nil {
-		log.Error().Err(err).Msgf("%s %s: failed to write response", r.Method, r.URL.Path)
+		zerolog.Ctx(r.Context()).Error().Err(err).Msgf("%s %s: failed to write response", r.Method, r.URL.Path)
 	}
 }
 
@@ -29,6 +29,6 @@ func JSONResponse(w http.ResponseWriter, r *http.Request, result interface{}) {
 func ReaderFileResponse(w http.ResponseWriter, r *http.Request, reader io.Reader, fileName, contentType string) {
 	err := radixhttp.ReaderFileResponse(w, reader, fileName, contentType)
 	if err != nil {
-		log.Error().Err(err).Msgf("%s %s: failed to write response", r.Method, r.URL.Path)
+		zerolog.Ctx(r.Context()).Error().Err(err).Msgf("%s %s: failed to write response", r.Method, r.URL.Path)
 	}
 }

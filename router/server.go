@@ -13,10 +13,10 @@ import (
 	"github.com/equinor/radix-cost-allocation-api/api/utils/auth"
 	"github.com/equinor/radix-cost-allocation-api/metrics"
 	"github.com/equinor/radix-cost-allocation-api/swaggerui"
-
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/negroni/v3"
 )
@@ -75,6 +75,7 @@ func NewServer(clusterName string, allowedAdGroups []string, authProvider auth.A
 	rec.PrintStack = false
 	n := negroni.New(
 		rec,
+		NewZerologHandler(log.Logger),
 	)
 	n.UseHandler(serveMux)
 
@@ -157,7 +158,7 @@ func newAuthenticationMiddleware(authProvider auth.AuthProvider) negroni.Handler
 		token, err := radixhttp.GetBearerTokenFromHeader(r)
 
 		if err != nil {
-			log.Info().Msg("Could not get token from header")
+			zerolog.Ctx(r.Context()).Info().Msg("Could not get token from header")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -165,7 +166,7 @@ func newAuthenticationMiddleware(authProvider auth.AuthProvider) negroni.Handler
 		verified, err := authProvider.VerifyToken(r.Context(), token)
 		// TODO: Validate token audience
 		if err != nil || verified == nil {
-			log.Debug().Err(err).Msg("Could not verify token")
+			zerolog.Ctx(r.Context()).Debug().Err(err).Msg("Could not verify token")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -179,7 +180,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups []string, authProvider au
 		token, err := radixhttp.GetBearerTokenFromHeader(r)
 
 		if err != nil {
-			log.Info().Msg("Could not get token from header")
+			zerolog.Ctx(r.Context()).Info().Msg("Could not get token from header")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -188,7 +189,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups []string, authProvider au
 		verified, err = authProvider.VerifyToken(r.Context(), token)
 
 		if err != nil || verified == nil {
-			log.Debug().Err(err).Msg("Unable to verify token")
+			zerolog.Ctx(r.Context()).Debug().Err(err).Msg("Unable to verify token")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -198,7 +199,7 @@ func newADGroupAuthorizationMiddleware(allowedADGroups []string, authProvider au
 		err = verified.GetClaims(claims)
 
 		if err != nil {
-			log.Debug().Err(err).Msg("Could not get claims from token")
+			zerolog.Ctx(r.Context()).Debug().Err(err).Msg("Could not get claims from token")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -206,10 +207,11 @@ func newADGroupAuthorizationMiddleware(allowedADGroups []string, authProvider au
 		for _, group := range claims.Groups {
 			if find(allowedADGroups, group) {
 				next(w, r)
+				return
 			}
 		}
 
-		log.Debug().Strs("ad-groups", claims.Groups).Msgf("User does not have correct AD group access")
+		zerolog.Ctx(r.Context()).Debug().Strs("ad-groups", claims.Groups).Msgf("User does not have correct AD group access")
 		w.WriteHeader(http.StatusForbidden)
 	}
 }

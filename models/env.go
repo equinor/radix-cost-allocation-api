@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -28,8 +29,8 @@ type Env struct {
 }
 
 // NewEnv Constructor
-func NewEnv() *Env {
-	zerolog.DurationFieldInteger = true
+func NewEnv() (*Env, context.Context) {
+	ctx := context.Background()
 	switch os.Getenv("LOG_LEVEL") {
 	case "DEBUG":
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
@@ -39,6 +40,7 @@ func NewEnv() *Env {
 	if envVarIsTrueOrYes(os.Getenv("PRETTY_PRINT")) {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.TimeOnly})
 	}
+	ctx = log.Logger.WithContext(ctx)
 
 	var (
 		apiEnv              = os.Getenv("RADIX_ENVIRONMENT")
@@ -96,7 +98,7 @@ func NewEnv() *Env {
 		OidcAudience:        audience,
 		OidcIssuer:          issuer,
 		OidcAllowedAdGroups: allowedGroups.List,
-	}
+	}, ctx
 }
 
 func envVarIsTrueOrYes(envVar string) bool {

@@ -9,7 +9,7 @@ import (
 	"github.com/equinor/radix-common/models"
 	"github.com/equinor/radix-cost-allocation-api/api/internal/utils"
 	"github.com/equinor/radix-cost-allocation-api/service"
-	"github.com/rs/zerolog/log"
+	"github.com/rs/zerolog"
 )
 
 const rootPath = ""
@@ -57,7 +57,7 @@ func (rc *reportController) GetCostReport(_ models.Accounts, w http.ResponseWrit
 
 	err := handler.GetCostReport(&b, fromDate, toDate)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get report")
+		zerolog.Ctx(r.Context()).Error().Err(err).Msg("Failed to get report")
 		utils.ErrorResponseForServer(w, r, fmt.Errorf("failed to get report"))
 	}
 
