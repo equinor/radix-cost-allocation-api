@@ -43,7 +43,7 @@ func (l Logger) Trace(ctx context.Context, begin time.Time, f func() (string, in
 		event = zl.Trace()
 	}
 
-	event.Dur("duration", time.Since(begin))
+	event.Dur("elapsed-ms", time.Since(begin))
 
 	sql, rows := f()
 	if sql != "" {

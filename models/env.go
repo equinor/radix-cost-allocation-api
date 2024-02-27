@@ -31,6 +31,7 @@ type Env struct {
 // NewEnv Constructor
 func NewEnv() (*Env, context.Context) {
 	ctx := context.Background()
+	zerolog.DurationFieldUnit = time.Millisecond
 	switch os.Getenv("LOG_LEVEL") {
 	case "DEBUG":
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)

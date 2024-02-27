@@ -42,7 +42,7 @@ func NewZerologHandler(log zerolog.Logger) negroni.HandlerFunc {
 			Str("remote-addr", r.RemoteAddr).
 			Str("request", r.Method+" "+r.URL.Path).
 			Str("query", r.URL.RawQuery).
-			Dur("duration", time.Since(start)).
+			Dur("elapsed-ms", time.Since(start)).
 			Int("status", statusCodeWriter.statusCode).
 			Msg(http.StatusText(statusCodeWriter.statusCode))
 	}
