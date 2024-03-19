@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	commongorm "github.com/equinor/radix-common/pkg/gorm"
 	"github.com/equinor/radix-cost-allocation-api/models"
+	"github.com/microsoft/go-mssqldb/azuread"
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -14,19 +16,18 @@ type gormRepository struct {
 	db *gorm.DB
 }
 
-func GetSqlServerDsn(server, database, userID, password string, port int) string {
-	dsn := fmt.Sprintf("server=%s;user id=%s;password=%s;database=%s",
-		server, userID, password, database)
+func OpenGormSqlServerDB(server, database string, port int) (*gorm.DB, error) {
+	dsn := fmt.Sprintf("server=%s;database=%s;port=%d;fedauth=ActiveDirectoryDefault", server, database, port)
 
-	if port > 0 {
-		dsn = fmt.Sprintf("%s;port=%d", dsn, port)
-	}
+	dialector := sqlserver.New(sqlserver.Config{
+		DriverName: azuread.DriverName,
+		DSN:        dsn,
+	})
 
-	return dsn
-}
-
-func OpenGormSqlServerDB(dsn string) (*gorm.DB, error) {
-	return gorm.Open(sqlserver.Open(dsn), &gorm.Config{DisableAutomaticPing: true, Logger: NewLogger()})
+	return gorm.Open(dialector, &gorm.Config{
+		DisableAutomaticPing: false,
+		Logger:               commongorm.NewLogger(),
+	})
 }
 
 func NewGormRepository(db *gorm.DB) Repository {
