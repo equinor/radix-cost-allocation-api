@@ -40,9 +40,9 @@ type controllerTestSuite struct {
 }
 
 func (s *controllerTestSuite) SetupTest() {
-	os.Setenv("WHITELIST", "{\"whiteList\": [\"canarycicd-test\",\"canarycicd-test1\",\"canarycicd-test2\",\"canarycicd-test3\",\"canarycicd-test4\",\"radix-api\",\"radix-canary-golang\",\"radix-cost-allocation-api\",\"radix-github-webhook\",\"radix-platform\",\"radix-web-console\"]}")
-	os.Setenv("AD_REPORT_READERS", fmt.Sprintf("{\"groups\": [\"%s\"]}", validADGroup))
-	s.env = models.NewEnv()
+	_ = os.Setenv("WHITELIST", "{\"whiteList\": [\"canarycicd-test\",\"canarycicd-test1\",\"canarycicd-test2\",\"canarycicd-test3\",\"canarycicd-test4\",\"radix-api\",\"radix-canary-golang\",\"radix-cost-allocation-api\",\"radix-github-webhook\",\"radix-platform\",\"radix-web-console\"]}")
+	_ = os.Setenv("AD_REPORT_READERS", fmt.Sprintf("{\"groups\": [\"%s\"]}", validADGroup))
+	s.env, _, _ = models.NewEnv()
 	ctrl := gomock.NewController(s.T())
 	s.authProvider = mock.NewMockAuthProvider(ctrl)
 	s.idToken = mock.NewMockIDToken(ctrl)
@@ -105,11 +105,13 @@ func (s *controllerTestSuite) TestReportController_AuthorizedUser_CanDownload() 
 
 	controllerTestUtils := controllerTest.NewTestUtils(NewReportController(s.costService))
 	controllerTestUtils.SetAuthProvider(s.authProvider)
+	controllerTestUtils.SetAllowedADGroups([]string{validADGroup})
 
 	response := controllerTestUtils.ExecuteRequest("GET", "/api/v1/report")
 	s.Equal(response.Code, http.StatusOK)
 	returnedReport := bytes.Buffer{}
-	io.Copy(&returnedReport, response.Body)
+	_, err := io.Copy(&returnedReport, response.Body)
+	s.Require().NoError(err)
 	reader := csv.NewReader(&returnedReport)
 	reader.Comma = ';'
 	allContent, err := reader.ReadAll()

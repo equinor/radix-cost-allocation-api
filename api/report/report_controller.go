@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/equinor/radix-common/models"
-	radixhttp "github.com/equinor/radix-common/net/http"
+	"github.com/equinor/radix-cost-allocation-api/api/internal/utils"
 	"github.com/equinor/radix-cost-allocation-api/service"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 )
 
 const rootPath = ""
@@ -57,11 +57,11 @@ func (rc *reportController) GetCostReport(_ models.Accounts, w http.ResponseWrit
 
 	err := handler.GetCostReport(&b, fromDate, toDate)
 	if err != nil {
-		log.Errorf("Failed to get report. Error: %v", err)
-		radixhttp.ErrorResponseForServer(w, r, fmt.Errorf("failed to get report"))
+		zerolog.Ctx(r.Context()).Error().Err(err).Msg("Failed to get report")
+		utils.ErrorResponseForServer(w, r, fmt.Errorf("failed to get report"))
 	}
 
-	radixhttp.ReaderFileResponse(w, &b, fileName, "text/plain; charset=utf-8")
+	utils.ReaderFileResponse(w, r, &b, fileName, "text/plain; charset=utf-8")
 }
 
 // from is the first day of the previous month

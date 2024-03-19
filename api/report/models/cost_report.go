@@ -52,7 +52,7 @@ func (cr *CostReport) Create(out io.Writer) error {
 	csvWriter := csv.NewWriter(writer)
 	// Set field seperator to ;
 	csvWriter.Comma = ';'
-	defer writer.Flush()
+	defer func() { _ = writer.Flush() }()
 
 	err := csvWriter.Write(columns)
 

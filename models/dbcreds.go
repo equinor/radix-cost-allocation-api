@@ -5,6 +5,4 @@ type DBCredentials struct {
 	Server   string
 	Port     int
 	Database string
-	UserID   string
-	Password string
 }
