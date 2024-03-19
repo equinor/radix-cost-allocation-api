@@ -103,3 +103,8 @@ jobs:
         uses: equinor/radix-github-actions@v1
         with:
           args: validate radix-config --config-file radixconfig.playground.yaml
+
+      - name: 'Validate Platform'
+        uses: equinor/radix-github-actions@v1
+        with:
+          args: validate radix-config --config-file radixconfig.platform.yaml
