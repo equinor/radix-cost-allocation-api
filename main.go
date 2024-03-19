@@ -6,6 +6,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"runtime/debug"
 
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
 	"github.com/equinor/radix-cost-allocation-api/repository"
@@ -26,6 +27,8 @@ func main() {
 		_, _ = fmt.Fprintf(os.Stderr, "Error:\n%s\n\n", err.Error())
 		os.Exit(3)
 	}
+	info, _ := debug.ReadBuildInfo()
+	log.Info().Str("version", info.Main.Version).Msg("Running")
 
 	fs := initializeFlagSet()
 	port := fs.StringP("port", "p", defaultPort(), "Port where API will be served")
@@ -68,9 +71,7 @@ func getCostService(env *models.Env) service.CostService {
 }
 
 func createContainerCostService(env *models.Env) service.CostService {
-	gormdb, err := repository.OpenGormSqlServerDB(
-		repository.GetSqlServerDsn(env.DbCredentials.Server, env.DbCredentials.Database, env.DbCredentials.UserID, env.DbCredentials.Password, env.DbCredentials.Port),
-	)
+	gormdb, err := repository.OpenGormSqlServerDB(env.DbCredentials.Server, env.DbCredentials.Database, env.DbCredentials.Port)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to open db repository")
 	}

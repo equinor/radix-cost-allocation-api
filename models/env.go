@@ -43,6 +43,7 @@ func NewEnv() (*Env, context.Context, error) {
 	if envVarIsTrueOrYes(os.Getenv("PRETTY_PRINT")) {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.TimeOnly})
 	}
+	zerolog.DefaultContextLogger = &log.Logger
 	ctx = log.Logger.WithContext(ctx)
 
 	var (
@@ -135,8 +136,6 @@ func getDBCredentials() *DBCredentials {
 	return &DBCredentials{
 		Server:   os.Getenv("SQL_SERVER"),
 		Database: os.Getenv("SQL_DATABASE"),
-		UserID:   os.Getenv("SQL_USER"),
-		Password: os.Getenv("SQL_PASSWORD"),
 		Port:     port,
 	}
 }
