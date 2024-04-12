@@ -111,6 +111,6 @@ To install with `install_base_components.sh`, mentioned above - add RadixRegistr
     --vault-name "<KEYVAULT>" 
     ```
 
------------------
+----------------- 
 
 [Security notification](./SECURITY.md) 
