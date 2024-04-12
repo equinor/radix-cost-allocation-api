@@ -13,7 +13,8 @@ spec:
       build:
         from: master
   components:
-    - name: "server"
+    - name: server
+      readOnlyFileSystem: true
       src: "."
       dockerfileName: "Dockerfile"
       ports:
@@ -26,9 +27,7 @@ spec:
         limits:
           memory: "2000Mi"
           cpu: "1000m"
-      public: true
       monitoring: true
-      runAsNonRoot: true
       variables:
         LOG_LEVEL: INFO
         SQL_SERVER: "sql-radix-cost-allocation-dev.database.windows.net"
