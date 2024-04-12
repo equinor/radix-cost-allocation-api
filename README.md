@@ -45,14 +45,12 @@ Run once after cloning of the GitHub repository:
 
 1. `go mod download`
 2. `make swagger`
-3. `make generate-radix-api-client`
+3. `make generate-radix-api-client`0.222
 
 The following env var is needed. Useful default values in brackets.
 
 * `SQL_SERVER` - SQL server name
 * `SQL_DATABASE` - SQL database name
-* `SQL_USER` - SQL server user name
-* `SQL_PASSWORD` - SQL server user password
 * `RADIX_ENVIRONMENT` - Radix environment (ex. `qa`)
 * `RADIX_CLUSTERNAME` - Radix cluster name (ex. `weekly-33`)
 * `RADIX_DNS_ZONE` - Radix DNS zone (ex. `dev.radix.equinor.com`)
@@ -68,12 +66,6 @@ The following env var is needed. Useful default values in brackets.
     ```
         go tool pprof -http=:6070 http://localhost:7070/debug/pprof/heap
     ```
-
-#### Common errors running locally
-
-- **Problem**: `panic: statik/fs: no zip data registered`
-
-  **Solution**: `make swagger`
 
 ## Deployment
 
@@ -116,40 +108,6 @@ To install with `install_base_components.sh`, mentioned above - add RadixRegistr
     az keyvault secret download \
     -f radix-cost-allocation-api-radixregistration-values-check.yaml \
     -n radix-cost-allocation-api-radixregistration-values \
-    --vault-name "<KEYVAULT>" 
-    ```
-5. Create a file `radix-cost-allocation-api-secrets.json` with content:
-    ```
-    {
-      "db": {
-        "server":"<SERVER>",
-        "database":"<DATABASE>",
-        "user":"<USER>",
-        "password":"<PASSWORD>"
-      },
-      "subscriptionCost": {
-        "value": "<COST-VALUE>",
-        "currency": "<COST-CURRENCY>"
-        "whiteList": "{"whiteList": ["APP1", "APP2"]}"
-      },
-      "auth": {
-        "tokenIssuer": "https://sts.windows.net/<TENANT-ID>/",
-        "reportReaders": "{"groups": ["<AD-GROUP>"]}"
-      }
-    }
-    ```
-6. Set the secret with following command or with Azure portal (`Key vault`/`Secrets`):
-    ```
-    az keyvault secret set \
-    -f radix-cost-allocation-api-secrets.json \
-    -n radix-cost-allocation-api-secrets \
-    --vault-name "<KEYVAULT>"
-    ```
-7. To check - run following command and read the created file `...-check.json` or with Azure portal (`Key vault`/`Secrets`):
-    ```
-    az keyvault secret download \
-    -f radix-cost-allocation-api-secrets-check.json \
-    -n radix-cost-allocation-api-secrets \
     --vault-name "<KEYVAULT>" 
     ```
 
