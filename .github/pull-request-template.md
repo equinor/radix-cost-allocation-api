@@ -4,7 +4,7 @@
   - ✅ Provide tests for your changes
   - 📝 Use descriptive commit messages
   - 📗 Update applicable documentation
--->
+-->.
 ## Description
 <!-- 
 Please do not leave this blank 
