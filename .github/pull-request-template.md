@@ -12,13 +12,13 @@ This PR [adds/removes/fixes/replaces] the [feature/bug/etc].
 -->
 
 ## What type of PR? (can choose many)
+
 - [ ] 🍕 Feature
 - [ ] 🐛 Bug Fix
+- [ ] 🔒 Security
 - [ ] 📝 Documentation Update
-- [ ] 🎨 Style
 - [ ] 🧑‍💻 Code Refactor
 - [ ] 🔥 Performance Improvements
-- [ ] ✅ Test
 - [ ] 📦 Release
 - [ ] ⏩ Revert
 
