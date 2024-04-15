@@ -28,6 +28,7 @@ spec:
           memory: "2000Mi"
           cpu: "1000m"
       monitoring: true
+      publicPort: http
       variables:
         LOG_LEVEL: INFO
         SQL_SERVER: "sql-radix-cost-allocation-dev.database.windows.net"
