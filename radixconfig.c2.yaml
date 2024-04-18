@@ -31,7 +31,7 @@ spec:
       runAsNonRoot: true
       variables:
         LOG_LEVEL: INFO
-        SQL_SERVER: "sql-radix-cost-allocation-c2-prod.database.windows.net"
+        SQL_SERVER: "sql-radix-cost-allocation-c2.database.windows.net"
         SQL_DATABASE: "sqldb-radix-cost-allocation"
         WHITELIST: '{"whiteList":["canarycicd-test","canarycicd-test1","canarycicd-test2","canarycicd-test3","canarycicd-test4","radix-api","radix-canary-golang","radix-cost-allocation-api","radix-github-webhook","radix-public-site","radix-platform","radix-web-console","radix-vulnerability-scanner-api","radix-networkpolicy-canary","radix-servicenow-proxy"]}'
         AD_REPORT_READERS: '{"groups":["ad4f6a93-79fb-4a6e-9861-e280bf6cb4e6"]}'
