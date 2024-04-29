@@ -10,13 +10,13 @@ test:
 lint: bootstrap
 	golangci-lint run --max-same-issues 0
 
-.PHONY: generate-radix-api-client
-generate-radix-api-client: bootstrap
+.PHONY: radixapiclient
+radixapiclient: bootstrap
 	swagger generate client -t ./models/radix_api/generated_client -f https://api.radix.equinor.com/swaggerui/swagger.json -A radixapi
 
 
-.PHONY: generate-radixconfig-envs
-generate-radixconfig-envs:
+.PHONY: radixconfigs
+radixconfigs:
 	# radix-id-vulnerability-scan-reader-<env>
 	AZURE_CLIENT_ID=b8fd30d4-61d0-4842-b6c1-e91ceb58db8c SQL_SERVER=sql-radix-cost-allocation-dev.database.windows.net envsubst < radixconfig.tpl.yaml > radixconfig.dev.yaml
 	AZURE_CLIENT_ID=bb6d92a0-2f6d-421e-80e6-1b2174953d21 SQL_SERVER=sql-radix-cost-allocation-c2.database.windows.net envsubst < radixconfig.tpl.yaml > radixconfig.c2.yaml
@@ -38,6 +38,13 @@ mocks: bootstrap
 	mockgen -source ./api/utils/auth/auth_provider.go -destination ./api/test/mock/auth_provider_mock.go -package mock
 	mockgen -source ./service/costservice.go -destination ./service/mock/costservice.go -package mock
 
+.PHONY: generate
+generate: radixconfigs mocks swagger
+
+.PHONY: verify-generate
+verify-generate: generate
+	git diff --exit-code
+
 HAS_SWAGGER       := $(shell command -v swagger;)
 HAS_GOLANGCI_LINT := $(shell command -v golangci-lint;)
 HAS_MOCKGEN       := $(shell command -v mockgen;)
@@ -47,7 +54,7 @@ ifndef HAS_SWAGGER
 	go install github.com/go-swagger/go-swagger/cmd/swagger@v0.30.5
 endif
 ifndef HAS_GOLANGCI_LINT
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.55.2
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2
 endif
 ifndef HAS_MOCKGEN
 	go install github.com/golang/mock/mockgen@v1.6.0
