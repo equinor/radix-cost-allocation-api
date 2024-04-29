@@ -44,8 +44,8 @@ Go modules are used for dependency management. See [link](https://blog.golang.or
 Run once after cloning of the GitHub repository:
 
 1. `go mod download`
-2. `make swagger`
-3. `make generate-radix-api-client`0.222
+2. `make generate`
+3. `make radixapiclient`
 
 The following env var is needed. Useful default values in brackets.
 
