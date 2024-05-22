@@ -21,15 +21,18 @@ spec:
       ports:
         - name: http
           port: 3003
+        - name: metrics
+          port: 9090
       resources:
         requests:
           memory: "1500Mi"
           cpu: "20m"
         limits:
-          memory: "2000Mi"
           cpu: "1000m"
       publicPort: http
       monitoring: true
+      monitoringConfig:
+        portName: metrics
       readOnlyFileSystem: true
       variables:
         LOG_LEVEL: INFO
