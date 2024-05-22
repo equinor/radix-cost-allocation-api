@@ -54,7 +54,7 @@ type JobSummary struct {
 
 	// Name of the pipeline
 	// Example: build-deploy
-	// Enum: [build build-deploy promote deploy]
+	// Enum: ["build","build-deploy","promote","deploy"]
 	Pipeline string `json:"pipeline,omitempty"`
 
 	// RadixDeployment name, which is promoted
@@ -72,7 +72,7 @@ type JobSummary struct {
 
 	// Status of the job
 	// Example: Waiting
-	// Enum: [Queued Waiting Running Succeeded Failed Stopped Stopping StoppedNoChanges]
+	// Enum: ["Queued","Waiting","Running","Succeeded","Failed","Stopped","Stopping","StoppedNoChanges"]
 	Status string `json:"status,omitempty"`
 
 	// TriggeredBy user that triggered the job. If through webhook = sender.login. If through api - usertoken.upn
