@@ -56,7 +56,7 @@ func (tu *Utils) ExecuteRequestWithParameters(method, endpoint string, parameter
 	req.Header.Add("Accept", "application/json")
 
 	rr := httptest.NewRecorder()
-	router.NewServer("anyClusterName", tu.allowedAdGroups, tu.authProvider, tu.controllers...).ServeHTTP(rr, req)
+	router.NewHandler("anyClusterName", tu.allowedAdGroups, tu.authProvider, tu.controllers...).ServeHTTP(rr, req)
 	return rr
 
 }

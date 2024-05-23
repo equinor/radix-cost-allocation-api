@@ -1,4 +1,4 @@
-FROM docker.io/golang:1.21-alpine3.18 as builder
+FROM docker.io/golang:1.22-alpine3.19 as builder
 ENV GO111MODULE=on
 
 RUN apk update && \

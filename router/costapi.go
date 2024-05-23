@@ -14,7 +14,6 @@ import (
 	"github.com/equinor/radix-cost-allocation-api/metrics"
 	"github.com/equinor/radix-cost-allocation-api/swaggerui"
 	"github.com/gorilla/mux"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -28,15 +27,8 @@ const (
 	swaggerUIPath                   = "/swaggerui"
 )
 
-// Server Holds instance variables
-type Server struct {
-	Middleware  *negroni.Negroni
-	clusterName string
-	controllers []models.Controller
-}
-
-// NewServer Constructor function
-func NewServer(clusterName string, allowedAdGroups []string, authProvider auth.AuthProvider, controllers ...models.Controller) http.Handler {
+// NewHandler Constructor function
+func NewHandler(clusterName string, allowedAdGroups []string, authProvider auth.AuthProvider, controllers ...models.Controller) http.Handler {
 	router := mux.NewRouter().StrictSlash(true)
 
 	initializeSwaggerUI(router)
@@ -67,28 +59,19 @@ func NewServer(clusterName string, allowedAdGroups []string, authProvider auth.A
 		negroni.Wrap(router),
 	))
 
-	serveMux.Handle("/metrics", negroni.New(
-		negroni.Wrap(promhttp.Handler()),
-	))
-
 	rec := negroni.NewRecovery()
 	rec.PrintStack = false
 	n := negroni.New(
 		rec,
 		NewZerologHandler(log.Logger),
 	)
+
 	n.UseHandler(serveMux)
 
-	server := &Server{
-		n,
-		clusterName,
-		controllers,
-	}
-
-	return getCORSHandler(server)
+	return applyCORS(clusterName, n)
 }
 
-func getCORSHandler(apiRouter *Server) http.Handler {
+func applyCORS(clusterName string, handler http.Handler) http.Handler {
 	radixDNSZone := os.Getenv(radixDNSZoneEnvironmentVariable)
 
 	c := cors.New(cors.Options{
@@ -100,8 +83,8 @@ func getCORSHandler(apiRouter *Server) http.Handler {
 			// 1. "https://*.radix.equinor.com"
 			// 2. Keep cors rules in ingresses
 			fmt.Sprintf("https://console.%s", radixDNSZone),
-			getHostName("web", "radix-web-console-qa", apiRouter.clusterName, radixDNSZone),
-			getHostName("web", "radix-web-console-prod", apiRouter.clusterName, radixDNSZone),
+			getHostName("web", "radix-web-console-qa", clusterName, radixDNSZone),
+			getHostName("web", "radix-web-console-prod", clusterName, radixDNSZone),
 			// Due to active-cluster
 			getActiveClusterHostName("web", "radix-web-console-qa", radixDNSZone),
 			getActiveClusterHostName("web", "radix-web-console-prod", radixDNSZone),
@@ -111,7 +94,7 @@ func getCORSHandler(apiRouter *Server) http.Handler {
 		AllowedHeaders:   []string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
 		AllowedMethods:   []string{"GET", "PUT", "POST", "OPTIONS", "DELETE", "PATCH"},
 	})
-	return c.Handler(apiRouter.Middleware)
+	return c.Handler(handler)
 }
 
 func getActiveClusterHostName(componentName, namespace, radixDNSZone string) string {
