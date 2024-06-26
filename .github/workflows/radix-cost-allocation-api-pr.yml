@@ -29,7 +29,6 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           version: v1.58.2
-          install-mode: goinstall
 
   test:
     name: Unit Test
