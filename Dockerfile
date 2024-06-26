@@ -1,29 +1,19 @@
-FROM docker.io/golang:1.22-alpine3.19 as builder
-ENV GO111MODULE=on
+# Build stage
+FROM docker.io/golang:1.22-alpine3.20 as builder
+ENV GO111MODULE=on \
+    CGO_ENABLED=0 \
+    GOOS=linux
 
-RUN apk update && \
-    apk add bash jq alpine-sdk sed gawk git ca-certificates curl mc && \
-    apk add --no-cache gcc musl-dev
-
-WORKDIR /go/src/github.com/equinor/radix-cost-allocation-api/
-
-# get dependencies
+WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
-
-# copy api code
 COPY . .
+RUN go build -ldflags "-s -w" -o /build/radix-cost-allocation-api
 
-# Build radix cost allocation API go project
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-s -w" -a -installsuffix cgo -o /usr/local/bin/radix-cost-allocation-api
-
-RUN addgroup -S -g 1000 radix-cost
-RUN adduser -S -u 1000 -G radix-cost radix-cost
-
-FROM scratch
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=builder /usr/local/bin/radix-cost-allocation-api /usr/local/bin/radix-cost-allocation-api
-COPY --from=builder /etc/passwd /etc/passwd
+# Final stage, ref https://github.com/GoogleContainerTools/distroless/blob/main/base/README.md for distroless
+FROM gcr.io/distroless/static
+WORKDIR /app
+COPY --from=builder /build/radix-cost-allocation-api .
 USER 1000
 EXPOSE 3003
-ENTRYPOINT ["/usr/local/bin/radix-cost-allocation-api"]
+ENTRYPOINT ["/app/radix-cost-allocation-api"]
