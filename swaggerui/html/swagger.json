@@ -64,29 +64,6 @@
         }
       }
     },
-    "/report": {
-      "get": {
-        "tags": [
-          "report"
-        ],
-        "summary": "Get cost-report for all applications for the previous month",
-        "operationId": "getCostReport",
-        "responses": {
-          "200": {
-            "description": "Successfully created report"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        }
-      }
-    },
     "/totalcost/{appName}": {
       "get": {
         "tags": [
