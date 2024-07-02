@@ -18,18 +18,20 @@ spec:
     - name: "server"
       src: "."
       dockerfileName: "Dockerfile"
+      runtime:
+        architecture: arm64
       ports:
         - name: http
           port: 3003
         - name: metrics
           port: 9090
+      publicPort: http
       resources:
         requests:
           memory: "1500Mi"
           cpu: "20m"
         limits:
           cpu: "1000m"
-      publicPort: http
       monitoring: true
       monitoringConfig:
         portName: metrics
@@ -48,5 +50,15 @@ spec:
       environmentConfig:
         - environment: qa
           replicas: 1
+          horizontalScaling:
+            maxReplicas: 1
+            minReplicas: 0
+            triggers:
+              - name: cron
+                cron:
+                  timezone: Europe/Oslo
+                  start: 0 7 * * 1-5 # 07:00 Monday - Friday
+                  end: 0 17 * * 1-5 # 17:00 Monday - Friday
+                  desiredReplicas: 1
         - environment: prod
           replicas: 2
