@@ -1,5 +1,4 @@
-PROD ![prod](https://api.radix.equinor.com/api/v1/applications/radix-cost-allocation-api/environments/prod/buildstatus)  
-QA   ![qa](https://api.radix.equinor.com/api/v1/applications/radix-cost-allocation-api/environments/qa/buildstatus)
+**PROD** ![prod](https://api.radix.equinor.com/api/v1/applications/radix-cost-allocation-api/environments/prod/buildstatus) **QA** ![qa](https://api.radix.equinor.com/api/v1/applications/radix-cost-allocation-api/environments/qa/buildstatus) [![SCM Compliance](https://scm-compliance-api.radix.equinor.com/repos/equinor/radix-cost-allocation-api/badge)](https://developer.equinor.com/governance/scm-policy/)
 
 # radix-cost-allocation-api
 
