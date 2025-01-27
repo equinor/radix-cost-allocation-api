@@ -8,9 +8,6 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        arch: [arm64]
     steps:
     - uses: actions/checkout@v4
     - name: Build docker image
@@ -19,9 +16,6 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        arch: [arm64]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -37,9 +31,6 @@ jobs:
   test:
     name: Unit Test
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        arch: [arm64]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -53,9 +44,6 @@ jobs:
   verify-code-generation:
     name: Verify Code Generation
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        arch: [arm64]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -68,9 +56,6 @@ jobs:
   report-swagger-changes:
     name: Report Changes In Swagger Spec
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        arch: [arm64]
     steps:
       - uses: actions/checkout@v4
       - run: git fetch --no-tags --no-recurse-submodules --depth=1  origin master:master
@@ -95,9 +80,6 @@ jobs:
   test-radixconfig:
     name: Test RadixConfig
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        arch: [arm64]
     steps:
       - name: 'Fake TOKEN FOR RADIX CLI'
         run: echo "APP_SERVICE_ACCOUNT_TOKEN=hello-world" >> $GITHUB_ENV
