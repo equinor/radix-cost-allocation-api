@@ -81,7 +81,7 @@ func (costHandler *CostHandler) GetFutureCost(ctx context.Context, appName strin
 	}
 
 	err = fmt.Errorf("user does not have access to application %s", appName)
-	zerolog.Ctx(ctx).Debug().Msgf(err.Error())
+	zerolog.Ctx(ctx).Debug().Msg(err.Error())
 	return nil, radixhttp.ApplicationNotFoundError("Application was not found.", err)
 }
 
