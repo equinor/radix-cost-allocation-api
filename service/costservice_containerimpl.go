@@ -130,6 +130,10 @@ func buildApplicationCostList(containerTotalCostList []containerTotalCost) []mod
 			appCostIndex[c.container.ApplicationName] = len(applicationCostList) - 1
 			wbsCodes[c.container.ApplicationName] = c.container.LastKnownRunningAt
 		} else {
+			if len(applicationCostList[idx].Currency) == 0 {
+				applicationCostList[idx].Currency = c.currency
+			}
+
 			applicationCostList[idx].Cost += c.value
 
 			if c.container.LastKnownRunningAt.After(wbsCodes[c.container.ApplicationName]) {
@@ -391,10 +395,11 @@ func isCostEncapsulated(first, second models.NodePoolCostDto) bool {
 
 // NodePoolCostDto sorter - sorts by FromDate, and for entries where FromDate is equal we sort by ToDate
 // Example entries
-//   |---------|
-//        |-------|
-//        |----------------|
-//             |----|
+//
+//	|---------|
+//	     |-------|
+//	     |----------------|
+//	          |----|
 type sortByFromAndTo []models.NodePoolCostDto
 
 func (c sortByFromAndTo) Len() int { return len(c) }
