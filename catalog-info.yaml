@@ -1,11 +1,15 @@
 apiVersion: backstage.io/v1alpha1
-kind: Component
+kind: API
 metadata:
   name: radix-cost-allocation-api
+  description: "API for Radix Cost Allocation"
   annotations:
     github.com/project-slug: equinor/radix-cost-allocation-api
 spec:
-  type: api
+  spec:
+  type: openapi
   lifecycle: production
   owner: omnia-radix
   system: Radix
+  definition:
+    $text: "./swaggerui/html/swagger.json"
