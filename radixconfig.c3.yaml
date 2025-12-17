@@ -1,0 +1,64 @@
+# yaml-language-server: =https://raw.githubusercontent.com/equinor/radix-operator/release/json-schema/radixapplication.json
+
+apiVersion: radix.equinor.com/v1
+kind: RadixApplication
+metadata:
+  name: radix-cost-allocation-api
+spec:
+  build:
+    useBuildKit: true
+  environments:
+    - name: prod
+      build:
+        from: release
+    - name: qa
+      build:
+        from: master
+  components:
+    - name: "server"
+      src: "."
+      dockerfileName: "Dockerfile"
+      runtime:
+        architecture: arm64
+      ports:
+        - name: http
+          port: 3003
+        - name: metrics
+          port: 9090
+      publicPort: http
+      resources:
+        requests:
+          memory: "1500Mi"
+          cpu: "20m"
+        limits:
+          cpu: "1000m"
+      monitoring: true
+      monitoringConfig:
+        portName: metrics
+      readOnlyFileSystem: true
+      variables:
+        LOG_LEVEL: INFO
+        SQL_SERVER: "sql-radix-cost-allocation-c3.database.windows.net"
+        SQL_DATABASE: "sqldb-radix-cost-allocation"
+        WHITELIST: '{"whiteList":["canarycicd-test","canarycicd-test1","canarycicd-test2","canarycicd-test3","canarycicd-test4","radix-api","radix-canary-golang","radix-cost-allocation-api","radix-github-webhook","radix-public-site","radix-platform","radix-web-console","radix-vulnerability-scanner-api","radix-networkpolicy-canary","radix-servicenow-proxy"]}'
+        AD_REPORT_READERS: '{"groups":["ad4f6a93-79fb-4a6e-9861-e280bf6cb4e6"]}'
+        TOKEN_AUDIENCE: "6dae42f8-4368-4678-94ff-3960e28e3630"
+        TOKEN_ISSUER: "https://sts.windows.net/3aa4a235-b6e2-48d5-9195-7fcf05b459b0/"
+      identity:
+        azure:
+          clientId: "a0bc7c53-d168-4f80-8b7d-dbbf85d6ed73"
+      environmentConfig:
+        - environment: qa
+          replicas: 1
+          horizontalScaling:
+            maxReplicas: 1
+            minReplicas: 0
+            triggers:
+              - name: cron
+                cron:
+                  timezone: Europe/Oslo
+                  start: 0 7 * * 1-5 # 07:00 Monday - Friday
+                  end: 0 17 * * 1-5 # 17:00 Monday - Friday
+                  desiredReplicas: 1
+        - environment: prod
+          replicas: 2
