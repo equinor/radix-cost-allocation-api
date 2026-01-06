@@ -20,6 +20,7 @@ radixconfigs:
 	# radix-id-vulnerability-scan-reader-<env>
 	AZURE_CLIENT_ID=b8fd30d4-61d0-4842-b6c1-e91ceb58db8c SQL_SERVER=sql-radix-cost-allocation-dev.database.windows.net envsubst < radixconfig.tpl.yaml > radixconfig.dev.yaml
 	AZURE_CLIENT_ID=bb6d92a0-2f6d-421e-80e6-1b2174953d21 SQL_SERVER=sql-radix-cost-allocation-c2.database.windows.net envsubst < radixconfig.tpl.yaml > radixconfig.c2.yaml
+	AZURE_CLIENT_ID=a0bc7c53-d168-4f80-8b7d-dbbf85d6ed73 SQL_SERVER=sql-radix-cost-allocation-c3.database.windows.net envsubst < radixconfig.tpl.yaml > radixconfig.c3.yaml
 	AZURE_CLIENT_ID=ed3ef8ee-c9b2-4a89-9b0d-47b40abb2bf1 SQL_SERVER=sql-radix-cost-allocation-platform.database.windows.net envsubst < radixconfig.tpl.yaml > radixconfig.platform.yaml
 	AZURE_CLIENT_ID=bc4b6c73-78c2-4b22-ab08-575706a338ec SQL_SERVER=sql-radix-cost-allocation-playground.database.windows.net envsubst < radixconfig.tpl.yaml > radixconfig.playground.yaml
 
