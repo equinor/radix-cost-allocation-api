@@ -10,7 +10,7 @@ import (
 	radix_api "github.com/equinor/radix-cost-allocation-api/models/radix_api"
 	application "github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/application"
 	platform "github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/platform"
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockRadixAPIClient is a mock of RadixAPIClient interface.

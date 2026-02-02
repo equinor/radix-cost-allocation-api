@@ -9,7 +9,7 @@ import (
 	time "time"
 
 	models "github.com/equinor/radix-cost-allocation-api/models"
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockCostService is a mock of CostService interface.

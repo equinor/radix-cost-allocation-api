@@ -15,8 +15,8 @@ import (
 	mock "github.com/equinor/radix-cost-allocation-api/api/test/mock"
 	"github.com/equinor/radix-cost-allocation-api/api/utils/auth"
 	serviceMock "github.com/equinor/radix-cost-allocation-api/service/mock"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 const (

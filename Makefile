@@ -58,5 +58,5 @@ ifndef HAS_GOLANGCI_LINT
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1
 endif
 ifndef HAS_MOCKGEN
-	go install github.com/golang/mock/mockgen@v1.6.0
+	go install go.uber.org/mock/mockgen@v0.6.0
 endif

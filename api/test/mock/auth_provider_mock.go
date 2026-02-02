@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	auth "github.com/equinor/radix-cost-allocation-api/api/utils/auth"
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockAuthProvider is a mock of AuthProvider interface.
