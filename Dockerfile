@@ -1,5 +1,5 @@
 # Build stage
-FROM docker.io/golang:1.24-alpine3.21 as builder
+FROM docker.io/golang:1.25-alpine3.23 AS builder
 ENV GO111MODULE=on \
     CGO_ENABLED=0 \
     GOOS=linux
