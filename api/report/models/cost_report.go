@@ -33,7 +33,7 @@ func NewCostReport(appCostSet *models.ApplicationCostSet) *CostReport {
 	cr := CostReport{}
 	for _, appCost := range appCostSet.ApplicationCosts {
 		cr.PostingDate = append(cr.PostingDate, time.Now().Format("2006-01-02"))
-		cr.Amount = append(cr.Amount, strings.Replace(fmt.Sprintf("%.2f", appCost.Cost), ".", ",", -1))
+		cr.Amount = append(cr.Amount, strings.ReplaceAll(fmt.Sprintf("%.2f", appCost.Cost), ".", ","))
 		cr.CompanyCode = append(cr.CompanyCode, companyCode)
 		cr.DocumentHeader = append(cr.DocumentHeader, documentHeader)
 		cr.GeneralLedgerAccount = append(cr.GeneralLedgerAccount, generalLedgerAccount)

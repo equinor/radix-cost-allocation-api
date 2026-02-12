@@ -7,8 +7,8 @@ import (
 
 	"github.com/equinor/radix-cost-allocation-api/models"
 	mockrepo "github.com/equinor/radix-cost-allocation-api/repository/mock"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func Test_ContainerCostService_GetCostForPeriod(t *testing.T) {

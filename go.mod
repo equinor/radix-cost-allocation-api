@@ -1,6 +1,6 @@
 module github.com/equinor/radix-cost-allocation-api
 
-go 1.24.0
+go 1.25.6
 
 require (
 	github.com/coreos/go-oidc/v3 v3.14.1
@@ -10,7 +10,6 @@ require (
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/go-openapi/swag v0.23.0
 	github.com/go-openapi/validate v0.24.0
-	github.com/golang/mock v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/microsoft/go-mssqldb v1.8.2
 	github.com/prometheus/client_golang v1.19.1
@@ -20,6 +19,7 @@ require (
 	github.com/spf13/pflag v1.0.6
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/negroni/v3 v3.1.1
+	go.uber.org/mock v0.6.0
 	gorm.io/driver/sqlserver v1.6.0
 	gorm.io/gorm v1.30.0
 )

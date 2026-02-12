@@ -1,5 +1,7 @@
 
 name: radix-cost-allocation-api-pr
+permissions:
+  contents: read
 on:
   pull_request:
     branches:
@@ -24,9 +26,9 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
-          version: v1.64.8
+          version: v2.7.2
 
   test:
     name: Unit Test

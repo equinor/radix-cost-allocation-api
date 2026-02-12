@@ -16,8 +16,8 @@ import (
 
 	controllertest "github.com/equinor/radix-cost-allocation-api/api/test"
 	"github.com/equinor/radix-cost-allocation-api/api/test/mock"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 const (
