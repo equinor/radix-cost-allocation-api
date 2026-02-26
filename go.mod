@@ -1,6 +1,6 @@
 module github.com/equinor/radix-cost-allocation-api
 
-go 1.25.6
+go 1.26.0
 
 require (
 	github.com/coreos/go-oidc/v3 v3.14.1
