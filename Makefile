@@ -17,7 +17,6 @@ radixapiclient: bootstrap
 
 .PHONY: radixconfigs
 radixconfigs:
-	# radix-id-vulnerability-scan-reader-<env>
 	ENV=qa AZURE_CLIENT_ID=b8fd30d4-61d0-4842-b6c1-e91ceb58db8c SQL_SERVER=sql-radix-cost-allocation-dev.database.windows.net envsubst < radixconfig.tpl.yaml > radixconfig.dev.yaml
 	ENV=prod AZURE_CLIENT_ID=bb6d92a0-2f6d-421e-80e6-1b2174953d21 SQL_SERVER=sql-radix-cost-allocation-c2.database.windows.net envsubst < radixconfig.tpl.yaml > radixconfig.c2.yaml
 	ENV=prod AZURE_CLIENT_ID=a0bc7c53-d168-4f80-8b7d-dbbf85d6ed73 SQL_SERVER=sql-radix-cost-allocation-c3.database.windows.net envsubst < radixconfig.tpl.yaml > radixconfig.c3.yaml
