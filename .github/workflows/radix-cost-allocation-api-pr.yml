@@ -92,5 +92,6 @@ jobs:
 
       - run: rx validate radix-config --config-file radixconfig.platform.yaml
       - run: rx validate radix-config --config-file radixconfig.c2.yaml
+      - run: rx validate radix-config --config-file radixconfig.c3.yaml
       - run: rx validate radix-config --config-file radixconfig.dev.yaml
       - run: rx validate radix-config --config-file radixconfig.playground.yaml
