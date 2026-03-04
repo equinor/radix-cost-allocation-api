@@ -15,7 +15,7 @@
 //
 //		Security:
 //		- bearer:
-//	    - token
+//	    - token:
 //
 //		SecurityDefinitions:
 //		bearer:

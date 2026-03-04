@@ -62,3 +62,7 @@ spec:
                   desiredReplicas: 1
         - environment: prod
           replicas: 2
+  dnsAlias:
+    - alias: cost-api
+      environment: "qa"
+      component: server

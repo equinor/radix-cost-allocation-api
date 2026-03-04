@@ -329,6 +329,9 @@
   "security": [
     {
       "bearer": []
+    },
+    {
+      "token": []
     }
   ]
 }
