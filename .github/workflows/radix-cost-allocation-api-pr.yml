@@ -74,34 +74,23 @@ jobs:
           breaking_changes=$(swagger diff --break <$main_swagger swaggerui/html/swagger.json) >> $GITHUB_OUTPUT
       - name: Add comment
         if: failure() && steps.breaking.outcome == 'failure'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: console.log('${{ steps.breaking.outputs.breaking_changes }}');
 
   test-radixconfig:
     name: Test RadixConfig
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [arm64]
     steps:
       - name: "Fake TOKEN FOR RADIX CLI"
         run: echo "APP_SERVICE_ACCOUNT_TOKEN=hello-world" >> $GITHUB_ENV
       - uses: actions/checkout@v6
+      - uses: equinor/radix-github-actions@v2
 
-      - name: "Validate C2"
-        uses: equinor/radix-github-actions@v1
-        with:
-          args: validate radix-config --config-file radixconfig.c2.yaml
-
-      - name: "Validate DEV"
-        uses: equinor/radix-github-actions@v1
-        with:
-          args: validate radix-config --config-file radixconfig.dev.yaml
-
-      - name: "Validate Playground"
-        uses: equinor/radix-github-actions@v1
-        with:
-          args: validate radix-config --config-file radixconfig.playground.yaml
-
-      - name: "Validate Platform"
-        uses: equinor/radix-github-actions@v1
-        with:
-          args: validate radix-config --config-file radixconfig.platform.yaml
+      - run: rx validate radix-config --config-file radixconfig.platform.yaml
+      - run: rx validate radix-config --config-file radixconfig.c2.yaml
+      - run: rx validate radix-config --config-file radixconfig.dev.yaml
+      - run: rx validate radix-config --config-file radixconfig.playground.yaml
