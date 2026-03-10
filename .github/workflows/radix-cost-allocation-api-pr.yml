@@ -1,43 +1,42 @@
-
 name: radix-cost-allocation-api-pr
 permissions:
   contents: read
 on:
   pull_request:
     branches:
-    - master
+      - master
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Build docker image
-      run: docker build .
+      - uses: actions/checkout@v6
+      - name: Build docker image
+        run: docker build .
 
   lint:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 2
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v8
+        uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20 # v9.2.0
         with:
-          version: v2.7.2
+          version: v2.10.1
 
   test:
     name: Unit Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
       - name: Install dependencies
         run: go mod download
       - name: Run Tests
@@ -47,10 +46,10 @@ jobs:
     name: Verify Code Generation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
       - name: Verify Code Generation
         run: |
           make verify-generate
@@ -59,13 +58,13 @@ jobs:
     name: Report Changes In Swagger Spec
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: git fetch --no-tags --no-recurse-submodules --depth=1  origin master:master
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
       - name: Install Swagger
-        run: go install github.com/go-swagger/go-swagger/cmd/swagger@v0.31.0
+        run: go install github.com/go-swagger/go-swagger/cmd/swagger@v0.33.1
       - name: Check breaking changes
         if: always()
         id: breaking
@@ -75,7 +74,7 @@ jobs:
           breaking_changes=$(swagger diff --break <$main_swagger swaggerui/html/swagger.json) >> $GITHUB_OUTPUT
       - name: Add comment
         if: failure() && steps.breaking.outcome == 'failure'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: console.log('${{ steps.breaking.outputs.breaking_changes }}');
 
@@ -83,26 +82,11 @@ jobs:
     name: Test RadixConfig
     runs-on: ubuntu-latest
     steps:
-      - name: 'Fake TOKEN FOR RADIX CLI'
-        run: echo "APP_SERVICE_ACCOUNT_TOKEN=hello-world" >> $GITHUB_ENV
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+      - uses: equinor/radix-github-actions@v2
 
-      - name: 'Validate C2'
-        uses: equinor/radix-github-actions@v1
-        with:
-          args: validate radix-config --config-file radixconfig.c2.yaml
-
-      - name: 'Validate DEV'
-        uses: equinor/radix-github-actions@v1
-        with:
-          args: validate radix-config --config-file radixconfig.dev.yaml
-
-      - name: 'Validate Playground'
-        uses: equinor/radix-github-actions@v1
-        with:
-          args: validate radix-config --config-file radixconfig.playground.yaml
-
-      - name: 'Validate Platform'
-        uses: equinor/radix-github-actions@v1
-        with:
-          args: validate radix-config --config-file radixconfig.platform.yaml
+      - run: rx validate radix-config --config-file radixconfig.platform.yaml
+      - run: rx validate radix-config --config-file radixconfig.c2.yaml
+      - run: rx validate radix-config --config-file radixconfig.c3.yaml
+      - run: rx validate radix-config --config-file radixconfig.dev.yaml
+      - run: rx validate radix-config --config-file radixconfig.playground.yaml

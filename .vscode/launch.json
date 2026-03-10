@@ -1,26 +1,13 @@
 {
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Run locally",
-      "type": "go",
-      "request": "launch",
-      "mode": "auto",
-      "program": "${workspaceFolder}/main.go",
-      "env": {
-        // "SQL_SERVER": "<SQL_SERVER>",
-        // "SQL_DATABASE": "<SQL_DATABASE>",
-        // "SQL_USER": "<USER>",
-        // "SQL_PASSWORD": "<PASSWORD>",
-        "RADIX_ENVIRONMENT": "qa",
-        // "RADIX_CLUSTERNAME": "weekly-33",
-        "RADIX_DNS_ZONE": "dev.radix.equinor.com",
-        "WHITELIST": "{\"whiteList\": [\"canarycicd-test\",\"canarycicd-test1\",\"canarycicd-test2\",\"canarycicd-test3\",\"canarycicd-test4\",\"radix-api\",\"radix-canary-golang\",\"radix-cost-allocation-api\",\"radix-github-webhook\",\"radix-platform\",\"radix-web-console\"]}",
-        "RADIX_CLUSTERNAME": "weekly-07",
-        // "AD_REPORT_READERS": "{\"groups\": [\"<AUTHORIZED-AD-GROUP>\"]}",
-        // "TOKEN_ISSUER": "https://sts.windows.net/<TENANT-ID>"
-      },
-      "envFile": "${workspaceFolder}/.env",
-    }
-  ]
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Run locally",
+			"type": "go",
+			"request": "launch",
+			"mode": "auto",
+			"program": "${workspaceFolder}/main.go",
+			"envFile": "${workspaceFolder}/.env"
+		}
+	]
 }
