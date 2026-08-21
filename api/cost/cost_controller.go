@@ -6,9 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/equinor/radix-common/models"
-	"github.com/equinor/radix-common/utils"
-	internalutils "github.com/equinor/radix-cost-allocation-api/api/internal/utils"
+	"github.com/equinor/radix-cost-allocation-api/internal/accounts"
+	"github.com/equinor/radix-cost-allocation-api/internal/controller"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
 	"github.com/equinor/radix-cost-allocation-api/service"
 	"github.com/gorilla/mux"
@@ -18,33 +17,33 @@ import (
 const rootPath = ""
 
 type costController struct {
-	*models.DefaultController
+	*controller.DefaultController
 	radixapi    radix_api.RadixAPIClient
 	costService service.CostService
 }
 
 // NewCostController Constructor
-func NewCostController(radixapi radix_api.RadixAPIClient, costService service.CostService) models.Controller {
+func NewCostController(radixapi radix_api.RadixAPIClient, costService service.CostService) controller.Controller {
 	return &costController{radixapi: radixapi, costService: costService}
 }
 
 // GetRoutes List the supported routes of this controller
-func (costController *costController) GetRoutes() models.Routes {
-	routes := models.Routes{
-		models.Route{
+func (c *costController) GetRoutes() controller.Routes {
+	routes := controller.Routes{
+		controller.Route{
 			Path:        rootPath + "/totalcosts",
 			Method:      "GET",
-			HandlerFunc: costController.GetTotalCosts,
+			HandlerFunc: c.GetTotalCosts,
 		},
-		models.Route{
+		controller.Route{
 			Path:        rootPath + "/totalcost/{appName}",
 			Method:      "GET",
-			HandlerFunc: costController.GetTotalCost,
+			HandlerFunc: c.GetTotalCost,
 		},
-		models.Route{
+		controller.Route{
 			Path:        rootPath + "/futurecost/{appName}",
 			Method:      "GET",
-			HandlerFunc: costController.GetFutureCost,
+			HandlerFunc: c.GetFutureCost,
 		},
 	}
 
@@ -52,7 +51,7 @@ func (costController *costController) GetRoutes() models.Routes {
 }
 
 // GetTotalCosts for all applications for period
-func (costController *costController) GetTotalCosts(accounts models.Accounts, w http.ResponseWriter, r *http.Request) {
+func (c *costController) GetTotalCosts(accounts accounts.Accounts, w http.ResponseWriter, r *http.Request) {
 	// swagger:operation GET /totalcosts cost getTotalCosts
 	// ---
 	// summary: Gets the total cost for an application
@@ -88,11 +87,11 @@ func (costController *costController) GetTotalCosts(accounts models.Accounts, w 
 	//     description: "Unauthorized"
 	//   "404":
 	//     description: "Not found"
-	costController.getTotalCosts(accounts, w, r, nil)
+	c.getTotalCosts(accounts, w, r, nil)
 }
 
 // GetTotalCost for an application for period
-func (costController *costController) GetTotalCost(accounts models.Accounts, w http.ResponseWriter, r *http.Request) {
+func (c *costController) GetTotalCost(accounts accounts.Accounts, w http.ResponseWriter, r *http.Request) {
 	// swagger:operation GET /totalcost/{appName} cost getTotalCost
 	// ---
 	// summary: Gets the total cost for an application
@@ -134,10 +133,10 @@ func (costController *costController) GetTotalCost(accounts models.Accounts, w h
 	//   "404":
 	//     description: "Not found"
 	appName := mux.Vars(r)["appName"]
-	costController.getTotalCosts(accounts, w, r, &appName)
+	c.getTotalCosts(accounts, w, r, &appName)
 }
 
-func (costController *costController) GetFutureCost(accounts models.Accounts, w http.ResponseWriter, r *http.Request) {
+func (c *costController) GetFutureCost(accounts accounts.Accounts, w http.ResponseWriter, r *http.Request) {
 	// swagger:operation GET /futurecost/{appName} cost getFutureCost
 	// ---
 	// summary: Gets the estimated future cost for an application
@@ -167,39 +166,39 @@ func (costController *costController) GetFutureCost(accounts models.Accounts, w 
 	//   "404":
 	//     description: "Not found"
 	appName := mux.Vars(r)["appName"]
-	costController.getFutureCost(accounts, w, r, appName)
+	c.getFutureCost(accounts, w, r, appName)
 }
 
-func (costController *costController) getFutureCost(accounts models.Accounts, w http.ResponseWriter, r *http.Request, appName string) {
-	handler := NewCostHandler(accounts, costController.radixapi, costController.costService)
+func (c *costController) getFutureCost(accounts accounts.Accounts, w http.ResponseWriter, r *http.Request, appName string) {
+	handler := NewCostHandler(accounts, c.radixapi, c.costService)
 	cost, err := handler.GetFutureCost(r.Context(), appName)
 
 	if err != nil {
 		zerolog.Ctx(r.Context()).Error().Err(err).Msg("failed to get future cost")
-		internalutils.ErrorResponseForServer(w, r, fmt.Errorf("failed to get future cost"))
+		c.ErrorResponseForServer(w, r, fmt.Errorf("failed to get future cost"))
 		return
 	}
 
-	internalutils.JSONResponse(w, r, &cost)
+	c.JSONResponse(w, r, &cost)
 }
 
-func (costController *costController) getTotalCosts(accounts models.Accounts, w http.ResponseWriter, r *http.Request, appName *string) {
+func (c *costController) getTotalCosts(accounts accounts.Accounts, w http.ResponseWriter, r *http.Request, appName *string) {
 	fromTime, toTime, err := getCostPeriod(r)
 	if err != nil {
 		zerolog.Ctx(r.Context()).Error().Err(err).Msg("failed to get total cost period")
-		internalutils.ErrorResponseForServer(w, r, fmt.Errorf("failed to get total cost period"))
+		c.ErrorResponseForServer(w, r, fmt.Errorf("failed to get total cost period"))
 		return
 	}
 
-	handler := NewCostHandler(accounts, costController.radixapi, costController.costService)
+	handler := NewCostHandler(accounts, c.radixapi, c.costService)
 	cost, err := handler.GetTotalCost(r.Context(), fromTime, toTime, appName)
 	if err != nil {
 		zerolog.Ctx(r.Context()).Error().Err(err).Msg("failed to get total cost")
-		internalutils.ErrorResponseForServer(w, r, fmt.Errorf("failed to get total cost"))
+		c.ErrorResponseForServer(w, r, fmt.Errorf("failed to get total cost"))
 		return
 	}
 
-	internalutils.JSONResponse(w, r, cost)
+	c.JSONResponse(w, r, cost)
 }
 
 func getCostPeriod(r *http.Request) (*time.Time, *time.Time, error) {
@@ -224,9 +223,9 @@ func getTimeFromRequest(r *http.Request, argName string) (*time.Time, error) {
 	}
 	var err error
 	if len(timeString) == 10 {
-		timeValue, err = utils.ParseTimestampBy("2006-01-02", timeString)
+		timeValue, err = time.Parse("2006-01-02", timeString)
 	} else {
-		timeValue, err = utils.ParseTimestamp(timeString)
+		timeValue, err = time.Parse(time.RFC3339, timeString)
 	}
 	if err != nil {
 		return nil, err

@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/equinor/radix-common/models"
-	"github.com/equinor/radix-cost-allocation-api/api/internal/utils"
+	"github.com/equinor/radix-cost-allocation-api/internal/accounts"
+	"github.com/equinor/radix-cost-allocation-api/internal/controller"
 	"github.com/equinor/radix-cost-allocation-api/service"
 	"github.com/rs/zerolog"
 )
@@ -15,28 +15,28 @@ import (
 const rootPath = ""
 
 type reportController struct {
-	*models.DefaultController
+	*controller.DefaultController
 	costService service.CostService
 }
 
 // NewReportController constructor
-func NewReportController(costService service.CostService) models.Controller {
+func NewReportController(costService service.CostService) controller.Controller {
 	return &reportController{costService: costService}
 }
 
-func (rc *reportController) GetRoutes() models.Routes {
-	routes := models.Routes{
+func (c *reportController) GetRoutes() controller.Routes {
+	routes := controller.Routes{
 		{
 			Path:        rootPath + "/report",
 			Method:      "GET",
-			HandlerFunc: rc.GetCostReport,
+			HandlerFunc: c.GetCostReport,
 		},
 	}
 	return routes
 }
 
 // GetCostReport creates a report for all applications for the previous month
-func (rc *reportController) GetCostReport(_ models.Accounts, w http.ResponseWriter, r *http.Request) {
+func (c *reportController) GetCostReport(_ accounts.Accounts, w http.ResponseWriter, r *http.Request) {
 	// swagger:operation GET /report report getCostReport
 	// ---
 	// summary: Get cost-report for all applications for the previous month
@@ -50,7 +50,7 @@ func (rc *reportController) GetCostReport(_ models.Accounts, w http.ResponseWrit
 	//   "404":
 	//     description: "Not found"
 
-	handler := NewReportHandler(rc.costService)
+	handler := NewReportHandler(c.costService)
 	fromDate, toDate := getReportFromAndToDate()
 	fileName := fmt.Sprintf("%s-%s.csv", fromDate.Format("2006-01-02"), toDate.Format("2006-01-02"))
 	var b bytes.Buffer
@@ -58,10 +58,10 @@ func (rc *reportController) GetCostReport(_ models.Accounts, w http.ResponseWrit
 	err := handler.GetCostReport(&b, fromDate, toDate)
 	if err != nil {
 		zerolog.Ctx(r.Context()).Error().Err(err).Msg("Failed to get report")
-		utils.ErrorResponseForServer(w, r, fmt.Errorf("failed to get report"))
+		c.ErrorResponseForServer(w, r, fmt.Errorf("failed to get report"))
 	}
 
-	utils.ReaderFileResponse(w, r, &b, fileName, "text/plain; charset=utf-8")
+	c.ReaderFileResponse(w, r, &b, fileName, "text/plain; charset=utf-8")
 }
 
 // from is the first day of the previous month

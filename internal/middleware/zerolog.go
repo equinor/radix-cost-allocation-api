@@ -1,4 +1,4 @@
-package router
+package middleware
 
 import (
 	"net/http"
@@ -11,21 +11,8 @@ import (
 
 // Inspired by https://stackoverflow.com/a/50567022/2103434
 
-type loggingResponseWriter struct {
-	http.ResponseWriter
-	statusCode int
-}
-
-func newLoggingResponseWriter(w http.ResponseWriter) *loggingResponseWriter {
-	return &loggingResponseWriter{w, http.StatusOK}
-}
-func (lrw *loggingResponseWriter) WriteHeader(code int) {
-	lrw.statusCode = code
-	lrw.ResponseWriter.WriteHeader(code)
-}
-
-// NewZerologHandler injects and logs requests.
-func NewZerologHandler(log zerolog.Logger) negroni.HandlerFunc {
+// NewZerologRequestLogger injects and logs requests.
+func NewZerologRequestLogger(log zerolog.Logger) negroni.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 		l := log.With().Logger()
 		l.UpdateContext(func(c zerolog.Context) zerolog.Context {
@@ -46,4 +33,17 @@ func NewZerologHandler(log zerolog.Logger) negroni.HandlerFunc {
 			Int("status", statusCodeWriter.statusCode).
 			Msg(http.StatusText(statusCodeWriter.statusCode))
 	}
+}
+
+type loggingResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func newLoggingResponseWriter(w http.ResponseWriter) *loggingResponseWriter {
+	return &loggingResponseWriter{w, http.StatusOK}
+}
+func (lrw *loggingResponseWriter) WriteHeader(code int) {
+	lrw.statusCode = code
+	lrw.ResponseWriter.WriteHeader(code)
 }

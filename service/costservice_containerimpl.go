@@ -2,11 +2,11 @@ package service
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"time"
 
-	"github.com/equinor/radix-common/utils"
 	"github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/equinor/radix-cost-allocation-api/repository"
 )
@@ -153,7 +153,7 @@ func excludeApplicationNames(containers []models.ContainerDto, applicationNames 
 
 	var i int
 	for _, c := range containers {
-		if utils.ContainsString(applicationNames, c.ApplicationName) {
+		if slices.Contains(applicationNames, c.ApplicationName) {
 			continue
 		}
 		containers[i] = c
@@ -167,7 +167,6 @@ func aggregateContainerCost(containerCostList []containerCost, containers []mode
 	containerTotalCostList := make([]containerTotalCost, len(containers))
 
 	for i, c := range containers {
-		c := c
 		indexMap[c.ContainerId] = i
 		containerTotalCostList[i] = containerTotalCost{container: &c}
 	}

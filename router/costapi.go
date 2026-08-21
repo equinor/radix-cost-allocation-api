@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/equinor/radix-common/models"
-	radixnet "github.com/equinor/radix-common/net"
-	radixhttp "github.com/equinor/radix-common/net/http"
-	"github.com/equinor/radix-cost-allocation-api/api/utils/auth"
+	"github.com/equinor/radix-cost-allocation-api/internal/auth"
+	"github.com/equinor/radix-cost-allocation-api/internal/controller"
+	radixhttp "github.com/equinor/radix-cost-allocation-api/internal/http"
+	"github.com/equinor/radix-cost-allocation-api/internal/middleware"
 	"github.com/equinor/radix-cost-allocation-api/metrics"
 	"github.com/equinor/radix-cost-allocation-api/swaggerui"
 	"github.com/gorilla/mux"
@@ -28,7 +28,7 @@ const (
 )
 
 // NewHandler Constructor function
-func NewHandler(clusterName string, allowedAdGroups []string, authProvider auth.AuthProvider, controllers ...models.Controller) http.Handler {
+func NewHandler(clusterName string, allowedAdGroups []string, authProvider auth.AuthProvider, controllers ...controller.Controller) http.Handler {
 	router := mux.NewRouter().StrictSlash(true)
 
 	initializeSwaggerUI(router)
@@ -63,7 +63,7 @@ func NewHandler(clusterName string, allowedAdGroups []string, authProvider auth.
 	rec.PrintStack = false
 	n := negroni.New(
 		rec,
-		NewZerologHandler(log.Logger),
+		middleware.NewZerologRequestLogger(log.Logger),
 	)
 
 	n.UseHandler(serveMux)
@@ -111,7 +111,7 @@ func initializeSwaggerUI(router *mux.Router) {
 	router.PathPrefix(swaggerUIPath).Handler(swaggerui)
 }
 
-func initializeAPIServer(router *mux.Router, controllers []models.Controller) {
+func initializeAPIServer(router *mux.Router, controllers []controller.Controller) {
 	for _, controller := range controllers {
 		for _, route := range controller.GetRoutes() {
 			addHandlerRoute(router, route)
@@ -125,11 +125,11 @@ func initializeHealthEndpoint(router *mux.Router) {
 	}).Methods("GET")
 }
 
-func addHandlerRoute(router *mux.Router, route models.Route) {
+func addHandlerRoute(router *mux.Router, route controller.Route) {
 	path := apiVersionRoute + route.Path
 	router.HandleFunc(path,
-		radixnet.NewRadixMiddleware(path, route.Method, route.HandlerFunc,
-			func(handler *radixnet.RadixMiddleware, w http.ResponseWriter, r *http.Request, started time.Time) {
+		middleware.NewRadixMiddleware(path, route.Method, route.HandlerFunc,
+			func(handler *middleware.RadixMiddleware, w http.ResponseWriter, r *http.Request, started time.Time) {
 				httpDuration := time.Since(started)
 				metrics.AddRequestDuration(handler.Path, handler.Method, httpDuration)
 			}).Handle).
