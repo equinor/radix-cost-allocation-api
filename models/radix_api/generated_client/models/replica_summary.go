@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 	"encoding/json"
+	stderrors "errors"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -21,16 +22,17 @@ import (
 type ReplicaSummary struct {
 
 	// Container started timestamp
-	// Example: 2006-01-02T15:04:05Z
-	ContainerStarted string `json:"containerStarted,omitempty"`
+	// Format: date-time
+	ContainerStarted strfmt.DateTime `json:"containerStarted,omitempty"`
 
 	// Created timestamp
-	// Example: 2006-01-02T15:04:05Z
-	Created string `json:"created,omitempty"`
+	// Required: true
+	// Format: date-time
+	Created *strfmt.DateTime `json:"created"`
 
 	// The time at which the batch job's pod finishedAt.
-	// Example: 2006-01-02T15:04:05Z
-	EndTime string `json:"endTime,omitempty"`
+	// Format: date-time
+	EndTime strfmt.DateTime `json:"endTime,omitempty"`
 
 	// Exit status from the last termination of the container
 	ExitCode int32 `json:"exitCode,omitempty"`
@@ -57,10 +59,6 @@ type ReplicaSummary struct {
 	// RestartCount count of restarts of a component container inside a pod
 	RestartCount int32 `json:"restartCount,omitempty"`
 
-	// The time at which the batch job's pod startedAt
-	// Example: 2006-01-02T15:04:05Z
-	StartTime string `json:"startTime,omitempty"`
-
 	// StatusMessage provides message describing the status of a component container inside a pod
 	StatusMessage string `json:"statusMessage,omitempty"`
 
@@ -72,7 +70,7 @@ type ReplicaSummary struct {
 	// OAuth2 = Replica of a Radix OAuth2 component
 	// Undefined = Replica without defined type - to be extended
 	// Example: ComponentReplica
-	// Enum: ["ComponentReplica","ScheduledJobReplica","JobManager","JobManagerAux","OAuth2","Undefined"]
+	// Enum: ["ComponentReplica","ScheduledJobReplica","JobManager","JobManagerAux","OAuth2","OAuth2Redis","Undefined"]
 	Type string `json:"type,omitempty"`
 
 	// replica status
@@ -85,6 +83,18 @@ type ReplicaSummary struct {
 // Validate validates this replica summary
 func (m *ReplicaSummary) Validate(formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.validateContainerStarted(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateCreated(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateEndTime(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validateName(formats); err != nil {
 		res = append(res, err)
@@ -108,6 +118,43 @@ func (m *ReplicaSummary) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *ReplicaSummary) validateContainerStarted(formats strfmt.Registry) error {
+	if swag.IsZero(m.ContainerStarted) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("containerStarted", "body", "date-time", m.ContainerStarted.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ReplicaSummary) validateCreated(formats strfmt.Registry) error {
+
+	if err := validate.Required("created", "body", m.Created); err != nil {
+		return err
+	}
+
+	if err := validate.FormatOf("created", "body", "date-time", m.Created.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ReplicaSummary) validateEndTime(formats strfmt.Registry) error {
+	if swag.IsZero(m.EndTime) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("endTime", "body", "date-time", m.EndTime.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m *ReplicaSummary) validateName(formats strfmt.Registry) error {
 
 	if err := validate.Required("name", "body", m.Name); err != nil {
@@ -117,11 +164,11 @@ func (m *ReplicaSummary) validateName(formats strfmt.Registry) error {
 	return nil
 }
 
-var replicaSummaryTypeTypePropEnum []interface{}
+var replicaSummaryTypeTypePropEnum []any
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["ComponentReplica","ScheduledJobReplica","JobManager","JobManagerAux","OAuth2","Undefined"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["ComponentReplica","ScheduledJobReplica","JobManager","JobManagerAux","OAuth2","OAuth2Redis","Undefined"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -145,6 +192,9 @@ const (
 
 	// ReplicaSummaryTypeOAuth2 captures enum value "OAuth2"
 	ReplicaSummaryTypeOAuth2 string = "OAuth2"
+
+	// ReplicaSummaryTypeOAuth2Redis captures enum value "OAuth2Redis"
+	ReplicaSummaryTypeOAuth2Redis string = "OAuth2Redis"
 
 	// ReplicaSummaryTypeUndefined captures enum value "Undefined"
 	ReplicaSummaryTypeUndefined string = "Undefined"
@@ -178,11 +228,15 @@ func (m *ReplicaSummary) validateReplicaStatus(formats strfmt.Registry) error {
 
 	if m.ReplicaStatus != nil {
 		if err := m.ReplicaStatus.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("replicaStatus")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("replicaStatus")
 			}
+
 			return err
 		}
 	}
@@ -197,11 +251,15 @@ func (m *ReplicaSummary) validateResources(formats strfmt.Registry) error {
 
 	if m.Resources != nil {
 		if err := m.Resources.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("resources")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("resources")
 			}
+
 			return err
 		}
 	}
@@ -236,11 +294,15 @@ func (m *ReplicaSummary) contextValidateReplicaStatus(ctx context.Context, forma
 		}
 
 		if err := m.ReplicaStatus.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("replicaStatus")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("replicaStatus")
 			}
+
 			return err
 		}
 	}
@@ -257,11 +319,15 @@ func (m *ReplicaSummary) contextValidateResources(ctx context.Context, formats s
 		}
 
 		if err := m.Resources.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("resources")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("resources")
 			}
+
 			return err
 		}
 	}

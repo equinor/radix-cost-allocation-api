@@ -24,6 +24,7 @@ type JobSummary struct {
 	// Example: radix-pipeline-20181029135644-algpv-6hznh
 	AppName string `json:"appName,omitempty"`
 
+	// Deprecated: use GitRef instead
 	// Branch to build from
 	// Example: master
 	Branch string `json:"branch,omitempty"`
@@ -33,28 +34,48 @@ type JobSummary struct {
 	CommitID string `json:"commitID,omitempty"`
 
 	// Created timestamp
-	// Example: 2006-01-02T15:04:05Z
-	Created string `json:"created,omitempty"`
+	// Required: true
+	// Format: date-time
+	Created *strfmt.DateTime `json:"created"`
+
+	// DeployExternalDNS deploy external DNS
+	DeployExternalDNS *bool `json:"deployExternalDNS,omitempty"`
 
 	// Ended timestamp
-	// Example: 2006-01-02T15:04:05Z
-	Ended string `json:"ended,omitempty"`
+	// Format: date-time
+	Ended strfmt.DateTime `json:"ended,omitempty"`
 
 	// Environments the job deployed to
 	// Example: ["dev","qa"]
 	Environments []string `json:"environments"`
 
+	// GitRef Branch or tag to build from
+	// Example: master
+	GitRef string `json:"gitRef,omitempty"`
+
+	// GitRefType When the pipeline job should be built from branch or tag specified in GitRef:
+	// branch
+	// tag
+	// <empty> - either branch or tag
+	// Example: branch
+	// Enum: ["branch","tag","\"\""]
+	GitRefType string `json:"gitRefType,omitempty"`
+
 	// Image tags names for components - if empty will use default logic
-	// Example: component1: tag1,component2: tag2
+	// Example: {"component1":"tag1","component2":"tag2"}
 	ImageTagNames map[string]string `json:"imageTagNames,omitempty"`
 
 	// Name of the job
 	// Example: radix-pipeline-20181029135644-algpv-6hznh
-	Name string `json:"name,omitempty"`
+	// Required: true
+	Name *string `json:"name"`
+
+	// OverrideUseBuildCache override default or configured build cache option
+	OverrideUseBuildCache *bool `json:"overrideUseBuildCache,omitempty"`
 
 	// Name of the pipeline
 	// Example: build-deploy
-	// Enum: ["build","build-deploy","promote","deploy"]
+	// Enum: ["build","build-deploy","promote","deploy","apply-config"]
 	Pipeline string `json:"pipeline,omitempty"`
 
 	// RadixDeployment name, which is promoted
@@ -66,9 +87,12 @@ type JobSummary struct {
 	// Environment name, to which the Radix deployment is promoted
 	PromotedToEnvironment string `json:"promotedToEnvironment,omitempty"`
 
+	// RefreshBuildCache forces to rebuild cache when UseBuildCache is true in the RadixApplication or OverrideUseBuildCache is true
+	RefreshBuildCache *bool `json:"refreshBuildCache,omitempty"`
+
 	// Started timestamp
-	// Example: 2006-01-02T15:04:05Z
-	Started string `json:"started,omitempty"`
+	// Format: date-time
+	Started strfmt.DateTime `json:"started,omitempty"`
 
 	// Status of the job
 	// Example: Waiting
@@ -78,17 +102,48 @@ type JobSummary struct {
 	// TriggeredBy user that triggered the job. If through webhook = sender.login. If through api - usertoken.upn
 	// Example: a_user@equinor.com
 	TriggeredBy string `json:"triggeredBy,omitempty"`
+
+	// TriggeredFromWebhook If true, the job was triggered from a webhook
+	// Required: true
+	TriggeredFromWebhook *bool `json:"triggeredFromWebhook"`
+
+	// Defaults to true.
+	UseBuildCache *bool `json:"useBuildCache,omitempty"`
 }
 
 // Validate validates this job summary
 func (m *JobSummary) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateCreated(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateEnded(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateGitRefType(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateName(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validatePipeline(formats); err != nil {
 		res = append(res, err)
 	}
 
+	if err := m.validateStarted(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateStatus(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateTriggeredFromWebhook(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -98,11 +153,90 @@ func (m *JobSummary) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-var jobSummaryTypePipelinePropEnum []interface{}
+func (m *JobSummary) validateCreated(formats strfmt.Registry) error {
+
+	if err := validate.Required("created", "body", m.Created); err != nil {
+		return err
+	}
+
+	if err := validate.FormatOf("created", "body", "date-time", m.Created.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *JobSummary) validateEnded(formats strfmt.Registry) error {
+	if swag.IsZero(m.Ended) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("ended", "body", "date-time", m.Ended.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+var jobSummaryTypeGitRefTypePropEnum []any
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["build","build-deploy","promote","deploy"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["branch","tag","\"\""]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		jobSummaryTypeGitRefTypePropEnum = append(jobSummaryTypeGitRefTypePropEnum, v)
+	}
+}
+
+const (
+
+	// JobSummaryGitRefTypeBranch captures enum value "branch"
+	JobSummaryGitRefTypeBranch string = "branch"
+
+	// JobSummaryGitRefTypeTag captures enum value "tag"
+	JobSummaryGitRefTypeTag string = "tag"
+
+	// JobSummaryGitRefType captures enum value "\"\""
+	JobSummaryGitRefType string = "\"\""
+)
+
+// prop value enum
+func (m *JobSummary) validateGitRefTypeEnum(path, location string, value string) error {
+	if err := validate.EnumCase(path, location, value, jobSummaryTypeGitRefTypePropEnum, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *JobSummary) validateGitRefType(formats strfmt.Registry) error {
+	if swag.IsZero(m.GitRefType) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validateGitRefTypeEnum("gitRefType", "body", m.GitRefType); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *JobSummary) validateName(formats strfmt.Registry) error {
+
+	if err := validate.Required("name", "body", m.Name); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+var jobSummaryTypePipelinePropEnum []any
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["build","build-deploy","promote","deploy","apply-config"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -123,6 +257,9 @@ const (
 
 	// JobSummaryPipelineDeploy captures enum value "deploy"
 	JobSummaryPipelineDeploy string = "deploy"
+
+	// JobSummaryPipelineApplyDashConfig captures enum value "apply-config"
+	JobSummaryPipelineApplyDashConfig string = "apply-config"
 )
 
 // prop value enum
@@ -146,7 +283,19 @@ func (m *JobSummary) validatePipeline(formats strfmt.Registry) error {
 	return nil
 }
 
-var jobSummaryTypeStatusPropEnum []interface{}
+func (m *JobSummary) validateStarted(formats strfmt.Registry) error {
+	if swag.IsZero(m.Started) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("started", "body", "date-time", m.Started.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+var jobSummaryTypeStatusPropEnum []any
 
 func init() {
 	var res []string
@@ -200,6 +349,15 @@ func (m *JobSummary) validateStatus(formats strfmt.Registry) error {
 
 	// value enum
 	if err := m.validateStatusEnum("status", "body", m.Status); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *JobSummary) validateTriggeredFromWebhook(formats strfmt.Registry) error {
+
+	if err := validate.Required("triggeredFromWebhook", "body", m.TriggeredFromWebhook); err != nil {
 		return err
 	}
 

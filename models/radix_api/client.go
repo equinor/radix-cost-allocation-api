@@ -20,7 +20,6 @@ type RadixApplicationDetails struct {
 	Name    string
 	Creator string
 	Owner   string
-	WBS     string
 }
 
 // radixAPIClientStruct instance variables
@@ -47,7 +46,7 @@ func (c radixAPIClientStruct) ShowRadixApplications(appParams *platform.ShowAppl
 
 	radixAppMap := make(map[string]*RadixApplicationDetails)
 	for _, appSummary := range resp.Payload {
-		name := appSummary.Name
+		name := *appSummary.Name
 		radixAppMap[name] = &RadixApplicationDetails{
 			Name: name,
 		}
@@ -68,7 +67,6 @@ func (c radixAPIClientStruct) GetRadixApplicationDetails(appParams *application.
 		Name:    *appRegistration.Name,
 		Creator: *appRegistration.Creator,
 		Owner:   *appRegistration.Owner,
-		WBS:     appRegistration.WBS,
 	}, nil
 }
 

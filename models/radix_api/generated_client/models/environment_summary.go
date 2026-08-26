@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 	"encoding/json"
+	stderrors "errors"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -25,7 +26,8 @@ type EnvironmentSummary struct {
 
 	// Name of the environment
 	// Example: prod
-	Name string `json:"name,omitempty"`
+	// Required: true
+	Name *string `json:"name"`
 
 	// Status of the environment
 	// Pending = Environment exists in Radix config, but not in cluster
@@ -43,6 +45,10 @@ type EnvironmentSummary struct {
 func (m *EnvironmentSummary) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateName(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateStatus(formats); err != nil {
 		res = append(res, err)
 	}
@@ -57,7 +63,16 @@ func (m *EnvironmentSummary) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-var environmentSummaryTypeStatusPropEnum []interface{}
+func (m *EnvironmentSummary) validateName(formats strfmt.Registry) error {
+
+	if err := validate.Required("name", "body", m.Name); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+var environmentSummaryTypeStatusPropEnum []any
 
 func init() {
 	var res []string
@@ -109,11 +124,15 @@ func (m *EnvironmentSummary) validateActiveDeployment(formats strfmt.Registry) e
 
 	if m.ActiveDeployment != nil {
 		if err := m.ActiveDeployment.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("activeDeployment")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("activeDeployment")
 			}
+
 			return err
 		}
 	}
@@ -144,11 +163,15 @@ func (m *EnvironmentSummary) contextValidateActiveDeployment(ctx context.Context
 		}
 
 		if err := m.ActiveDeployment.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("activeDeployment")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("activeDeployment")
 			}
+
 			return err
 		}
 	}

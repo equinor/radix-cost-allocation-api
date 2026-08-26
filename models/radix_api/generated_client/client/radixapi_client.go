@@ -13,11 +13,13 @@ import (
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/application"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/buildstatus"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/component"
+	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/configuration"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/deployment"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/environment"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/job"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/pipeline_job"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/platform"
+	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/webhook"
 )
 
 // Default radixapi HTTP client.
@@ -65,11 +67,13 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Radixapi {
 	cli.Application = application.New(transport, formats)
 	cli.Buildstatus = buildstatus.New(transport, formats)
 	cli.Component = component.New(transport, formats)
+	cli.Configuration = configuration.New(transport, formats)
 	cli.Deployment = deployment.New(transport, formats)
 	cli.Environment = environment.New(transport, formats)
 	cli.Job = job.New(transport, formats)
 	cli.PipelineJob = pipeline_job.New(transport, formats)
 	cli.Platform = platform.New(transport, formats)
+	cli.Webhook = webhook.New(transport, formats)
 	return cli
 }
 
@@ -120,6 +124,8 @@ type Radixapi struct {
 
 	Component component.ClientService
 
+	Configuration configuration.ClientService
+
 	Deployment deployment.ClientService
 
 	Environment environment.ClientService
@@ -130,6 +136,8 @@ type Radixapi struct {
 
 	Platform platform.ClientService
 
+	Webhook webhook.ClientService
+
 	Transport runtime.ClientTransport
 }
 
@@ -139,9 +147,11 @@ func (c *Radixapi) SetTransport(transport runtime.ClientTransport) {
 	c.Application.SetTransport(transport)
 	c.Buildstatus.SetTransport(transport)
 	c.Component.SetTransport(transport)
+	c.Configuration.SetTransport(transport)
 	c.Deployment.SetTransport(transport)
 	c.Environment.SetTransport(transport)
 	c.Job.SetTransport(transport)
 	c.PipelineJob.SetTransport(transport)
 	c.Platform.SetTransport(transport)
+	c.Webhook.SetTransport(transport)
 }

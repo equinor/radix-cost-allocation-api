@@ -125,10 +125,5 @@ func (costHandler *CostHandler) getRadixApplicationDetails(appName string) (*rad
 	if err != nil || appDetails == nil {
 		return nil, err
 	}
-	return &radix_api.RadixApplicationDetails{
-		Name:    appDetails.Name,
-		Creator: appDetails.Creator,
-		Owner:   appDetails.Owner,
-		WBS:     appDetails.WBS,
-	}, nil
+	return appDetails, nil
 }

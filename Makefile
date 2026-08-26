@@ -12,7 +12,7 @@ lint: bootstrap
 
 .PHONY: radixapiclient
 radixapiclient: bootstrap
-	swagger generate client -t ./internal/radixapiclient/ -f https://api.radix.equinor.com/swaggerui/swagger.json -A radixapi
+	swagger generate client -t ./models/radix_api/generated_client -f https://api.radix.equinor.com/swaggerui/swagger.json -A radixapi
 
 
 .PHONY: radixconfigs
@@ -39,7 +39,7 @@ mocks: bootstrap
 	mockgen -source ./service/costservice.go -destination ./service/mock/costservice.go -package mock
 
 .PHONY: generate
-generate: radixconfigs mocks swagger
+generate: radixconfigs mocks swagger radixapiclient
 
 .PHONY: verify-generate
 verify-generate: generate
