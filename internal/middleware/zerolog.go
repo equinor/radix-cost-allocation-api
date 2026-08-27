@@ -47,3 +47,12 @@ func (lrw *loggingResponseWriter) WriteHeader(code int) {
 	lrw.statusCode = code
 	lrw.ResponseWriter.WriteHeader(code)
 }
+// Flush delegates to the underlying writer so streaming responses (SSE)
+// still flush per chunk: the generated text/event-stream writer type-asserts
+// http.Flusher on the outermost writer, and without this method the
+// assertion fails and it falls back to a fully buffered io.Copy.
+func (lrw *loggingResponseWriter) Flush() {
+	if f, ok := lrw.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}
