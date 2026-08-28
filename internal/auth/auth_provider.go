@@ -14,7 +14,7 @@ type AuthProvider interface {
 
 // IDToken interface
 type IDToken interface {
-	GetClaims(out interface{}) error
+	GetClaims(out any) error
 }
 
 type oidcProvider struct {
@@ -32,7 +32,7 @@ type Claims struct {
 }
 
 // GetClaims returns claims for the token
-func (it *IDTokenStruct) GetClaims(out interface{}) error {
+func (it *IDTokenStruct) GetClaims(out any) error {
 	err := it.token.Claims(out)
 	if err != nil {
 		return err

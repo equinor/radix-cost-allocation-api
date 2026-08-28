@@ -63,7 +63,7 @@ type GetOAuthPodLogParams struct {
 
 	/* ImpersonateGroup.
 
-	   Works only with custom setup of cluster. Allow impersonation of a comma-seperated list of test groups (Required if Impersonate-User is set)
+	   Works only with custom setup of cluster. Allow impersonation of a comma-separated list of test groups (Required if Impersonate-User is set)
 	*/
 	ImpersonateGroup *string
 
@@ -99,6 +99,14 @@ type GetOAuthPodLogParams struct {
 	*/
 	File *string
 
+	/* Follow.
+
+	   Get log as a server-sent event stream if true
+
+	   Format: boolean
+	*/
+	Follow *string
+
 	/* Lines.
 
 	   Get log lines (example 1000)
@@ -113,6 +121,14 @@ type GetOAuthPodLogParams struct {
 	*/
 	PodName string
 
+	/* Previous.
+
+	   Get previous container log if true
+
+	   Format: boolean
+	*/
+	Previous *string
+
 	/* SinceTime.
 
 	   Get log only from sinceTime (example 2020-03-18T07:20:41+00:00)
@@ -120,6 +136,12 @@ type GetOAuthPodLogParams struct {
 	   Format: date-time
 	*/
 	SinceTime *strfmt.DateTime
+
+	/* Type.
+
+	   Type of auxiliary resource (oauth|oauth-redis)
+	*/
+	Type string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -240,6 +262,17 @@ func (o *GetOAuthPodLogParams) SetFile(file *string) {
 	o.File = file
 }
 
+// WithFollow adds the follow to the get o auth pod log params
+func (o *GetOAuthPodLogParams) WithFollow(follow *string) *GetOAuthPodLogParams {
+	o.SetFollow(follow)
+	return o
+}
+
+// SetFollow adds the follow to the get o auth pod log params
+func (o *GetOAuthPodLogParams) SetFollow(follow *string) {
+	o.Follow = follow
+}
+
 // WithLines adds the lines to the get o auth pod log params
 func (o *GetOAuthPodLogParams) WithLines(lines *string) *GetOAuthPodLogParams {
 	o.SetLines(lines)
@@ -262,6 +295,17 @@ func (o *GetOAuthPodLogParams) SetPodName(podName string) {
 	o.PodName = podName
 }
 
+// WithPrevious adds the previous to the get o auth pod log params
+func (o *GetOAuthPodLogParams) WithPrevious(previous *string) *GetOAuthPodLogParams {
+	o.SetPrevious(previous)
+	return o
+}
+
+// SetPrevious adds the previous to the get o auth pod log params
+func (o *GetOAuthPodLogParams) SetPrevious(previous *string) {
+	o.Previous = previous
+}
+
 // WithSinceTime adds the sinceTime to the get o auth pod log params
 func (o *GetOAuthPodLogParams) WithSinceTime(sinceTime *strfmt.DateTime) *GetOAuthPodLogParams {
 	o.SetSinceTime(sinceTime)
@@ -271,6 +315,17 @@ func (o *GetOAuthPodLogParams) WithSinceTime(sinceTime *strfmt.DateTime) *GetOAu
 // SetSinceTime adds the sinceTime to the get o auth pod log params
 func (o *GetOAuthPodLogParams) SetSinceTime(sinceTime *strfmt.DateTime) {
 	o.SinceTime = sinceTime
+}
+
+// WithType adds the typeVar to the get o auth pod log params
+func (o *GetOAuthPodLogParams) WithType(typeVar string) *GetOAuthPodLogParams {
+	o.SetType(typeVar)
+	return o
+}
+
+// SetType adds the type to the get o auth pod log params
+func (o *GetOAuthPodLogParams) SetType(typeVar string) {
+	o.Type = typeVar
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -329,6 +384,23 @@ func (o *GetOAuthPodLogParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		}
 	}
 
+	if o.Follow != nil {
+
+		// query param follow
+		var qrFollow string
+
+		if o.Follow != nil {
+			qrFollow = *o.Follow
+		}
+		qFollow := qrFollow
+		if qFollow != "" {
+
+			if err := r.SetQueryParam("follow", qFollow); err != nil {
+				return err
+			}
+		}
+	}
+
 	if o.Lines != nil {
 
 		// query param lines
@@ -351,6 +423,23 @@ func (o *GetOAuthPodLogParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		return err
 	}
 
+	if o.Previous != nil {
+
+		// query param previous
+		var qrPrevious string
+
+		if o.Previous != nil {
+			qrPrevious = *o.Previous
+		}
+		qPrevious := qrPrevious
+		if qPrevious != "" {
+
+			if err := r.SetQueryParam("previous", qPrevious); err != nil {
+				return err
+			}
+		}
+	}
+
 	if o.SinceTime != nil {
 
 		// query param sinceTime
@@ -366,6 +455,11 @@ func (o *GetOAuthPodLogParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 				return err
 			}
 		}
+	}
+
+	// path param type
+	if err := r.SetPathParam("type", o.Type); err != nil {
+		return err
 	}
 
 	if len(res) > 0 {

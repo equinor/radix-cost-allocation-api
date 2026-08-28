@@ -1,15 +1,24 @@
-package utils
+package controller
 
 import (
 	"io"
 	"net/http"
 
-	radixhttp "github.com/equinor/radix-common/net/http"
+	radixhttp "github.com/equinor/radix-cost-allocation-api/internal/http"
 	"github.com/rs/zerolog"
 )
 
+// Controller Pattern of an rest/stream controller
+type Controller interface {
+	GetRoutes() Routes
+}
+
+// DefaultController Default implementation
+type DefaultController struct {
+}
+
 // ErrorResponseForServer Marshals error for server requester
-func ErrorResponseForServer(w http.ResponseWriter, r *http.Request, apiError error) {
+func (*DefaultController) ErrorResponseForServer(w http.ResponseWriter, r *http.Request, apiError error) {
 	err := radixhttp.ErrorResponseForServer(w, r, apiError)
 	if err != nil {
 		zerolog.Ctx(r.Context()).Error().Err(err).Msgf("%s %s: failed to write server response", r.Method, r.URL.Path)
@@ -17,7 +26,7 @@ func ErrorResponseForServer(w http.ResponseWriter, r *http.Request, apiError err
 }
 
 // JSONResponse Marshals response with header
-func JSONResponse(w http.ResponseWriter, r *http.Request, result interface{}) {
+func (*DefaultController) JSONResponse(w http.ResponseWriter, r *http.Request, result any) {
 	err := radixhttp.JSONResponse(w, r, result)
 	if err != nil {
 		zerolog.Ctx(r.Context()).Error().Err(err).Msgf("%s %s: failed to write response", r.Method, r.URL.Path)
@@ -26,7 +35,7 @@ func JSONResponse(w http.ResponseWriter, r *http.Request, result interface{}) {
 
 // ReaderFileResponse writes the content from the reader to the response,
 // and sets Content-Disposition=attachment; filename=<filename arg>
-func ReaderFileResponse(w http.ResponseWriter, r *http.Request, reader io.Reader, fileName, contentType string) {
+func (*DefaultController) ReaderFileResponse(w http.ResponseWriter, r *http.Request, reader io.Reader, fileName, contentType string) {
 	err := radixhttp.ReaderFileResponse(w, reader, fileName, contentType)
 	if err != nil {
 		zerolog.Ctx(r.Context()).Error().Err(err).Msgf("%s %s: failed to write response", r.Method, r.URL.Path)

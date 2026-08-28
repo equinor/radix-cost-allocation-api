@@ -63,7 +63,7 @@ type LogParams struct {
 
 	/* ImpersonateGroup.
 
-	   Works only with custom setup of cluster. Allow impersonation of a comma-seperated list of test groups (Required if Impersonate-User is set)
+	   Works only with custom setup of cluster. Allow impersonation of a comma-separated list of test groups (Required if Impersonate-User is set)
 	*/
 	ImpersonateGroup *string
 
@@ -98,6 +98,14 @@ type LogParams struct {
 	   Format: boolean
 	*/
 	File *string
+
+	/* Follow.
+
+	   Get log as a server-sent event stream if true
+
+	   Format: boolean
+	*/
+	Follow *string
 
 	/* Lines.
 
@@ -248,6 +256,17 @@ func (o *LogParams) SetFile(file *string) {
 	o.File = file
 }
 
+// WithFollow adds the follow to the log params
+func (o *LogParams) WithFollow(follow *string) *LogParams {
+	o.SetFollow(follow)
+	return o
+}
+
+// SetFollow adds the follow to the log params
+func (o *LogParams) SetFollow(follow *string) {
+	o.Follow = follow
+}
+
 // WithLines adds the lines to the log params
 func (o *LogParams) WithLines(lines *string) *LogParams {
 	o.SetLines(lines)
@@ -343,6 +362,23 @@ func (o *LogParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry)
 		if qFile != "" {
 
 			if err := r.SetQueryParam("file", qFile); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Follow != nil {
+
+		// query param follow
+		var qrFollow string
+
+		if o.Follow != nil {
+			qrFollow = *o.Follow
+		}
+		qFollow := qrFollow
+		if qFollow != "" {
+
+			if err := r.SetQueryParam("follow", qFollow); err != nil {
 				return err
 			}
 		}

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	radixmodels "github.com/equinor/radix-common/models"
-	radixhttp "github.com/equinor/radix-common/net/http"
+	"github.com/equinor/radix-cost-allocation-api/internal/accounts"
+	"github.com/equinor/radix-cost-allocation-api/internal/http"
 	"github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api"
 	"github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/client/application"
@@ -18,13 +18,13 @@ import (
 
 // CostHandler Instance variables
 type CostHandler struct {
-	accounts    radixmodels.Accounts
+	accounts    accounts.Accounts
 	radixapi    radix_api.RadixAPIClient
 	costService service.CostService
 }
 
 // NewCostHandler Constructor
-func NewCostHandler(accounts radixmodels.Accounts, radixapi radix_api.RadixAPIClient, costService service.CostService) CostHandler {
+func NewCostHandler(accounts accounts.Accounts, radixapi radix_api.RadixAPIClient, costService service.CostService) CostHandler {
 	return CostHandler{
 		accounts:    accounts,
 		radixapi:    radixapi,
@@ -82,7 +82,7 @@ func (costHandler *CostHandler) GetFutureCost(ctx context.Context, appName strin
 
 	err = fmt.Errorf("user does not have access to application %s", appName)
 	zerolog.Ctx(ctx).Debug().Msg(err.Error())
-	return nil, radixhttp.ApplicationNotFoundError("Application was not found.", err)
+	return nil, http.ApplicationNotFoundError("Application was not found.", err)
 }
 
 func (costHandler *CostHandler) filterApplicationsByAccess(rrMap map[string]*radix_api.RadixApplicationDetails, applicationCosts []models.ApplicationCost) []models.ApplicationCost {
@@ -125,10 +125,5 @@ func (costHandler *CostHandler) getRadixApplicationDetails(appName string) (*rad
 	if err != nil || appDetails == nil {
 		return nil, err
 	}
-	return &radix_api.RadixApplicationDetails{
-		Name:    appDetails.Name,
-		Creator: appDetails.Creator,
-		Owner:   appDetails.Owner,
-		WBS:     appDetails.WBS,
-	}, nil
+	return appDetails, nil
 }

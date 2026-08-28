@@ -75,8 +75,8 @@ func (cr *CostReport) Create(out io.Writer) error {
 func (cr *CostReport) organiseData(numberOfRows int, params ...[]string) [][]string {
 	numberOfCols := len(params)
 	data := make([][]string, numberOfRows)
-	for i := 0; i < numberOfRows; i++ {
-		for j := 0; j < numberOfCols; j++ {
+	for i := range numberOfRows {
+		for j := range numberOfCols {
 			data[i] = append(data[i], params[j][i])
 		}
 	}

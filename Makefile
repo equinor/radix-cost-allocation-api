@@ -34,12 +34,12 @@ swagger: bootstrap
 .PHONY: mocks
 mocks: bootstrap
 	mockgen -source ./repository/repository.go -destination ./repository/mock/repository_mock.go -package mock
-	mockgen -source ./models/radix_api/client.go -destination ./api/test/mock/radix_api_client_mock.go -package mock
-	mockgen -source ./api/utils/auth/auth_provider.go -destination ./api/test/mock/auth_provider_mock.go -package mock
+	mockgen -source ./models/radix_api/client.go -destination ./internal/test/mock/radix_api_client_mock.go -package mock
+	mockgen -source ./internal/auth/auth_provider.go -destination ./internal/test/mock/auth_provider_mock.go -package mock
 	mockgen -source ./service/costservice.go -destination ./service/mock/costservice.go -package mock
 
 .PHONY: generate
-generate: radixconfigs mocks swagger
+generate: radixconfigs mocks swagger radixapiclient
 
 .PHONY: verify-generate
 verify-generate: generate

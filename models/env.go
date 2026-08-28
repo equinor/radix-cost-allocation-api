@@ -11,7 +11,6 @@ import (
 
 // Env instance variables
 type Env struct {
-	APIEnvironment      string
 	ClusterName         string
 	DNSZone             string
 	UseLocalRadixApi    bool
@@ -29,7 +28,6 @@ func NewEnv() (*Env, error) {
 	var errs []error
 
 	var (
-		apiEnv              = os.Getenv("RADIX_ENVIRONMENT")
 		clusterName         = os.Getenv("RADIX_CLUSTERNAME")
 		dnsZone             = os.Getenv("RADIX_DNS_ZONE")
 		whiteList           = os.Getenv("WHITELIST")
@@ -40,9 +38,6 @@ func NewEnv() (*Env, error) {
 		audience            = os.Getenv("TOKEN_AUDIENCE")
 		allowedAdGroupsJson = os.Getenv("AD_REPORT_READERS")
 	)
-	if apiEnv == "" {
-		errs = append(errs, fmt.Errorf("environment variable RADIX_ENVIRONMENT is not set"))
-	}
 	if clusterName == "" {
 		errs = append(errs, fmt.Errorf("environment variable RADIX_CLUSTERNAME is not set"))
 	}
@@ -73,7 +68,6 @@ func NewEnv() (*Env, error) {
 	}
 
 	return &Env{
-		APIEnvironment:      apiEnv,
 		ClusterName:         clusterName,
 		DNSZone:             dnsZone,
 		Whitelist:           list,
@@ -95,7 +89,7 @@ func (env *Env) GetRadixAPIURL() string {
 	if env.UseLocalRadixApi {
 		return "localhost:3002"
 	} else {
-		return fmt.Sprintf("server-radix-api-%s.%s.%s", env.APIEnvironment, env.ClusterName, env.DNSZone)
+		return fmt.Sprintf("api.%s.%s", env.ClusterName, env.DNSZone)
 	}
 }
 

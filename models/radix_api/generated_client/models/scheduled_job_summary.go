@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 	"encoding/json"
+	stderrors "errors"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -21,6 +22,9 @@ import (
 // swagger:model ScheduledJobSummary
 type ScheduledJobSummary struct {
 
+	// Args to the entrypoint specified for the job.
+	Args []string `json:"args"`
+
 	// BackoffLimit Amount of retries due to a logical error in configuration etc.
 	// Example: 1
 	// Required: true
@@ -30,16 +34,24 @@ type ScheduledJobSummary struct {
 	// Example: \"batch-abc\
 	BatchName string `json:"batchName,omitempty"`
 
+	// Command is the entrypoint array specified for the job. Not executed within a shell.
+	Command []string `json:"command"`
+
 	// Created timestamp
-	// Example: 2006-01-02T15:04:05Z
-	Created string `json:"created,omitempty"`
+	// Format: date-time
+	Created strfmt.DateTime `json:"created,omitempty"`
+
+	// CronSchedule is the cron schedule expression, if this job was created by a cron schedule.
+	// Example: \"0 1 * * *\
+	CronSchedule string `json:"cronSchedule,omitempty"`
 
 	// DeploymentName name of RadixDeployment for the job
-	DeploymentName string `json:"deploymentName,omitempty"`
+	// Required: true
+	DeploymentName *string `json:"deploymentName"`
 
 	// Ended timestamp
-	// Example: 2006-01-02T15:04:05Z
-	Ended string `json:"ended,omitempty"`
+	// Format: date-time
+	Ended strfmt.DateTime `json:"ended,omitempty"`
 
 	// FailedCount is the number of times the job has failed
 	// Example: 1
@@ -56,7 +68,8 @@ type ScheduledJobSummary struct {
 
 	// Name of the scheduled job
 	// Example: job-component-20181029135644-algpv-6hznh
-	Name string `json:"name,omitempty"`
+	// Required: true
+	Name *string `json:"name"`
 
 	// Array of ReplicaSummary
 	ReplicaList []*ReplicaSummary `json:"replicaList"`
@@ -66,24 +79,38 @@ type ScheduledJobSummary struct {
 	Restart string `json:"Restart,omitempty"`
 
 	// Started timestamp
-	// Example: 2006-01-02T15:04:05Z
-	Started string `json:"started,omitempty"`
+	// Format: date-time
+	Started strfmt.DateTime `json:"started,omitempty"`
 
 	// Status of the job
+	// Running ScheduledBatchJobStatusRunning  ScheduledBatchJobStatusRunning Active
+	// Succeeded ScheduledBatchJobStatusSucceeded  ScheduledBatchJobStatusSucceeded Job succeeded
+	// Failed ScheduledBatchJobStatusFailed  ScheduledBatchJobStatusFailed Job failed
+	// Waiting ScheduledBatchJobStatusWaiting  ScheduledBatchJobStatusWaiting Job pending
+	// Stopping ScheduledBatchJobStatusStopping  ScheduledBatchJobStatusStopping job is stopping
+	// Stopped ScheduledBatchJobStatusStopped  ScheduledBatchJobStatusStopped job stopped
+	// Active ScheduledBatchJobStatusActive  ScheduledBatchJobStatusActive job, one or more pods are not ready
+	// Completed ScheduledBatchJobStatusCompleted  ScheduledBatchJobStatusCompleted batch jobs are completed
 	// Example: Waiting
 	// Required: true
-	// Enum: ["Running","Active","Succeeded","Failed","Waiting","Stopping","Stopped"]
+	// Enum: ["Running","Succeeded","Failed","Waiting","Stopping","Stopped","Active","Completed"]
 	Status *string `json:"status"`
 
 	// TimeLimitSeconds How long the job supposed to run at maximum
 	// Example: 3600
 	TimeLimitSeconds int64 `json:"timeLimitSeconds,omitempty"`
 
+	// Variable names map to values specified for this job.
+	Variables map[string]string `json:"variables,omitempty"`
+
 	// node
 	Node *Node `json:"node,omitempty"`
 
 	// resources
 	Resources *ResourceRequirements `json:"resources,omitempty"`
+
+	// runtime
+	Runtime *Runtime `json:"runtime,omitempty"`
 }
 
 // Validate validates this scheduled job summary
@@ -94,11 +121,31 @@ func (m *ScheduledJobSummary) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateCreated(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateDeploymentName(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateEnded(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateFailedCount(formats); err != nil {
 		res = append(res, err)
 	}
 
+	if err := m.validateName(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateReplicaList(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStarted(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -111,6 +158,10 @@ func (m *ScheduledJobSummary) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateResources(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRuntime(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -129,9 +180,51 @@ func (m *ScheduledJobSummary) validateBackoffLimit(formats strfmt.Registry) erro
 	return nil
 }
 
+func (m *ScheduledJobSummary) validateCreated(formats strfmt.Registry) error {
+	if swag.IsZero(m.Created) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("created", "body", "date-time", m.Created.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ScheduledJobSummary) validateDeploymentName(formats strfmt.Registry) error {
+
+	if err := validate.Required("deploymentName", "body", m.DeploymentName); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ScheduledJobSummary) validateEnded(formats strfmt.Registry) error {
+	if swag.IsZero(m.Ended) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("ended", "body", "date-time", m.Ended.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m *ScheduledJobSummary) validateFailedCount(formats strfmt.Registry) error {
 
 	if err := validate.Required("failedCount", "body", m.FailedCount); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ScheduledJobSummary) validateName(formats strfmt.Registry) error {
+
+	if err := validate.Required("name", "body", m.Name); err != nil {
 		return err
 	}
 
@@ -150,11 +243,15 @@ func (m *ScheduledJobSummary) validateReplicaList(formats strfmt.Registry) error
 
 		if m.ReplicaList[i] != nil {
 			if err := m.ReplicaList[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
 					return ve.ValidateName("replicaList" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
 					return ce.ValidateName("replicaList" + "." + strconv.Itoa(i))
 				}
+
 				return err
 			}
 		}
@@ -164,11 +261,23 @@ func (m *ScheduledJobSummary) validateReplicaList(formats strfmt.Registry) error
 	return nil
 }
 
-var scheduledJobSummaryTypeStatusPropEnum []interface{}
+func (m *ScheduledJobSummary) validateStarted(formats strfmt.Registry) error {
+	if swag.IsZero(m.Started) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("started", "body", "date-time", m.Started.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+var scheduledJobSummaryTypeStatusPropEnum []any
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["Running","Active","Succeeded","Failed","Waiting","Stopping","Stopped"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["Running","Succeeded","Failed","Waiting","Stopping","Stopped","Active","Completed"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -180,9 +289,6 @@ const (
 
 	// ScheduledJobSummaryStatusRunning captures enum value "Running"
 	ScheduledJobSummaryStatusRunning string = "Running"
-
-	// ScheduledJobSummaryStatusActive captures enum value "Active"
-	ScheduledJobSummaryStatusActive string = "Active"
 
 	// ScheduledJobSummaryStatusSucceeded captures enum value "Succeeded"
 	ScheduledJobSummaryStatusSucceeded string = "Succeeded"
@@ -198,6 +304,12 @@ const (
 
 	// ScheduledJobSummaryStatusStopped captures enum value "Stopped"
 	ScheduledJobSummaryStatusStopped string = "Stopped"
+
+	// ScheduledJobSummaryStatusActive captures enum value "Active"
+	ScheduledJobSummaryStatusActive string = "Active"
+
+	// ScheduledJobSummaryStatusCompleted captures enum value "Completed"
+	ScheduledJobSummaryStatusCompleted string = "Completed"
 )
 
 // prop value enum
@@ -229,11 +341,15 @@ func (m *ScheduledJobSummary) validateNode(formats strfmt.Registry) error {
 
 	if m.Node != nil {
 		if err := m.Node.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("node")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("node")
 			}
+
 			return err
 		}
 	}
@@ -248,11 +364,38 @@ func (m *ScheduledJobSummary) validateResources(formats strfmt.Registry) error {
 
 	if m.Resources != nil {
 		if err := m.Resources.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("resources")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("resources")
 			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ScheduledJobSummary) validateRuntime(formats strfmt.Registry) error {
+	if swag.IsZero(m.Runtime) { // not required
+		return nil
+	}
+
+	if m.Runtime != nil {
+		if err := m.Runtime.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("runtime")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("runtime")
+			}
+
 			return err
 		}
 	}
@@ -276,6 +419,10 @@ func (m *ScheduledJobSummary) ContextValidate(ctx context.Context, formats strfm
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateRuntime(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -293,11 +440,15 @@ func (m *ScheduledJobSummary) contextValidateReplicaList(ctx context.Context, fo
 			}
 
 			if err := m.ReplicaList[i].ContextValidate(ctx, formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
 					return ve.ValidateName("replicaList" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
 					return ce.ValidateName("replicaList" + "." + strconv.Itoa(i))
 				}
+
 				return err
 			}
 		}
@@ -316,11 +467,15 @@ func (m *ScheduledJobSummary) contextValidateNode(ctx context.Context, formats s
 		}
 
 		if err := m.Node.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("node")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("node")
 			}
+
 			return err
 		}
 	}
@@ -337,11 +492,40 @@ func (m *ScheduledJobSummary) contextValidateResources(ctx context.Context, form
 		}
 
 		if err := m.Resources.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("resources")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("resources")
 			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ScheduledJobSummary) contextValidateRuntime(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Runtime != nil {
+
+		if swag.IsZero(m.Runtime) { // not required
+			return nil
+		}
+
+		if err := m.Runtime.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("runtime")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("runtime")
+			}
+
 			return err
 		}
 	}
