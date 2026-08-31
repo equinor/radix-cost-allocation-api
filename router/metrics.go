@@ -3,6 +3,7 @@ package router
 import (
 	"net/http"
 
+	"github.com/equinor/radix-cost-allocation-api/internal/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/negroni/v3"
@@ -17,7 +18,7 @@ func NewMetricsHandler() http.Handler {
 	rec.PrintStack = false
 	n := negroni.New(
 		rec,
-		NewZerologHandler(log.Logger),
+		middleware.NewZerologRequestLogger(log.Logger),
 	)
 	n.UseHandler(serveMux)
 

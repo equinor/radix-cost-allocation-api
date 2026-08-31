@@ -7,6 +7,9 @@ package models
 
 import (
 	"context"
+	"encoding/json"
+	stderrors "errors"
+	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -19,16 +22,30 @@ import (
 // swagger:model OAuth2AuxiliaryResource
 type OAuth2AuxiliaryResource struct {
 
-	// deployment
-	// Required: true
-	Deployment *AuxiliaryResourceDeployment `json:"deployment"`
+	// Deployments describes the underlying Kubernetes deployments for the resource
+	Deployments []*AuxiliaryResourceDeployment `json:"deployments"`
+
+	// SessionStoreType type of session store
+	// Enum: ["cookie","redis","systemManaged","\"\""]
+	SessionStoreType string `json:"sessionStoreType,omitempty"`
+
+	// identity
+	Identity *Identity `json:"identity,omitempty"`
 }
 
 // Validate validates this o auth2 auxiliary resource
 func (m *OAuth2AuxiliaryResource) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateDeployment(formats); err != nil {
+	if err := m.validateDeployments(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateSessionStoreType(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateIdentity(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -38,19 +55,100 @@ func (m *OAuth2AuxiliaryResource) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *OAuth2AuxiliaryResource) validateDeployment(formats strfmt.Registry) error {
+func (m *OAuth2AuxiliaryResource) validateDeployments(formats strfmt.Registry) error {
+	if swag.IsZero(m.Deployments) { // not required
+		return nil
+	}
 
-	if err := validate.Required("deployment", "body", m.Deployment); err != nil {
+	for i := 0; i < len(m.Deployments); i++ {
+		if swag.IsZero(m.Deployments[i]) { // not required
+			continue
+		}
+
+		if m.Deployments[i] != nil {
+			if err := m.Deployments[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("deployments" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("deployments" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+var oAuth2AuxiliaryResourceTypeSessionStoreTypePropEnum []any
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["cookie","redis","systemManaged","\"\""]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		oAuth2AuxiliaryResourceTypeSessionStoreTypePropEnum = append(oAuth2AuxiliaryResourceTypeSessionStoreTypePropEnum, v)
+	}
+}
+
+const (
+
+	// OAuth2AuxiliaryResourceSessionStoreTypeCookie captures enum value "cookie"
+	OAuth2AuxiliaryResourceSessionStoreTypeCookie string = "cookie"
+
+	// OAuth2AuxiliaryResourceSessionStoreTypeRedis captures enum value "redis"
+	OAuth2AuxiliaryResourceSessionStoreTypeRedis string = "redis"
+
+	// OAuth2AuxiliaryResourceSessionStoreTypeSystemManaged captures enum value "systemManaged"
+	OAuth2AuxiliaryResourceSessionStoreTypeSystemManaged string = "systemManaged"
+
+	// OAuth2AuxiliaryResourceSessionStoreType captures enum value "\"\""
+	OAuth2AuxiliaryResourceSessionStoreType string = "\"\""
+)
+
+// prop value enum
+func (m *OAuth2AuxiliaryResource) validateSessionStoreTypeEnum(path, location string, value string) error {
+	if err := validate.EnumCase(path, location, value, oAuth2AuxiliaryResourceTypeSessionStoreTypePropEnum, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *OAuth2AuxiliaryResource) validateSessionStoreType(formats strfmt.Registry) error {
+	if swag.IsZero(m.SessionStoreType) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validateSessionStoreTypeEnum("sessionStoreType", "body", m.SessionStoreType); err != nil {
 		return err
 	}
 
-	if m.Deployment != nil {
-		if err := m.Deployment.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("deployment")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("deployment")
+	return nil
+}
+
+func (m *OAuth2AuxiliaryResource) validateIdentity(formats strfmt.Registry) error {
+	if swag.IsZero(m.Identity) { // not required
+		return nil
+	}
+
+	if m.Identity != nil {
+		if err := m.Identity.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("identity")
 			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("identity")
+			}
+
 			return err
 		}
 	}
@@ -62,7 +160,11 @@ func (m *OAuth2AuxiliaryResource) validateDeployment(formats strfmt.Registry) er
 func (m *OAuth2AuxiliaryResource) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.contextValidateDeployment(ctx, formats); err != nil {
+	if err := m.contextValidateDeployments(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateIdentity(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -72,16 +174,53 @@ func (m *OAuth2AuxiliaryResource) ContextValidate(ctx context.Context, formats s
 	return nil
 }
 
-func (m *OAuth2AuxiliaryResource) contextValidateDeployment(ctx context.Context, formats strfmt.Registry) error {
+func (m *OAuth2AuxiliaryResource) contextValidateDeployments(ctx context.Context, formats strfmt.Registry) error {
 
-	if m.Deployment != nil {
+	for i := 0; i < len(m.Deployments); i++ {
 
-		if err := m.Deployment.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("deployment")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("deployment")
+		if m.Deployments[i] != nil {
+
+			if swag.IsZero(m.Deployments[i]) { // not required
+				return nil
 			}
+
+			if err := m.Deployments[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("deployments" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("deployments" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *OAuth2AuxiliaryResource) contextValidateIdentity(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Identity != nil {
+
+		if swag.IsZero(m.Identity) { // not required
+			return nil
+		}
+
+		if err := m.Identity.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("identity")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("identity")
+			}
+
 			return err
 		}
 	}

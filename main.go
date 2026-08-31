@@ -21,7 +21,7 @@ import (
 
 	"github.com/equinor/radix-cost-allocation-api/api/cost"
 	"github.com/equinor/radix-cost-allocation-api/api/report"
-	"github.com/equinor/radix-cost-allocation-api/api/utils/auth"
+	"github.com/equinor/radix-cost-allocation-api/internal/auth"
 	models "github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/equinor/radix-cost-allocation-api/router"
 	"github.com/rs/zerolog"
@@ -91,14 +91,12 @@ func shutdownServersGracefulOnSignal(servers ...*http.Server) {
 	var wg sync.WaitGroup
 
 	for _, srv := range servers {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			log.Info().Msgf("Shutting down server on address %s", srv.Addr)
 			if err := srv.Shutdown(shutdownCtx); err != nil {
 				log.Warn().Err(err).Msgf("shutdown of server on address %s returned an error", srv.Addr)
 			}
-		}()
+		})
 	}
 
 	wg.Wait()

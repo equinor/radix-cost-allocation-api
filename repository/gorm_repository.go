@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	commongorm "github.com/equinor/radix-common/pkg/gorm"
+	"github.com/equinor/radix-cost-allocation-api/internal/log"
 	"github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/microsoft/go-mssqldb/azuread"
 	"gorm.io/driver/sqlserver"
@@ -26,7 +26,7 @@ func OpenGormSqlServerDB(server, database string, port int) (*gorm.DB, error) {
 
 	return gorm.Open(dialector, &gorm.Config{
 		DisableAutomaticPing: false,
-		Logger:               commongorm.NewLogger(),
+		Logger:               log.ZerologGormAdapterLogger{},
 	})
 }
 

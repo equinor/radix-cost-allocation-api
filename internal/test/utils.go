@@ -7,20 +7,20 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/equinor/radix-common/models"
-	"github.com/equinor/radix-cost-allocation-api/api/utils/auth"
+	"github.com/equinor/radix-cost-allocation-api/internal/auth"
+	"github.com/equinor/radix-cost-allocation-api/internal/controller"
 	"github.com/equinor/radix-cost-allocation-api/router"
 )
 
 // Utils Instance variables
 type Utils struct {
-	controllers     []models.Controller
+	controllers     []controller.Controller
 	authProvider    auth.AuthProvider
 	allowedAdGroups []string
 }
 
 // NewTestUtils Constructor
-func NewTestUtils(controllers ...models.Controller) Utils {
+func NewTestUtils(controllers ...controller.Controller) Utils {
 	return Utils{
 		controllers,
 		nil,
@@ -43,7 +43,7 @@ func (tu *Utils) ExecuteRequest(method, endpoint string) *httptest.ResponseRecor
 }
 
 // ExecuteRequestWithParameters Helper method to issue a http request with payload
-func (tu *Utils) ExecuteRequestWithParameters(method, endpoint string, parameters interface{}) *httptest.ResponseRecorder {
+func (tu *Utils) ExecuteRequestWithParameters(method, endpoint string, parameters any) *httptest.ResponseRecorder {
 	var reader io.Reader
 
 	if parameters != nil {
@@ -62,7 +62,7 @@ func (tu *Utils) ExecuteRequestWithParameters(method, endpoint string, parameter
 }
 
 // GetResponseBody Gets response payload as type
-func GetResponseBody(response *httptest.ResponseRecorder, target interface{}) error {
+func GetResponseBody(response *httptest.ResponseRecorder, target any) error {
 	body, _ := io.ReadAll(response.Body)
 	return json.Unmarshal(body, target)
 }

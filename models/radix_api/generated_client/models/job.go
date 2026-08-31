@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 	"encoding/json"
+	stderrors "errors"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -38,6 +39,13 @@ type Job struct {
 	// Example: 2006-01-02T15:04:05Z
 	Created string `json:"created,omitempty"`
 
+	// DeployExternalDNS deploy external DNS
+	DeployExternalDNS *bool `json:"deployExternalDNS,omitempty"`
+
+	// DeployedToEnvironment the name of the environment that was deployed to
+	// Example: qa
+	DeployedToEnvironment string `json:"deployedToEnvironment,omitempty"`
+
 	// Array of deployments
 	Deployments []*DeploymentSummary `json:"deployments"`
 
@@ -45,17 +53,32 @@ type Job struct {
 	// Example: 2006-01-02T15:04:05Z
 	Ended string `json:"ended,omitempty"`
 
+	// GitRef Branch or tag to build from
+	// Example: master
+	GitRef string `json:"gitRef,omitempty"`
+
+	// GitRefType When the pipeline job should be built from branch or tag specified in GitRef:
+	// branch
+	// tag
+	// <empty> - either branch or tag
+	// Example: branch
+	// Enum: ["branch","tag","\"\""]
+	GitRefType string `json:"gitRefType,omitempty"`
+
 	// Image tags names for components - if empty will use default logic
-	// Example: component1: tag1,component2: tag2
+	// Example: {"component1":"tag1","component2":"tag2"}
 	ImageTagNames map[string]string `json:"imageTagNames,omitempty"`
 
 	// Name of the job
 	// Example: radix-pipeline-20181029135644-algpv-6hznh
 	Name string `json:"name,omitempty"`
 
+	// OverrideUseBuildCache override default or configured build cache option
+	OverrideUseBuildCache *bool `json:"overrideUseBuildCache,omitempty"`
+
 	// Name of the pipeline
 	// Example: build-deploy
-	// Enum: ["build","build-deploy","promote","deploy"]
+	// Enum: ["build","build-deploy","promote","deploy","apply-config"]
 	Pipeline string `json:"pipeline,omitempty"`
 
 	// RadixDeployment name, which is promoted
@@ -68,6 +91,9 @@ type Job struct {
 	// PromotedToEnvironment the name of the environment that was promoted to
 	// Example: qa
 	PromotedToEnvironment string `json:"promotedToEnvironment,omitempty"`
+
+	// RefreshBuildCache forces to rebuild cache when UseBuildCache is true in the RadixApplication or OverrideUseBuildCache is true
+	RefreshBuildCache *bool `json:"refreshBuildCache,omitempty"`
 
 	// RerunFromJob The source name of the job if this job was restarted from it
 	// Example: radix-pipeline-20231011104617-urynf
@@ -88,6 +114,13 @@ type Job struct {
 	// TriggeredBy user that triggered the job. If through webhook = sender.login. If through api = usertoken.upn
 	// Example: a_user@equinor.com
 	TriggeredBy string `json:"triggeredBy,omitempty"`
+
+	// TriggeredFromWebhook If true, the job was triggered from a webhook
+	// Required: true
+	TriggeredFromWebhook *bool `json:"triggeredFromWebhook"`
+
+	// Defaults to true.
+	UseBuildCache *bool `json:"useBuildCache,omitempty"`
 }
 
 // Validate validates this job
@@ -102,6 +135,10 @@ func (m *Job) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateGitRefType(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validatePipeline(formats); err != nil {
 		res = append(res, err)
 	}
@@ -111,6 +148,10 @@ func (m *Job) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateSteps(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateTriggeredFromWebhook(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -132,11 +173,15 @@ func (m *Job) validateComponents(formats strfmt.Registry) error {
 
 		if m.Components[i] != nil {
 			if err := m.Components[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
 					return ve.ValidateName("components" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
 					return ce.ValidateName("components" + "." + strconv.Itoa(i))
 				}
+
 				return err
 			}
 		}
@@ -158,11 +203,15 @@ func (m *Job) validateDeployments(formats strfmt.Registry) error {
 
 		if m.Deployments[i] != nil {
 			if err := m.Deployments[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
 					return ve.ValidateName("deployments" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
 					return ce.ValidateName("deployments" + "." + strconv.Itoa(i))
 				}
+
 				return err
 			}
 		}
@@ -172,11 +221,56 @@ func (m *Job) validateDeployments(formats strfmt.Registry) error {
 	return nil
 }
 
-var jobTypePipelinePropEnum []interface{}
+var jobTypeGitRefTypePropEnum []any
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["build","build-deploy","promote","deploy"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["branch","tag","\"\""]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		jobTypeGitRefTypePropEnum = append(jobTypeGitRefTypePropEnum, v)
+	}
+}
+
+const (
+
+	// JobGitRefTypeBranch captures enum value "branch"
+	JobGitRefTypeBranch string = "branch"
+
+	// JobGitRefTypeTag captures enum value "tag"
+	JobGitRefTypeTag string = "tag"
+
+	// JobGitRefType captures enum value "\"\""
+	JobGitRefType string = "\"\""
+)
+
+// prop value enum
+func (m *Job) validateGitRefTypeEnum(path, location string, value string) error {
+	if err := validate.EnumCase(path, location, value, jobTypeGitRefTypePropEnum, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *Job) validateGitRefType(formats strfmt.Registry) error {
+	if swag.IsZero(m.GitRefType) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validateGitRefTypeEnum("gitRefType", "body", m.GitRefType); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+var jobTypePipelinePropEnum []any
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["build","build-deploy","promote","deploy","apply-config"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -197,6 +291,9 @@ const (
 
 	// JobPipelineDeploy captures enum value "deploy"
 	JobPipelineDeploy string = "deploy"
+
+	// JobPipelineApplyDashConfig captures enum value "apply-config"
+	JobPipelineApplyDashConfig string = "apply-config"
 )
 
 // prop value enum
@@ -220,7 +317,7 @@ func (m *Job) validatePipeline(formats strfmt.Registry) error {
 	return nil
 }
 
-var jobTypeStatusPropEnum []interface{}
+var jobTypeStatusPropEnum []any
 
 func init() {
 	var res []string
@@ -292,15 +389,28 @@ func (m *Job) validateSteps(formats strfmt.Registry) error {
 
 		if m.Steps[i] != nil {
 			if err := m.Steps[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
 					return ve.ValidateName("steps" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
 					return ce.ValidateName("steps" + "." + strconv.Itoa(i))
 				}
+
 				return err
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *Job) validateTriggeredFromWebhook(formats strfmt.Registry) error {
+
+	if err := validate.Required("triggeredFromWebhook", "body", m.TriggeredFromWebhook); err != nil {
+		return err
 	}
 
 	return nil
@@ -339,11 +449,15 @@ func (m *Job) contextValidateComponents(ctx context.Context, formats strfmt.Regi
 			}
 
 			if err := m.Components[i].ContextValidate(ctx, formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
 					return ve.ValidateName("components" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
 					return ce.ValidateName("components" + "." + strconv.Itoa(i))
 				}
+
 				return err
 			}
 		}
@@ -364,11 +478,15 @@ func (m *Job) contextValidateDeployments(ctx context.Context, formats strfmt.Reg
 			}
 
 			if err := m.Deployments[i].ContextValidate(ctx, formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
 					return ve.ValidateName("deployments" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
 					return ce.ValidateName("deployments" + "." + strconv.Itoa(i))
 				}
+
 				return err
 			}
 		}
@@ -389,11 +507,15 @@ func (m *Job) contextValidateSteps(ctx context.Context, formats strfmt.Registry)
 			}
 
 			if err := m.Steps[i].ContextValidate(ctx, formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
 					return ve.ValidateName("steps" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
 					return ce.ValidateName("steps" + "." + strconv.Itoa(i))
 				}
+
 				return err
 			}
 		}

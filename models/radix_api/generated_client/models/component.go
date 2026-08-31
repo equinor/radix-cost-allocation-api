@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 	"encoding/json"
+	stderrors "errors"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -24,6 +25,10 @@ type Component struct {
 	// Commit ID for the component. It can be different from the Commit ID, specified in deployment label
 	// Example: 4faca8595c5283a9d0f17a623b9255a0d9866a2e
 	CommitID string `json:"commitID,omitempty"`
+
+	// Cron schedules defined for a job component
+	// Example: ["0 0 * * *","*/5 * * * *"]
+	CronSchedules []string `json:"cronSchedules"`
 
 	// Array of external DNS configurations
 	ExternalDNS []*ExternalDNS `json:"externalDNS"`
@@ -42,15 +47,24 @@ type Component struct {
 	// Required: true
 	Name *string `json:"name"`
 
+	// NextRun is the next time the job component's cron schedule is due to run, if a cron schedule is configured.
+	// It is the earliest next run across all configured schedules, interpreted in the configured timezone and returned as a UTC timestamp.
+	// Format: date-time
+	NextRun strfmt.DateTime `json:"nextRun,omitempty"`
+
 	// Ports defines the port number and protocol that a component is exposed for internally in environment
 	Ports []*Port `json:"ports"`
 
 	// Array of ReplicaSummary
 	ReplicaList []*ReplicaSummary `json:"replicaList"`
 
-	// Array of pod names
+	// Deprecated: Array of pod names. Use ReplicaList instead
 	// Example: ["server-78fc8857c4-hm76l","server-78fc8857c4-asfa2"]
 	Replicas []string `json:"replicas"`
+
+	// Set if manual control of replicas is in place. Not set means automatic control, 0 means stopped and >= 1 is manually scaled.
+	// Example: 5
+	ReplicasOverride *int64 `json:"replicasOverride,omitempty"`
 
 	// ScheduledJobPayloadPath defines the payload path, where payload for Job Scheduler will be mapped as a file. From radixconfig.yaml
 	// Example: \"/tmp/payload\
@@ -96,6 +110,9 @@ type Component struct {
 
 	// resources
 	Resources *ResourceRequirements `json:"resources,omitempty"`
+
+	// runtime
+	Runtime *Runtime `json:"runtime,omitempty"`
 }
 
 // Validate validates this component
@@ -111,6 +128,10 @@ func (m *Component) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateName(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateNextRun(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -150,6 +171,10 @@ func (m *Component) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateRuntime(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -168,11 +193,15 @@ func (m *Component) validateExternalDNS(formats strfmt.Registry) error {
 
 		if m.ExternalDNS[i] != nil {
 			if err := m.ExternalDNS[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
 					return ve.ValidateName("externalDNS" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
 					return ce.ValidateName("externalDNS" + "." + strconv.Itoa(i))
 				}
+
 				return err
 			}
 		}
@@ -200,6 +229,18 @@ func (m *Component) validateName(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *Component) validateNextRun(formats strfmt.Registry) error {
+	if swag.IsZero(m.NextRun) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("nextRun", "body", "date-time", m.NextRun.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m *Component) validatePorts(formats strfmt.Registry) error {
 	if swag.IsZero(m.Ports) { // not required
 		return nil
@@ -212,11 +253,15 @@ func (m *Component) validatePorts(formats strfmt.Registry) error {
 
 		if m.Ports[i] != nil {
 			if err := m.Ports[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
 					return ve.ValidateName("ports" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
 					return ce.ValidateName("ports" + "." + strconv.Itoa(i))
 				}
+
 				return err
 			}
 		}
@@ -238,11 +283,15 @@ func (m *Component) validateReplicaList(formats strfmt.Registry) error {
 
 		if m.ReplicaList[i] != nil {
 			if err := m.ReplicaList[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
 					return ve.ValidateName("replicaList" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
 					return ce.ValidateName("replicaList" + "." + strconv.Itoa(i))
 				}
+
 				return err
 			}
 		}
@@ -252,7 +301,7 @@ func (m *Component) validateReplicaList(formats strfmt.Registry) error {
 	return nil
 }
 
-var componentTypeStatusPropEnum []interface{}
+var componentTypeStatusPropEnum []any
 
 func init() {
 	var res []string
@@ -303,7 +352,7 @@ func (m *Component) validateStatus(formats strfmt.Registry) error {
 	return nil
 }
 
-var componentTypeTypePropEnum []interface{}
+var componentTypeTypePropEnum []any
 
 func init() {
 	var res []string
@@ -353,11 +402,15 @@ func (m *Component) validateHorizontalScalingSummary(formats strfmt.Registry) er
 
 	if m.HorizontalScalingSummary != nil {
 		if err := m.HorizontalScalingSummary.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("horizontalScalingSummary")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("horizontalScalingSummary")
 			}
+
 			return err
 		}
 	}
@@ -372,11 +425,15 @@ func (m *Component) validateIdentity(formats strfmt.Registry) error {
 
 	if m.Identity != nil {
 		if err := m.Identity.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("identity")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("identity")
 			}
+
 			return err
 		}
 	}
@@ -391,11 +448,15 @@ func (m *Component) validateNotifications(formats strfmt.Registry) error {
 
 	if m.Notifications != nil {
 		if err := m.Notifications.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("notifications")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("notifications")
 			}
+
 			return err
 		}
 	}
@@ -410,11 +471,15 @@ func (m *Component) validateOauth2(formats strfmt.Registry) error {
 
 	if m.Oauth2 != nil {
 		if err := m.Oauth2.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("oauth2")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("oauth2")
 			}
+
 			return err
 		}
 	}
@@ -429,11 +494,38 @@ func (m *Component) validateResources(formats strfmt.Registry) error {
 
 	if m.Resources != nil {
 		if err := m.Resources.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("resources")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("resources")
 			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Component) validateRuntime(formats strfmt.Registry) error {
+	if swag.IsZero(m.Runtime) { // not required
+		return nil
+	}
+
+	if m.Runtime != nil {
+		if err := m.Runtime.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("runtime")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("runtime")
+			}
+
 			return err
 		}
 	}
@@ -477,6 +569,10 @@ func (m *Component) ContextValidate(ctx context.Context, formats strfmt.Registry
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateRuntime(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -494,11 +590,15 @@ func (m *Component) contextValidateExternalDNS(ctx context.Context, formats strf
 			}
 
 			if err := m.ExternalDNS[i].ContextValidate(ctx, formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
 					return ve.ValidateName("externalDNS" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
 					return ce.ValidateName("externalDNS" + "." + strconv.Itoa(i))
 				}
+
 				return err
 			}
 		}
@@ -519,11 +619,15 @@ func (m *Component) contextValidatePorts(ctx context.Context, formats strfmt.Reg
 			}
 
 			if err := m.Ports[i].ContextValidate(ctx, formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
 					return ve.ValidateName("ports" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
 					return ce.ValidateName("ports" + "." + strconv.Itoa(i))
 				}
+
 				return err
 			}
 		}
@@ -544,11 +648,15 @@ func (m *Component) contextValidateReplicaList(ctx context.Context, formats strf
 			}
 
 			if err := m.ReplicaList[i].ContextValidate(ctx, formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
 					return ve.ValidateName("replicaList" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
 					return ce.ValidateName("replicaList" + "." + strconv.Itoa(i))
 				}
+
 				return err
 			}
 		}
@@ -567,11 +675,15 @@ func (m *Component) contextValidateHorizontalScalingSummary(ctx context.Context,
 		}
 
 		if err := m.HorizontalScalingSummary.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("horizontalScalingSummary")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("horizontalScalingSummary")
 			}
+
 			return err
 		}
 	}
@@ -588,11 +700,15 @@ func (m *Component) contextValidateIdentity(ctx context.Context, formats strfmt.
 		}
 
 		if err := m.Identity.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("identity")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("identity")
 			}
+
 			return err
 		}
 	}
@@ -609,11 +725,15 @@ func (m *Component) contextValidateNotifications(ctx context.Context, formats st
 		}
 
 		if err := m.Notifications.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("notifications")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("notifications")
 			}
+
 			return err
 		}
 	}
@@ -630,11 +750,15 @@ func (m *Component) contextValidateOauth2(ctx context.Context, formats strfmt.Re
 		}
 
 		if err := m.Oauth2.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("oauth2")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("oauth2")
 			}
+
 			return err
 		}
 	}
@@ -651,11 +775,40 @@ func (m *Component) contextValidateResources(ctx context.Context, formats strfmt
 		}
 
 		if err := m.Resources.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("resources")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("resources")
 			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Component) contextValidateRuntime(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Runtime != nil {
+
+		if swag.IsZero(m.Runtime) { // not required
+			return nil
+		}
+
+		if err := m.Runtime.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("runtime")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("runtime")
+			}
+
 			return err
 		}
 	}

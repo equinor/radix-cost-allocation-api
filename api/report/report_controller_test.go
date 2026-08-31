@@ -11,9 +11,9 @@ import (
 
 	"github.com/equinor/radix-cost-allocation-api/models"
 
-	controllerTest "github.com/equinor/radix-cost-allocation-api/api/test"
-	mock "github.com/equinor/radix-cost-allocation-api/api/test/mock"
-	"github.com/equinor/radix-cost-allocation-api/api/utils/auth"
+	"github.com/equinor/radix-cost-allocation-api/internal/auth"
+	controllerTest "github.com/equinor/radix-cost-allocation-api/internal/test"
+	"github.com/equinor/radix-cost-allocation-api/internal/test/mock"
 	serviceMock "github.com/equinor/radix-cost-allocation-api/service/mock"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"

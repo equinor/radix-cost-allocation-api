@@ -68,6 +68,8 @@ type ClientService interface {
 
 	ReplicaLog(params *ReplicaLogParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReplicaLogOK, error)
 
+	ResetScaledComponent(params *ResetScaledComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResetScaledComponentOK, error)
+
 	RestartComponent(params *RestartComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RestartComponentOK, error)
 
 	RestartOAuthAuxiliaryResource(params *RestartOAuthAuxiliaryResourceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RestartOAuthAuxiliaryResourceOK, error)
@@ -87,7 +89,7 @@ type ClientService interface {
 ChangeEnvVar updates an environment variable
 */
 func (a *Client) ChangeEnvVar(params *ChangeEnvVarParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ChangeEnvVarOK, error) {
-	// TODO: Validate the params before sending
+	// NOTE: parameters are not validated before sending
 	if params == nil {
 		params = NewChangeEnvVarParams()
 	}
@@ -107,17 +109,22 @@ func (a *Client) ChangeEnvVar(params *ChangeEnvVarParams, authInfo runtime.Clien
 	for _, opt := range opts {
 		opt(op)
 	}
-
 	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
+
+	// only one success response has to be checked
 	success, ok := result.(*ChangeEnvVarOK)
 	if ok {
 		return success, nil
 	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for changeEnvVar: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
@@ -126,7 +133,7 @@ func (a *Client) ChangeEnvVar(params *ChangeEnvVarParams, authInfo runtime.Clien
 Components gets components for a deployment
 */
 func (a *Client) Components(params *ComponentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ComponentsOK, error) {
-	// TODO: Validate the params before sending
+	// NOTE: parameters are not validated before sending
 	if params == nil {
 		params = NewComponentsParams()
 	}
@@ -146,17 +153,22 @@ func (a *Client) Components(params *ComponentsParams, authInfo runtime.ClientAut
 	for _, opt := range opts {
 		opt(op)
 	}
-
 	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
+
+	// only one success response has to be checked
 	success, ok := result.(*ComponentsOK)
 	if ok {
 		return success, nil
 	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for components: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
@@ -165,7 +177,7 @@ func (a *Client) Components(params *ComponentsParams, authInfo runtime.ClientAut
 EnvVars gets environment variables for component
 */
 func (a *Client) EnvVars(params *EnvVarsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EnvVarsOK, error) {
-	// TODO: Validate the params before sending
+	// NOTE: parameters are not validated before sending
 	if params == nil {
 		params = NewEnvVarsParams()
 	}
@@ -185,17 +197,22 @@ func (a *Client) EnvVars(params *EnvVarsParams, authInfo runtime.ClientAuthInfoW
 	for _, opt := range opts {
 		opt(op)
 	}
-
 	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
+
+	// only one success response has to be checked
 	success, ok := result.(*EnvVarsOK)
 	if ok {
 		return success, nil
 	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for envVars: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
@@ -204,14 +221,14 @@ func (a *Client) EnvVars(params *EnvVarsParams, authInfo runtime.ClientAuthInfoW
 GetOAuthPodLog gets logs for an oauth auxiliary resource pod
 */
 func (a *Client) GetOAuthPodLog(params *GetOAuthPodLogParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOAuthPodLogOK, error) {
-	// TODO: Validate the params before sending
+	// NOTE: parameters are not validated before sending
 	if params == nil {
 		params = NewGetOAuthPodLogParams()
 	}
 	op := &runtime.ClientOperation{
 		ID:                 "getOAuthPodLog",
 		Method:             "GET",
-		PathPattern:        "/applications/{appName}/environments/{envName}/components/{componentName}/aux/oauth/replicas/{podName}/logs",
+		PathPattern:        "/applications/{appName}/environments/{envName}/components/{componentName}/aux/{type}/replicas/{podName}/logs",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
@@ -224,17 +241,22 @@ func (a *Client) GetOAuthPodLog(params *GetOAuthPodLogParams, authInfo runtime.C
 	for _, opt := range opts {
 		opt(op)
 	}
-
 	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
+
+	// only one success response has to be checked
 	success, ok := result.(*GetOAuthPodLogOK)
 	if ok {
 		return success, nil
 	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for getOAuthPodLog: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
@@ -243,7 +265,7 @@ func (a *Client) GetOAuthPodLog(params *GetOAuthPodLogParams, authInfo runtime.C
 Log gets logs from a deployed pod
 */
 func (a *Client) Log(params *LogParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LogOK, error) {
-	// TODO: Validate the params before sending
+	// NOTE: parameters are not validated before sending
 	if params == nil {
 		params = NewLogParams()
 	}
@@ -263,17 +285,22 @@ func (a *Client) Log(params *LogParams, authInfo runtime.ClientAuthInfoWriter, o
 	for _, opt := range opts {
 		opt(op)
 	}
-
 	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
+
+	// only one success response has to be checked
 	success, ok := result.(*LogOK)
 	if ok {
 		return success, nil
 	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for log: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
@@ -282,7 +309,7 @@ func (a *Client) Log(params *LogParams, authInfo runtime.ClientAuthInfoWriter, o
 ReplicaLog gets logs from a deployed pod
 */
 func (a *Client) ReplicaLog(params *ReplicaLogParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReplicaLogOK, error) {
-	// TODO: Validate the params before sending
+	// NOTE: parameters are not validated before sending
 	if params == nil {
 		params = NewReplicaLogParams()
 	}
@@ -302,18 +329,67 @@ func (a *Client) ReplicaLog(params *ReplicaLogParams, authInfo runtime.ClientAut
 	for _, opt := range opts {
 		opt(op)
 	}
-
 	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
+
+	// only one success response has to be checked
 	success, ok := result.(*ReplicaLogOK)
 	if ok {
 		return success, nil
 	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for replicaLog: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ResetScaledComponent resets manually scaled component and resumes normal operation
+*/
+func (a *Client) ResetScaledComponent(params *ResetScaledComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResetScaledComponentOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewResetScaledComponentParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "resetScaledComponent",
+		Method:             "POST",
+		PathPattern:        "/applications/{appName}/environments/{envName}/components/{componentName}/reset-scale",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &ResetScaledComponentReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ResetScaledComponentOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for resetScaledComponent: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -321,7 +397,7 @@ func (a *Client) ReplicaLog(params *ReplicaLogParams, authInfo runtime.ClientAut
 RestartComponent restarts a component stops running the component container pulls new image from image hub in radix configuration starts the container again using an up to date image
 */
 func (a *Client) RestartComponent(params *RestartComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RestartComponentOK, error) {
-	// TODO: Validate the params before sending
+	// NOTE: parameters are not validated before sending
 	if params == nil {
 		params = NewRestartComponentParams()
 	}
@@ -341,17 +417,22 @@ func (a *Client) RestartComponent(params *RestartComponentParams, authInfo runti
 	for _, opt := range opts {
 		opt(op)
 	}
-
 	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
+
+	// only one success response has to be checked
 	success, ok := result.(*RestartComponentOK)
 	if ok {
 		return success, nil
 	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for restartComponent: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
@@ -360,14 +441,14 @@ func (a *Client) RestartComponent(params *RestartComponentParams, authInfo runti
 RestartOAuthAuxiliaryResource restarts an auxiliary resource for a component
 */
 func (a *Client) RestartOAuthAuxiliaryResource(params *RestartOAuthAuxiliaryResourceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RestartOAuthAuxiliaryResourceOK, error) {
-	// TODO: Validate the params before sending
+	// NOTE: parameters are not validated before sending
 	if params == nil {
 		params = NewRestartOAuthAuxiliaryResourceParams()
 	}
 	op := &runtime.ClientOperation{
 		ID:                 "restartOAuthAuxiliaryResource",
 		Method:             "POST",
-		PathPattern:        "/applications/{appName}/environments/{envName}/components/{componentName}/aux/oauth/restart",
+		PathPattern:        "/applications/{appName}/environments/{envName}/components/{componentName}/aux/{type}/restart",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
@@ -380,17 +461,22 @@ func (a *Client) RestartOAuthAuxiliaryResource(params *RestartOAuthAuxiliaryReso
 	for _, opt := range opts {
 		opt(op)
 	}
-
 	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
+
+	// only one success response has to be checked
 	success, ok := result.(*RestartOAuthAuxiliaryResourceOK)
 	if ok {
 		return success, nil
 	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for restartOAuthAuxiliaryResource: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
@@ -399,7 +485,7 @@ func (a *Client) RestartOAuthAuxiliaryResource(params *RestartOAuthAuxiliaryReso
 ScaleComponent scales a component replicas
 */
 func (a *Client) ScaleComponent(params *ScaleComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ScaleComponentNoContent, error) {
-	// TODO: Validate the params before sending
+	// NOTE: parameters are not validated before sending
 	if params == nil {
 		params = NewScaleComponentParams()
 	}
@@ -419,26 +505,31 @@ func (a *Client) ScaleComponent(params *ScaleComponentParams, authInfo runtime.C
 	for _, opt := range opts {
 		opt(op)
 	}
-
 	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
+
+	// only one success response has to be checked
 	success, ok := result.(*ScaleComponentNoContent)
 	if ok {
 		return success, nil
 	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for scaleComponent: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
 /*
-StartComponent starts component
+StartComponent deprecateds start component use reset scale instead this does the same thing but naming is wrong this endpoint will be removed after 1 september 2025
 */
 func (a *Client) StartComponent(params *StartComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*StartComponentOK, error) {
-	// TODO: Validate the params before sending
+	// NOTE: parameters are not validated before sending
 	if params == nil {
 		params = NewStartComponentParams()
 	}
@@ -458,17 +549,22 @@ func (a *Client) StartComponent(params *StartComponentParams, authInfo runtime.C
 	for _, opt := range opts {
 		opt(op)
 	}
-
 	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
+
+	// only one success response has to be checked
 	success, ok := result.(*StartComponentOK)
 	if ok {
 		return success, nil
 	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for startComponent: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
@@ -477,7 +573,7 @@ func (a *Client) StartComponent(params *StartComponentParams, authInfo runtime.C
 StopComponent stops component
 */
 func (a *Client) StopComponent(params *StopComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*StopComponentOK, error) {
-	// TODO: Validate the params before sending
+	// NOTE: parameters are not validated before sending
 	if params == nil {
 		params = NewStopComponentParams()
 	}
@@ -497,17 +593,22 @@ func (a *Client) StopComponent(params *StopComponentParams, authInfo runtime.Cli
 	for _, opt := range opts {
 		opt(op)
 	}
-
 	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
+
+	// only one success response has to be checked
 	success, ok := result.(*StopComponentOK)
 	if ok {
 		return success, nil
 	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for stopComponent: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
@@ -516,7 +617,7 @@ func (a *Client) StopComponent(params *StopComponentParams, authInfo runtime.Cli
 UpdateComponentExternalDNSTLS sets external DNS TLS private key certificate for a component
 */
 func (a *Client) UpdateComponentExternalDNSTLS(params *UpdateComponentExternalDNSTLSParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateComponentExternalDNSTLSOK, error) {
-	// TODO: Validate the params before sending
+	// NOTE: parameters are not validated before sending
 	if params == nil {
 		params = NewUpdateComponentExternalDNSTLSParams()
 	}
@@ -536,17 +637,22 @@ func (a *Client) UpdateComponentExternalDNSTLS(params *UpdateComponentExternalDN
 	for _, opt := range opts {
 		opt(op)
 	}
-
 	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
+
+	// only one success response has to be checked
 	success, ok := result.(*UpdateComponentExternalDNSTLSOK)
 	if ok {
 		return success, nil
 	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for updateComponentExternalDnsTls: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
