@@ -66,8 +66,6 @@ type ClientService interface {
 
 	EnableApplicationAlerting(params *EnableApplicationAlertingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EnableApplicationAlertingOK, error)
 
-	FederatedCredentialsMigratedAnnotation(params *FederatedCredentialsMigratedAnnotationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*FederatedCredentialsMigratedAnnotationNoContent, error)
-
 	GetApplication(params *GetApplicationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetApplicationOK, error)
 
 	GetApplicationAlertingConfig(params *GetApplicationAlertingConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetApplicationAlertingConfigOK, error)
@@ -336,50 +334,6 @@ func (a *Client) EnableApplicationAlerting(params *EnableApplicationAlertingPara
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for enableApplicationAlerting: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-FederatedCredentialsMigratedAnnotation sets the radix equinor com federeated credentials migrated annotation on the applications radix registration c r
-*/
-func (a *Client) FederatedCredentialsMigratedAnnotation(params *FederatedCredentialsMigratedAnnotationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*FederatedCredentialsMigratedAnnotationNoContent, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewFederatedCredentialsMigratedAnnotationParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "federatedCredentialsMigratedAnnotation",
-		Method:             "PATCH",
-		PathPattern:        "/applications/{appName}/federated-credentials-migrated",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http", "https"},
-		Params:             params,
-		Reader:             &FederatedCredentialsMigratedAnnotationReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*FederatedCredentialsMigratedAnnotationNoContent)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for federatedCredentialsMigratedAnnotation: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

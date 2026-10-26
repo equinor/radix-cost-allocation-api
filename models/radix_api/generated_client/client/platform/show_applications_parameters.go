@@ -73,12 +73,6 @@ type ShowApplicationsParams struct {
 	*/
 	ImpersonateUser *string
 
-	/* SSHRepo.
-
-	   ssh repo to identify Radix application if exists
-	*/
-	SSHRepo *string
-
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -154,17 +148,6 @@ func (o *ShowApplicationsParams) SetImpersonateUser(impersonateUser *string) {
 	o.ImpersonateUser = impersonateUser
 }
 
-// WithSSHRepo adds the sSHRepo to the show applications params
-func (o *ShowApplicationsParams) WithSSHRepo(sSHRepo *string) *ShowApplicationsParams {
-	o.SetSSHRepo(sSHRepo)
-	return o
-}
-
-// SetSSHRepo adds the sshRepo to the show applications params
-func (o *ShowApplicationsParams) SetSSHRepo(sSHRepo *string) {
-	o.SSHRepo = sSHRepo
-}
-
 // WriteToRequest writes these params to a swagger request
 func (o *ShowApplicationsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -186,23 +169,6 @@ func (o *ShowApplicationsParams) WriteToRequest(r runtime.ClientRequest, reg str
 		// header param Impersonate-User
 		if err := r.SetHeaderParam("Impersonate-User", *o.ImpersonateUser); err != nil {
 			return err
-		}
-	}
-
-	if o.SSHRepo != nil {
-
-		// query param sshRepo
-		var qrSSHRepo string
-
-		if o.SSHRepo != nil {
-			qrSSHRepo = *o.SSHRepo
-		}
-		qSSHRepo := qrSSHRepo
-		if qSSHRepo != "" {
-
-			if err := r.SetQueryParam("sshRepo", qSSHRepo); err != nil {
-				return err
-			}
 		}
 	}
 

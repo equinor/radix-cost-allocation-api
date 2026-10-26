@@ -33,6 +33,10 @@ type Job struct {
 	// Components (array of ComponentSummary) created by the job
 	//
 	// Deprecated: Inspect each deployment to get list of components created by the job
+	//
+	// type: "array"
+	// items:
+	// "$ref": "#/definitions/ComponentSummary"
 	Components []*ComponentSummary `json:"components"`
 
 	// Created timestamp
@@ -47,6 +51,10 @@ type Job struct {
 	DeployedToEnvironment string `json:"deployedToEnvironment,omitempty"`
 
 	// Array of deployments
+	//
+	// type: "array"
+	// items:
+	// "$ref": "#/definitions/DeploymentSummary"
 	Deployments []*DeploymentSummary `json:"deployments"`
 
 	// Ended timestamp
@@ -58,11 +66,11 @@ type Job struct {
 	GitRef string `json:"gitRef,omitempty"`
 
 	// GitRefType When the pipeline job should be built from branch or tag specified in GitRef:
-	// branch
-	// tag
-	// <empty> - either branch or tag
+	// - branch
+	// - tag
+	// - <empty> - either branch or tag
 	// Example: branch
-	// Enum: ["branch","tag","\"\""]
+	// Enum: ["branch","tag",""]
 	GitRefType string `json:"gitRefType,omitempty"`
 
 	// Image tags names for components - if empty will use default logic
@@ -109,6 +117,10 @@ type Job struct {
 	Status string `json:"status,omitempty"`
 
 	// Array of steps
+	//
+	// type: "array"
+	// items:
+	// "$ref": "#/definitions/Step"
 	Steps []*Step `json:"steps"`
 
 	// TriggeredBy user that triggered the job. If through webhook = sender.login. If through api = usertoken.upn
@@ -225,7 +237,7 @@ var jobTypeGitRefTypePropEnum []any
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["branch","tag","\"\""]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["branch","tag",""]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -241,8 +253,8 @@ const (
 	// JobGitRefTypeTag captures enum value "tag"
 	JobGitRefTypeTag string = "tag"
 
-	// JobGitRefType captures enum value "\"\""
-	JobGitRefType string = "\"\""
+	// JobGitRefTypeEmpty captures enum value ""
+	JobGitRefTypeEmpty string = ""
 )
 
 // prop value enum

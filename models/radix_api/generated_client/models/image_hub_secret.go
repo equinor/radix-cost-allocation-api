@@ -30,8 +30,8 @@ type ImageHubSecret struct {
 	Server *string `json:"server"`
 
 	// Status of the secret
-	// Pending = Secret value is not set
-	// Consistent = Secret value is set
+	// - Pending = Secret value is not set
+	// - Consistent = Secret value is set
 	// Example: Consistent
 	// Enum: ["Pending","Consistent"]
 	Status string `json:"status,omitempty"`

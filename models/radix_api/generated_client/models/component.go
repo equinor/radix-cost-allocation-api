@@ -34,7 +34,7 @@ type Component struct {
 	ExternalDNS []*ExternalDNS `json:"externalDNS"`
 
 	// GitTags the git tags that the git commit hash points to
-	// Example: \"v1.22.1 v1.22.3\
+	// Example: v1.22.1 v1.22.3
 	GitTags string `json:"gitTags,omitempty"`
 
 	// Image name
@@ -53,6 +53,10 @@ type Component struct {
 	NextRun strfmt.DateTime `json:"nextRun,omitempty"`
 
 	// Ports defines the port number and protocol that a component is exposed for internally in environment
+	//
+	// type: "array"
+	// items:
+	// "$ref": "#/definitions/Port"
 	Ports []*Port `json:"ports"`
 
 	// Array of ReplicaSummary
@@ -67,7 +71,7 @@ type Component struct {
 	ReplicasOverride *int64 `json:"replicasOverride,omitempty"`
 
 	// ScheduledJobPayloadPath defines the payload path, where payload for Job Scheduler will be mapped as a file. From radixconfig.yaml
-	// Example: \"/tmp/payload\
+	// Example: /tmp/payload
 	ScheduledJobPayloadPath string `json:"scheduledJobPayloadPath,omitempty"`
 
 	// SchedulerPort defines the port number that a Job Scheduler is exposed internally in environment
@@ -83,6 +87,9 @@ type Component struct {
 	SkipDeployment bool `json:"skipDeployment,omitempty"`
 
 	// Status of the component
+	// - Stopped = Component is stopped (no replica)
+	// - Consistent = Component is consistent with config
+	// - Restarting = User has triggered restart, but this is not reconciled
 	// Example: Consistent
 	// Enum: ["Stopped","Consistent","Reconciling","Restarting","Outdated"]
 	Status string `json:"status,omitempty"`

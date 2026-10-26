@@ -50,14 +50,14 @@ type ScheduledBatchSummary struct {
 	Started strfmt.DateTime `json:"started,omitempty"`
 
 	// Status of the job
-	// Running ScheduledBatchJobStatusRunning  ScheduledBatchJobStatusRunning Active
-	// Succeeded ScheduledBatchJobStatusSucceeded  ScheduledBatchJobStatusSucceeded Job succeeded
-	// Failed ScheduledBatchJobStatusFailed  ScheduledBatchJobStatusFailed Job failed
-	// Waiting ScheduledBatchJobStatusWaiting  ScheduledBatchJobStatusWaiting Job pending
-	// Stopping ScheduledBatchJobStatusStopping  ScheduledBatchJobStatusStopping job is stopping
-	// Stopped ScheduledBatchJobStatusStopped  ScheduledBatchJobStatusStopped job stopped
-	// Active ScheduledBatchJobStatusActive  ScheduledBatchJobStatusActive job, one or more pods are not ready
-	// Completed ScheduledBatchJobStatusCompleted  ScheduledBatchJobStatusCompleted batch jobs are completed
+	// Running ScheduledBatchJobStatusRunning Active
+	// Succeeded ScheduledBatchJobStatusSucceeded Job succeeded
+	// Failed ScheduledBatchJobStatusFailed Job failed
+	// Waiting ScheduledBatchJobStatusWaiting Job pending
+	// Stopping ScheduledBatchJobStatusStopping job is stopping
+	// Stopped ScheduledBatchJobStatusStopped job stopped
+	// Active ScheduledBatchJobStatusActive job, one or more pods are not ready
+	// Completed ScheduledBatchJobStatusCompleted batch jobs are completed
 	// Example: Waiting
 	// Required: true
 	// Enum: ["Running","Succeeded","Failed","Waiting","Stopping","Stopped","Active","Completed"]

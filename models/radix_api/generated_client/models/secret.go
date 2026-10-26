@@ -42,22 +42,21 @@ type Secret struct {
 	Resource string `json:"resource,omitempty"`
 
 	// Status of the secret
-	// Pending = Secret exists in Radix config, but not in cluster
-	// Consistent = Secret exists in Radix config and in cluster
-	// NotAvailable = Secret is available in external secret configuration but not in cluster
+	// - Pending = Secret exists in Radix config, but not in cluster
+	// - Consistent = Secret exists in Radix config and in cluster
+	// - NotAvailable = Secret is available in external secret configuration but not in cluster
 	// Example: Consistent
 	// Enum: ["Pending","Consistent","NotAvailable"]
 	Status string `json:"status,omitempty"`
 
 	// Type of the secret
 	// generic SecretTypeGeneric
-	// azure-blob-fuse-volume SecretTypeAzureBlobFuseVolume
 	// csi-azure-blob-volume SecretTypeCsiAzureBlobVolume
 	// csi-azure-key-vault-creds SecretTypeCsiAzureKeyVaultCreds
 	// csi-azure-key-vault-item SecretTypeCsiAzureKeyVaultItem
 	// oauth2-proxy SecretTypeOAuth2Proxy
 	// Example: generic
-	// Enum: ["generic","azure-blob-fuse-volume","csi-azure-blob-volume","csi-azure-key-vault-creds","csi-azure-key-vault-item","oauth2-proxy"]
+	// Enum: ["generic","csi-azure-blob-volume","csi-azure-key-vault-creds","csi-azure-key-vault-item","oauth2-proxy"]
 	Type string `json:"type,omitempty"`
 
 	// Updated timestamp of the last change
@@ -149,7 +148,7 @@ var secretTypeTypePropEnum []any
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["generic","azure-blob-fuse-volume","csi-azure-blob-volume","csi-azure-key-vault-creds","csi-azure-key-vault-item","oauth2-proxy"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["generic","csi-azure-blob-volume","csi-azure-key-vault-creds","csi-azure-key-vault-item","oauth2-proxy"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -161,9 +160,6 @@ const (
 
 	// SecretTypeGeneric captures enum value "generic"
 	SecretTypeGeneric string = "generic"
-
-	// SecretTypeAzureDashBlobDashFuseDashVolume captures enum value "azure-blob-fuse-volume"
-	SecretTypeAzureDashBlobDashFuseDashVolume string = "azure-blob-fuse-volume"
 
 	// SecretTypeCsiDashAzureDashBlobDashVolume captures enum value "csi-azure-blob-volume"
 	SecretTypeCsiDashAzureDashBlobDashVolume string = "csi-azure-blob-volume"

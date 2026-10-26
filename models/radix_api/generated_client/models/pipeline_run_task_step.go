@@ -34,22 +34,22 @@ type PipelineRunTaskStep struct {
 	Started string `json:"started,omitempty"`
 
 	// Status of the task
-	// Started TaskRunReasonStarted  TaskRunReasonStarted is the reason set when the TaskRun has just started
-	// Running TaskRunReasonRunning  TaskRunReasonRunning is the reason set when the TaskRun is running
-	// Succeeded TaskRunReasonSuccessful  TaskRunReasonSuccessful is the reason set when the TaskRun completed successfully
-	// Failed TaskRunReasonFailed  TaskRunReasonFailed is the reason set when the TaskRun completed with a failure
-	// ToBeRetried TaskRunReasonToBeRetried  TaskRunReasonToBeRetried is the reason set when the last TaskRun execution failed, and will be retried
-	// TaskRunCancelled TaskRunReasonCancelled  TaskRunReasonCancelled is the reason set when the TaskRun is cancelled by the user
-	// TaskRunTimeout TaskRunReasonTimedOut  TaskRunReasonTimedOut is the reason set when one TaskRun execution has timed out
-	// TaskRunImagePullFailed TaskRunReasonImagePullFailed  TaskRunReasonImagePullFailed is the reason set when the step of a task fails due to image not being pulled
-	// TaskRunResultLargerThanAllowedLimit TaskRunReasonResultLargerThanAllowedLimit  TaskRunReasonResultLargerThanAllowedLimit is the reason set when one of the results exceeds its maximum allowed limit of 1 KB
-	// TaskRunStopSidecarFailed TaskRunReasonStopSidecarFailed  TaskRunReasonStopSidecarFailed indicates that the sidecar is not properly stopped.
-	// InvalidParamValue TaskRunReasonInvalidParamValue  TaskRunReasonInvalidParamValue indicates that the TaskRun Param input value is not allowed.
-	// TaskRunResolutionFailed TaskRunReasonFailedResolution  TaskRunReasonFailedResolution indicated that the reason for failure status is  that references within the TaskRun could not be resolved
-	// TaskRunValidationFailed TaskRunReasonFailedValidation  TaskRunReasonFailedValidation indicated that the reason for failure status is  that taskrun failed runtime validation
-	// TaskValidationFailed TaskRunReasonTaskFailedValidation  TaskRunReasonTaskFailedValidation indicated that the reason for failure status is  that task failed runtime validation
-	// ResourceVerificationFailed TaskRunReasonResourceVerificationFailed  TaskRunReasonResourceVerificationFailed indicates that the task fails the trusted resource verification,  it could be the content has changed, signature is invalid or public key is invalid
-	// FailureIgnored TaskRunReasonFailureIgnored  TaskRunReasonFailureIgnored is the reason set when the Taskrun has failed due to pod execution error and the failure is ignored for the owning PipelineRun.  TaskRuns failed due to reconciler/validation error should not use this reason.
+	// Started TaskRunReasonStarted is the reason set when the TaskRun has just started
+	// Running TaskRunReasonRunning is the reason set when the TaskRun is running
+	// Succeeded TaskRunReasonSuccessful is the reason set when the TaskRun completed successfully
+	// Failed TaskRunReasonFailed is the reason set when the TaskRun completed with a failure
+	// ToBeRetried TaskRunReasonToBeRetried is the reason set when the last TaskRun execution failed, and will be retried
+	// TaskRunCancelled TaskRunReasonCancelled is the reason set when the TaskRun is cancelled by the user
+	// TaskRunTimeout TaskRunReasonTimedOut is the reason set when one TaskRun execution has timed out
+	// TaskRunImagePullFailed TaskRunReasonImagePullFailed is the reason set when the step of a task fails due to image not being pulled
+	// TaskRunResultLargerThanAllowedLimit TaskRunReasonResultLargerThanAllowedLimit is the reason set when one of the results exceeds its maximum allowed limit of 1 KB
+	// TaskRunStopSidecarFailed TaskRunReasonStopSidecarFailed indicates that the sidecar is not properly stopped.
+	// InvalidParamValue TaskRunReasonInvalidParamValue indicates that the TaskRun Param input value is not allowed.
+	// TaskRunResolutionFailed TaskRunReasonFailedResolution indicated that the reason for failure status is  that references within the TaskRun could not be resolved
+	// TaskRunValidationFailed TaskRunReasonFailedValidation indicated that the reason for failure status is  that taskrun failed runtime validation
+	// TaskValidationFailed TaskRunReasonTaskFailedValidation indicated that the reason for failure status is  that task failed runtime validation
+	// ResourceVerificationFailed TaskRunReasonResourceVerificationFailed indicates that the task fails the trusted resource verification,  it could be the content has changed, signature is invalid or public key is invalid
+	// FailureIgnored TaskRunReasonFailureIgnored is the reason set when the Taskrun has failed due to pod execution error and the failure is ignored for the owning PipelineRun.  TaskRuns failed due to reconciler/validation error should not use this reason.
 	// Enum: ["Started","Running","Succeeded","Failed","ToBeRetried","TaskRunCancelled","TaskRunTimeout","TaskRunImagePullFailed","TaskRunResultLargerThanAllowedLimit","TaskRunStopSidecarFailed","InvalidParamValue","TaskRunResolutionFailed","TaskRunValidationFailed","TaskValidationFailed","ResourceVerificationFailed","FailureIgnored"]
 	Status string `json:"status,omitempty"`
 
