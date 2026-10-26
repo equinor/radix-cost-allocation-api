@@ -26,7 +26,7 @@ type OAuth2AuxiliaryResource struct {
 	Deployments []*AuxiliaryResourceDeployment `json:"deployments"`
 
 	// SessionStoreType type of session store
-	// Enum: ["cookie","redis","systemManaged","\"\""]
+	// Enum: ["cookie","redis","systemManaged",""]
 	SessionStoreType string `json:"sessionStoreType,omitempty"`
 
 	// identity
@@ -89,7 +89,7 @@ var oAuth2AuxiliaryResourceTypeSessionStoreTypePropEnum []any
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["cookie","redis","systemManaged","\"\""]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["cookie","redis","systemManaged",""]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -108,8 +108,8 @@ const (
 	// OAuth2AuxiliaryResourceSessionStoreTypeSystemManaged captures enum value "systemManaged"
 	OAuth2AuxiliaryResourceSessionStoreTypeSystemManaged string = "systemManaged"
 
-	// OAuth2AuxiliaryResourceSessionStoreType captures enum value "\"\""
-	OAuth2AuxiliaryResourceSessionStoreType string = "\"\""
+	// OAuth2AuxiliaryResourceSessionStoreTypeEmpty captures enum value ""
+	OAuth2AuxiliaryResourceSessionStoreTypeEmpty string = ""
 )
 
 // prop value enum

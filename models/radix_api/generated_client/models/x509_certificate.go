@@ -28,14 +28,12 @@ type X509Certificate struct {
 	Issuer *string `json:"issuer"`
 
 	// NotAfter defines the uppdater date/time validity boundary
-	// Required: true
 	// Format: date-time
-	NotAfter *strfmt.DateTime `json:"notAfter"`
+	NotAfter strfmt.DateTime `json:"notAfter,omitempty"`
 
 	// NotBefore defines the lower date/time validity boundary
-	// Required: true
 	// Format: date-time
-	NotBefore *strfmt.DateTime `json:"notBefore"`
+	NotBefore strfmt.DateTime `json:"notBefore,omitempty"`
 
 	// Subject contains the distinguished name for the certificate
 	// Example: CN=mysite.example.com,O=MyOrg,L=MyLocation,C=NO
@@ -79,9 +77,8 @@ func (m *X509Certificate) validateIssuer(formats strfmt.Registry) error {
 }
 
 func (m *X509Certificate) validateNotAfter(formats strfmt.Registry) error {
-
-	if err := validate.Required("notAfter", "body", m.NotAfter); err != nil {
-		return err
+	if swag.IsZero(m.NotAfter) { // not required
+		return nil
 	}
 
 	if err := validate.FormatOf("notAfter", "body", "date-time", m.NotAfter.String(), formats); err != nil {
@@ -92,9 +89,8 @@ func (m *X509Certificate) validateNotAfter(formats strfmt.Registry) error {
 }
 
 func (m *X509Certificate) validateNotBefore(formats strfmt.Registry) error {
-
-	if err := validate.Required("notBefore", "body", m.NotBefore); err != nil {
-		return err
+	if swag.IsZero(m.NotBefore) { // not required
+		return nil
 	}
 
 	if err := validate.FormatOf("notBefore", "body", "date-time", m.NotBefore.String(), formats); err != nil {

@@ -21,6 +21,32 @@ import (
 // swagger:model ApplicationSummary
 type ApplicationSummary struct {
 
+	// ad groups
+	AdGroups []string `json:"adGroups"`
+
+	// ad users
+	AdUsers []string `json:"adUsers"`
+
+	// AppID is the unique identifier for the Radix application. Not to be confused by Configuration Item.
+	AppID string `json:"appID,omitempty"`
+
+	// CloneURL is the URL of the GitHub repository where the Radix configuration file is located.
+	// Required: true
+	CloneURL *string `json:"cloneURL"`
+
+	// ConfigBranch is the branch in the git repository where the Radix configuration file is located.
+	// See https://git-scm.com/docs/git-check-ref-format#_description for more details.
+	// Required: true
+	ConfigBranch *string `json:"configBranch"`
+
+	// ConfigurationItem is an identifier for an entity in a configuration management solution such as a CMDB.
+	// ITIL defines a CI as any component that needs to be managed in order to deliver an IT Service
+	// Ref: https://en.wikipedia.org/wiki/Configuration_item
+	ConfigurationItem string `json:"configurationItem,omitempty"`
+
+	// creator
+	Creator string `json:"creator,omitempty"`
+
 	// Environments List of environments for this application
 	Environments []*Environment `json:"environments"`
 
@@ -28,6 +54,19 @@ type ApplicationSummary struct {
 	// Example: radix-canary-golang
 	// Required: true
 	Name *string `json:"name"`
+
+	// owner
+	Owner string `json:"owner,omitempty"`
+
+	// RadixConfigFullName is the full name of the Radix configuration file in the git repository.
+	// Required: true
+	RadixConfigFullName *string `json:"radixConfigFullName"`
+
+	// reader ad groups
+	ReaderAdGroups []string `json:"readerAdGroups"`
+
+	// reader ad users
+	ReaderAdUsers []string `json:"readerAdUsers"`
 
 	// latest job
 	LatestJob *JobSummary `json:"latestJob,omitempty"`
@@ -37,11 +76,23 @@ type ApplicationSummary struct {
 func (m *ApplicationSummary) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateCloneURL(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateConfigBranch(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateEnvironments(formats); err != nil {
 		res = append(res, err)
 	}
 
 	if err := m.validateName(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRadixConfigFullName(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -52,6 +103,24 @@ func (m *ApplicationSummary) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ApplicationSummary) validateCloneURL(formats strfmt.Registry) error {
+
+	if err := validate.Required("cloneURL", "body", m.CloneURL); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ApplicationSummary) validateConfigBranch(formats strfmt.Registry) error {
+
+	if err := validate.Required("configBranch", "body", m.ConfigBranch); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -88,6 +157,15 @@ func (m *ApplicationSummary) validateEnvironments(formats strfmt.Registry) error
 func (m *ApplicationSummary) validateName(formats strfmt.Registry) error {
 
 	if err := validate.Required("name", "body", m.Name); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ApplicationSummary) validateRadixConfigFullName(formats strfmt.Registry) error {
+
+	if err := validate.Required("radixConfigFullName", "body", m.RadixConfigFullName); err != nil {
 		return err
 	}
 

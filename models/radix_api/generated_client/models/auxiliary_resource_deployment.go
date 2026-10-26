@@ -26,13 +26,16 @@ type AuxiliaryResourceDeployment struct {
 	ReplicaList []*ReplicaSummary `json:"replicaList"`
 
 	// Status of the auxiliary resource's deployment
+	// - Consistent: All replicas are running with the desired state
+	// - Reconciling: Waiting for new replicas to enter desired state
+	// - Stopped: Replica count is set to 0
 	// Example: Consistent
 	// Required: true
 	// Enum: ["Stopped","Consistent","Reconciling"]
 	Status *string `json:"status"`
 
 	// Name of the auxiliary resource's deployment
-	// Enum: ["oauth","oauth-redis","\"\""]
+	// Enum: ["oauth","oauth-redis",""]
 	Type string `json:"type,omitempty"`
 }
 
@@ -138,7 +141,7 @@ var auxiliaryResourceDeploymentTypeTypePropEnum []any
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["oauth","oauth-redis","\"\""]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["oauth","oauth-redis",""]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -154,8 +157,8 @@ const (
 	// AuxiliaryResourceDeploymentTypeOauthDashRedis captures enum value "oauth-redis"
 	AuxiliaryResourceDeploymentTypeOauthDashRedis string = "oauth-redis"
 
-	// AuxiliaryResourceDeploymentType captures enum value "\"\""
-	AuxiliaryResourceDeploymentType string = "\"\""
+	// AuxiliaryResourceDeploymentTypeEmpty captures enum value ""
+	AuxiliaryResourceDeploymentTypeEmpty string = ""
 )
 
 // prop value enum

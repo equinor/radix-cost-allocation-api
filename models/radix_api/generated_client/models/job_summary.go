@@ -34,9 +34,8 @@ type JobSummary struct {
 	CommitID string `json:"commitID,omitempty"`
 
 	// Created timestamp
-	// Required: true
 	// Format: date-time
-	Created *strfmt.DateTime `json:"created"`
+	Created strfmt.DateTime `json:"created,omitempty"`
 
 	// DeployExternalDNS deploy external DNS
 	DeployExternalDNS *bool `json:"deployExternalDNS,omitempty"`
@@ -54,11 +53,11 @@ type JobSummary struct {
 	GitRef string `json:"gitRef,omitempty"`
 
 	// GitRefType When the pipeline job should be built from branch or tag specified in GitRef:
-	// branch
-	// tag
-	// <empty> - either branch or tag
+	// - branch
+	// - tag
+	// - <empty> - either branch or tag
 	// Example: branch
-	// Enum: ["branch","tag","\"\""]
+	// Enum: ["branch","tag",""]
 	GitRefType string `json:"gitRefType,omitempty"`
 
 	// Image tags names for components - if empty will use default logic
@@ -154,9 +153,8 @@ func (m *JobSummary) Validate(formats strfmt.Registry) error {
 }
 
 func (m *JobSummary) validateCreated(formats strfmt.Registry) error {
-
-	if err := validate.Required("created", "body", m.Created); err != nil {
-		return err
+	if swag.IsZero(m.Created) { // not required
+		return nil
 	}
 
 	if err := validate.FormatOf("created", "body", "date-time", m.Created.String(), formats); err != nil {
@@ -182,7 +180,7 @@ var jobSummaryTypeGitRefTypePropEnum []any
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["branch","tag","\"\""]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["branch","tag",""]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -198,8 +196,8 @@ const (
 	// JobSummaryGitRefTypeTag captures enum value "tag"
 	JobSummaryGitRefTypeTag string = "tag"
 
-	// JobSummaryGitRefType captures enum value "\"\""
-	JobSummaryGitRefType string = "\"\""
+	// JobSummaryGitRefTypeEmpty captures enum value ""
+	JobSummaryGitRefTypeEmpty string = ""
 )
 
 // prop value enum

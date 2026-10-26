@@ -38,9 +38,9 @@ type Environment struct {
 	Secrets []*Secret `json:"secrets"`
 
 	// Status of the environment
-	// Pending = Environment exists in Radix config, but not in cluster
-	// Consistent = Environment exists in Radix config and in cluster
-	// Orphan = Environment does not exist in Radix config, but exists in cluster
+	// - Pending = Environment exists in Radix config, but not in cluster
+	// - Consistent = Environment exists in Radix config and in cluster
+	// - Orphan = Environment does not exist in Radix config, but exists in cluster
 	// Example: Consistent
 	// Enum: ["Pending","Consistent","Orphan"]
 	Status string `json:"status,omitempty"`

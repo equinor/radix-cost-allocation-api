@@ -26,9 +26,8 @@ type ReplicaSummary struct {
 	ContainerStarted strfmt.DateTime `json:"containerStarted,omitempty"`
 
 	// Created timestamp
-	// Required: true
 	// Format: date-time
-	Created *strfmt.DateTime `json:"created"`
+	Created strfmt.DateTime `json:"created,omitempty"`
 
 	// The time at which the batch job's pod finishedAt.
 	// Format: date-time
@@ -63,12 +62,12 @@ type ReplicaSummary struct {
 	StatusMessage string `json:"statusMessage,omitempty"`
 
 	// Pod type
-	// ComponentReplica = Replica of a Radix component
-	// ScheduledJobReplica = Replica of a Radix job-component
-	// JobManager = Replica of a Radix job-component scheduler
-	// JobManagerAux = Replica of a Radix job-component scheduler auxiliary
-	// OAuth2 = Replica of a Radix OAuth2 component
-	// Undefined = Replica without defined type - to be extended
+	// - ComponentReplica = Replica of a Radix component
+	// - ScheduledJobReplica = Replica of a Radix job-component
+	// - JobManager = Replica of a Radix job-component scheduler
+	// - JobManagerAux = Replica of a Radix job-component scheduler auxiliary
+	// - OAuth2 = Replica of a Radix OAuth2 component
+	// - Undefined = Replica without defined type - to be extended
 	// Example: ComponentReplica
 	// Enum: ["ComponentReplica","ScheduledJobReplica","JobManager","JobManagerAux","OAuth2","OAuth2Redis","Undefined"]
 	Type string `json:"type,omitempty"`
@@ -131,9 +130,8 @@ func (m *ReplicaSummary) validateContainerStarted(formats strfmt.Registry) error
 }
 
 func (m *ReplicaSummary) validateCreated(formats strfmt.Registry) error {
-
-	if err := validate.Required("created", "body", m.Created); err != nil {
-		return err
+	if swag.IsZero(m.Created) { // not required
+		return nil
 	}
 
 	if err := validate.FormatOf("created", "body", "date-time", m.Created.String(), formats); err != nil {

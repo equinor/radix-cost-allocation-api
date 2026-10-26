@@ -17,27 +17,18 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// DeploymentSummary DeploymentSummary describe an deployment
+// DeploymentSummary DeploymentSummary describes a deployment
 //
 // swagger:model DeploymentSummary
 type DeploymentSummary struct {
 
 	// ActiveFrom Timestamp when the deployment starts (or created)
-	// Required: true
 	// Format: date-time
-	ActiveFrom *strfmt.DateTime `json:"activeFrom"`
+	ActiveFrom strfmt.DateTime `json:"activeFrom,omitempty"`
 
 	// ActiveTo Timestamp when the deployment ends
 	// Format: date-time
 	ActiveTo strfmt.DateTime `json:"activeTo,omitempty"`
-
-	// Name of the branch used to build the deployment
-	// Example: main
-	BuiltFromBranch string `json:"builtFromBranch,omitempty"`
-
-	// CommitID the commit ID of the branch to build
-	// Example: 4faca8595c5283a9d0f17a623b9255a0d9866a2e
-	CommitID string `json:"commitID,omitempty"`
 
 	// Array of component summaries
 	Components []*ComponentSummary `json:"components"`
@@ -59,15 +50,15 @@ type DeploymentSummary struct {
 	GitRef string `json:"gitRef,omitempty"`
 
 	// GitRefType When the pipeline job should be built from branch or tag specified in GitRef:
-	// branch
-	// tag
-	// <empty> - either branch or tag
+	// - branch
+	// - tag
+	// - <empty> - either branch or tag
 	// Example: branch
-	// Enum: ["branch","tag","\"\""]
+	// Enum: ["branch","tag",""]
 	GitRefType string `json:"gitRefType,omitempty"`
 
 	// GitTags the git tags that the git commit hash points to
-	// Example: \"v1.22.1 v1.22.3\
+	// Example: v1.22.1 v1.22.3
 	GitTags string `json:"gitTags,omitempty"`
 
 	// Name the unique name of the Radix application deployment
@@ -89,10 +80,10 @@ type DeploymentSummary struct {
 	RefreshBuildCache *bool `json:"refreshBuildCache,omitempty"`
 
 	// Status of deployment reconciliation
-	// Reconciling DeploymentStatusReconciling  DeploymentStatusReconciling deployment is not fully reconciled
-	// Ready DeploymentStatusReady  DeploymentStatusReady deployment is reconciled successfully
-	// Failed DeploymentStatusFailed  DeploymentStatusFailed deployment reconciliation failed
-	// Inactive DeploymentStatusInactive  DeploymentStatusInactive deployment is inactive
+	// Reconciling DeploymentStatusReconciling deployment is not fully reconciled
+	// Ready DeploymentStatusReady deployment is reconciled successfully
+	// Failed DeploymentStatusFailed deployment reconciliation failed
+	// Inactive DeploymentStatusInactive deployment is inactive
 	// Required: true
 	// Enum: ["Reconciling","Ready","Failed","Inactive"]
 	Status *string `json:"status"`
@@ -147,9 +138,8 @@ func (m *DeploymentSummary) Validate(formats strfmt.Registry) error {
 }
 
 func (m *DeploymentSummary) validateActiveFrom(formats strfmt.Registry) error {
-
-	if err := validate.Required("activeFrom", "body", m.ActiveFrom); err != nil {
-		return err
+	if swag.IsZero(m.ActiveFrom) { // not required
+		return nil
 	}
 
 	if err := validate.FormatOf("activeFrom", "body", "date-time", m.ActiveFrom.String(), formats); err != nil {
@@ -214,7 +204,7 @@ var deploymentSummaryTypeGitRefTypePropEnum []any
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["branch","tag","\"\""]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["branch","tag",""]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -230,8 +220,8 @@ const (
 	// DeploymentSummaryGitRefTypeTag captures enum value "tag"
 	DeploymentSummaryGitRefTypeTag string = "tag"
 
-	// DeploymentSummaryGitRefType captures enum value "\"\""
-	DeploymentSummaryGitRefType string = "\"\""
+	// DeploymentSummaryGitRefTypeEmpty captures enum value ""
+	DeploymentSummaryGitRefTypeEmpty string = ""
 )
 
 // prop value enum

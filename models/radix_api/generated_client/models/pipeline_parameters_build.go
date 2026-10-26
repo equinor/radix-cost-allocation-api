@@ -37,11 +37,11 @@ type PipelineParametersBuild struct {
 	GitRef string `json:"gitRef,omitempty"`
 
 	// GitRefType When the pipeline job should be built from branch or tag specified in GitRef:
-	// branch
-	// tag
-	// <empty> - either branch or tag
+	// - branch
+	// - tag
+	// - <empty> - either branch or tag
 	// Example: branch
-	// Enum: ["branch","tag","\"\""]
+	// Enum: ["branch","tag",""]
 	GitRefType string `json:"gitRefType,omitempty"`
 
 	// ImageTag of the image - if empty will use default logic
@@ -85,7 +85,7 @@ var pipelineParametersBuildTypeGitRefTypePropEnum []any
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["branch","tag","\"\""]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["branch","tag",""]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -101,8 +101,8 @@ const (
 	// PipelineParametersBuildGitRefTypeTag captures enum value "tag"
 	PipelineParametersBuildGitRefTypeTag string = "tag"
 
-	// PipelineParametersBuildGitRefType captures enum value "\"\""
-	PipelineParametersBuildGitRefType string = "\"\""
+	// PipelineParametersBuildGitRefTypeEmpty captures enum value ""
+	PipelineParametersBuildGitRefTypeEmpty string = ""
 )
 
 // prop value enum

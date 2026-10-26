@@ -20,9 +20,8 @@ import (
 type DeploymentItem struct {
 
 	// ActiveFrom Timestamp when the deployment starts (or created)
-	// Required: true
 	// Format: date-time
-	ActiveFrom *strfmt.DateTime `json:"activeFrom"`
+	ActiveFrom strfmt.DateTime `json:"activeFrom,omitempty"`
 
 	// ActiveTo Timestamp when the deployment ends
 	// Format: date-time
@@ -61,9 +60,8 @@ func (m *DeploymentItem) Validate(formats strfmt.Registry) error {
 }
 
 func (m *DeploymentItem) validateActiveFrom(formats strfmt.Registry) error {
-
-	if err := validate.Required("activeFrom", "body", m.ActiveFrom); err != nil {
-		return err
+	if swag.IsZero(m.ActiveFrom) { // not required
+		return nil
 	}
 
 	if err := validate.FormatOf("activeFrom", "body", "date-time", m.ActiveFrom.String(), formats); err != nil {

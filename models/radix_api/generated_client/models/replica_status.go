@@ -21,22 +21,22 @@ import (
 type ReplicaStatus struct {
 
 	// Status of the container
-	// Pending = Container in Waiting state and the reason is ContainerCreating
-	// Starting = Container is starting
-	// Failed = Container is failed
-	// Failing = Container is failed
-	// Running = Container in Running state
-	// Succeeded = Container in Succeeded state
-	// Stopped = Replica was deleted du to job stopped
-	// Terminated = Container in Terminated state
-	// Pending Pending  Pending container
-	// Failed Failed  Failed container permanently exists in a failed state
-	// Failing Failing  Failing container, which can attempt to restart
-	// Running Running  Running container
-	// Terminated Terminated  Terminated container
-	// Starting Starting  Starting container
-	// Stopped Stopped  Stopped container
-	// Succeeded Succeeded  Succeeded all containers in the pod have voluntarily terminated
+	// - Pending = Container in Waiting state and the reason is ContainerCreating
+	// - Starting = Container is starting
+	// - Failed = Container is failed
+	// - Failing = Container is failed
+	// - Running = Container in Running state
+	// - Succeeded = Container in Succeeded state
+	// - Stopped = Replica was deleted du to job stopped
+	// - Terminated = Container in Terminated state
+	// Pending Pending container
+	// Failed Failed container permanently exists in a failed state
+	// Failing Failing container, which can attempt to restart
+	// Running Running container
+	// Terminated Terminated container
+	// Starting Starting container
+	// Stopped Stopped container
+	// Succeeded Succeeded all containers in the pod have voluntarily terminated
 	// Example: Running
 	// Required: true
 	// Enum: ["Pending","Failed","Failing","Running","Terminated","Starting","Stopped","Succeeded"]

@@ -31,7 +31,7 @@ type ScheduledJobSummary struct {
 	BackoffLimit *int32 `json:"backoffLimit"`
 
 	// BatchName Batch name, if any
-	// Example: \"batch-abc\
+	// Example: batch-abc
 	BatchName string `json:"batchName,omitempty"`
 
 	// Command is the entrypoint array specified for the job. Not executed within a shell.
@@ -42,7 +42,7 @@ type ScheduledJobSummary struct {
 	Created strfmt.DateTime `json:"created,omitempty"`
 
 	// CronSchedule is the cron schedule expression, if this job was created by a cron schedule.
-	// Example: \"0 1 * * *\
+	// Example: 0 1 * * *
 	CronSchedule string `json:"cronSchedule,omitempty"`
 
 	// DeploymentName name of RadixDeployment for the job
@@ -59,11 +59,11 @@ type ScheduledJobSummary struct {
 	FailedCount *int32 `json:"failedCount"`
 
 	// JobId JobId, if any
-	// Example: \"job1\
+	// Example: job1
 	JobID string `json:"jobId,omitempty"`
 
 	// Message of a status, if any, of the job
-	// Example: \"Error occurred\
+	// Example: Error occurred
 	Message string `json:"message,omitempty"`
 
 	// Name of the scheduled job
@@ -75,7 +75,6 @@ type ScheduledJobSummary struct {
 	ReplicaList []*ReplicaSummary `json:"replicaList"`
 
 	// Timestamp of the job restart, if applied.
-	// +optional
 	Restart string `json:"Restart,omitempty"`
 
 	// Started timestamp
@@ -83,14 +82,14 @@ type ScheduledJobSummary struct {
 	Started strfmt.DateTime `json:"started,omitempty"`
 
 	// Status of the job
-	// Running ScheduledBatchJobStatusRunning  ScheduledBatchJobStatusRunning Active
-	// Succeeded ScheduledBatchJobStatusSucceeded  ScheduledBatchJobStatusSucceeded Job succeeded
-	// Failed ScheduledBatchJobStatusFailed  ScheduledBatchJobStatusFailed Job failed
-	// Waiting ScheduledBatchJobStatusWaiting  ScheduledBatchJobStatusWaiting Job pending
-	// Stopping ScheduledBatchJobStatusStopping  ScheduledBatchJobStatusStopping job is stopping
-	// Stopped ScheduledBatchJobStatusStopped  ScheduledBatchJobStatusStopped job stopped
-	// Active ScheduledBatchJobStatusActive  ScheduledBatchJobStatusActive job, one or more pods are not ready
-	// Completed ScheduledBatchJobStatusCompleted  ScheduledBatchJobStatusCompleted batch jobs are completed
+	// Running ScheduledBatchJobStatusRunning Active
+	// Succeeded ScheduledBatchJobStatusSucceeded Job succeeded
+	// Failed ScheduledBatchJobStatusFailed Job failed
+	// Waiting ScheduledBatchJobStatusWaiting Job pending
+	// Stopping ScheduledBatchJobStatusStopping job is stopping
+	// Stopped ScheduledBatchJobStatusStopped job stopped
+	// Active ScheduledBatchJobStatusActive job, one or more pods are not ready
+	// Completed ScheduledBatchJobStatusCompleted batch jobs are completed
 	// Example: Waiting
 	// Required: true
 	// Enum: ["Running","Succeeded","Failed","Waiting","Stopping","Stopped","Active","Completed"]
