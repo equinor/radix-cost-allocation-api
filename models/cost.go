@@ -4,6 +4,10 @@ import (
 	"time"
 )
 
+// costDate preserves time.Time while keeping format and field validation annotations separate.
+// swagger:strfmt date
+type costDate = time.Time
+
 // ApplicationCostSet details of application cost set
 // swagger:model ApplicationCostSet
 type ApplicationCostSet struct {
@@ -11,14 +15,12 @@ type ApplicationCostSet struct {
 	// ApplicationCostSet period started From
 	//
 	// required: true
-	// swagger:strfmt date
-	From time.Time `json:"from"`
+	From costDate `json:"from"`
 
 	// ApplicationCostSet period continued To
 	//
 	// required: true
-	// swagger:strfmt date
-	To time.Time `json:"to"`
+	To costDate `json:"to"`
 
 	// ApplicationCosts with costs.
 	//

@@ -19,11 +19,22 @@ You need Go installed. Make sure `GOPATH` and `GOROOT` are properly set up.
 
 Also needed:
 
-- [`go-swagger`](https://github.com/go-swagger/go-swagger) (on a Mac, you can install it with Homebrew: `brew install go-swagger`)
+- [`go-swagger`](https://github.com/go-swagger/go-swagger) v0.36.4 (install with `go install github.com/go-swagger/go-swagger/cmd/swagger@v0.36.4`)
 - [`statik`](https://github.com/rakyll/statik) (install with `go install github.com/rakyll/statik@v0.1.7`)
 - [`gomock`](https://github.com/golang/mock) (install with `go install github.com/golang/mock/mockgen@v1.6.0`)
 
 Clone the repo into your `GOPATH` and run `go mod download`.
+
+Use `make generate` to regenerate files with the pinned tools. Review and commit
+the generated files and any required module dependency updates together.
+`make verify-generate` reruns generation and checks `git diff --exit-code`, so
+unstaged changes (including unrelated changes) will cause verification to fail.
+Both targets fetch the client schema from the live Radix API; upstream schema
+changes can therefore also change the generated client.
+
+For date-only model fields, use the `costDate` alias so the format annotation
+does not hide field-level `required` annotations in Swagger v0.36.4.
+Keep alternatives in the Swagger `Security` comment aligned at the same indentation.
 
 ### Generating mocks
 We use gomock to generate mocks used in unit test.

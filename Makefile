@@ -45,16 +45,16 @@ generate: radixconfigs mocks swagger radixapiclient
 verify-generate: generate
 	git diff --exit-code
 
-HAS_SWAGGER       := $(shell command -v swagger;)
-HAS_GOLANGCI_LINT := $(shell command -v golangci-lint;)
+HAS_SWAGGER       := $(shell swagger version 2>/dev/null | grep -Fx 'version: v0.36.4')
+HAS_GOLANGCI_LINT := $(shell golangci-lint version 2>/dev/null | grep -F 'version 2.15.0 ')
 HAS_MOCKGEN       := $(shell command -v mockgen;)
 
 bootstrap:
 ifndef HAS_SWAGGER
-	go install github.com/go-swagger/go-swagger/cmd/swagger@v0.33.1
+	go install github.com/go-swagger/go-swagger/cmd/swagger@v0.36.4
 endif
 ifndef HAS_GOLANGCI_LINT
-	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.10.1
+	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0
 endif
 ifndef HAS_MOCKGEN
 	go install go.uber.org/mock/mockgen@v0.6.0
