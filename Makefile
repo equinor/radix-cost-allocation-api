@@ -28,7 +28,7 @@ radixconfigs:
 # we also do make swagger inside Dockerfile
 .PHONY: swagger
 swagger: bootstrap
-	swagger generate spec -o ./swaggerui/html/swagger.json --scan-models --exclude-deps --exclude=github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/models
+	swagger generate spec -o ./swaggerui/html/swagger.json --scan-models --exclude=github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/models
 	swagger validate ./swaggerui/html/swagger.json
 
 .PHONY: mocks

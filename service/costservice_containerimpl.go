@@ -9,6 +9,7 @@ import (
 
 	"github.com/equinor/radix-cost-allocation-api/models"
 	"github.com/equinor/radix-cost-allocation-api/repository"
+	"github.com/go-openapi/strfmt"
 )
 
 func CurrencyMismatchError(expected, actual string) error {
@@ -63,8 +64,8 @@ func (s *containerCostService) GetCostForPeriod(from, to time.Time) (*models.App
 	}
 
 	applicationCost := models.ApplicationCostSet{
-		From:             from,
-		To:               to,
+		From:             strfmt.Date(from),
+		To:               strfmt.Date(to),
 		ApplicationCosts: applicationCostList,
 	}
 	return &applicationCost, nil

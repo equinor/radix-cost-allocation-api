@@ -7,6 +7,7 @@ import (
 
 	"github.com/equinor/radix-cost-allocation-api/models"
 	mockrepo "github.com/equinor/radix-cost-allocation-api/repository/mock"
+	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -58,8 +59,8 @@ func Test_ContainerCostService_GetCostForPeriod(t *testing.T) {
 		costService := NewContainerCostService(repo, []string{})
 
 		expected := models.ApplicationCostSet{
-			From: from,
-			To:   to,
+			From: strfmt.Date(from),
+			To:   strfmt.Date(to),
 			ApplicationCosts: []models.ApplicationCost{
 				{Name: "app1", Cost: 9000, Currency: "NOK"},
 				{Name: "app2", Cost: 37000, Currency: "NOK"},
@@ -100,8 +101,8 @@ func Test_ContainerCostService_GetCostForPeriod(t *testing.T) {
 		costService := NewContainerCostService(repo, []string{"whitelisted"})
 
 		expected := models.ApplicationCostSet{
-			From: from,
-			To:   to,
+			From: strfmt.Date(from),
+			To:   strfmt.Date(to),
 			ApplicationCosts: []models.ApplicationCost{
 				{Name: "app1", Cost: 10000, Currency: "NOK"},
 			},
@@ -143,8 +144,8 @@ func Test_ContainerCostService_GetCostForPeriod(t *testing.T) {
 		costService := NewContainerCostService(repo, []string{})
 
 		expected := models.ApplicationCostSet{
-			From: from,
-			To:   to,
+			From: strfmt.Date(from),
+			To:   strfmt.Date(to),
 			ApplicationCosts: []models.ApplicationCost{
 				{Name: "app1", WBS: "wbs3", Cost: 10000, Currency: "NOK"},
 			},
