@@ -1,7 +1,7 @@
 package models
 
 import (
-	"time"
+	"github.com/go-openapi/strfmt"
 )
 
 // ApplicationCostSet details of application cost set
@@ -11,14 +11,12 @@ type ApplicationCostSet struct {
 	// ApplicationCostSet period started From
 	//
 	// required: true
-	// swagger:strfmt date
-	From time.Time `json:"from"`
+	From strfmt.Date `json:"from"`
 
 	// ApplicationCostSet period continued To
 	//
 	// required: true
-	// swagger:strfmt date
-	To time.Time `json:"to"`
+	To strfmt.Date `json:"to"`
 
 	// ApplicationCosts with costs.
 	//
