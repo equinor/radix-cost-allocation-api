@@ -267,8 +267,6 @@
       "description": "ApplicationCostSet details of application cost set",
       "type": "object",
       "required": [
-        "from",
-        "to",
         "applicationCosts"
       ],
       "properties": {
@@ -329,9 +327,6 @@
   "security": [
     {
       "bearer": []
-    },
-    {
-      "token": []
     }
   ]
 }
