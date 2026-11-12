@@ -28,7 +28,7 @@ radixconfigs:
 # we also do make swagger inside Dockerfile
 .PHONY: swagger
 swagger: bootstrap
-	swagger generate spec -o ./swaggerui/html/swagger.json --scan-models --exclude-deps --exclude=github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/models
+	swagger generate spec -o ./swaggerui/html/swagger.json --scan-models --exclude=github.com/equinor/radix-cost-allocation-api/models/radix_api/generated_client/models
 	swagger validate ./swaggerui/html/swagger.json
 
 .PHONY: mocks
@@ -51,10 +51,10 @@ HAS_MOCKGEN       := $(shell command -v mockgen;)
 
 bootstrap:
 ifndef HAS_SWAGGER
-	go install github.com/go-swagger/go-swagger/cmd/swagger@v0.33.1
+	go install github.com/go-swagger/go-swagger/cmd/swagger@v0.36.4
 endif
 ifndef HAS_GOLANGCI_LINT
-	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.10.1
+	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0
 endif
 ifndef HAS_MOCKGEN
 	go install go.uber.org/mock/mockgen@v0.6.0
