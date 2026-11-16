@@ -26,9 +26,10 @@ spec:
       publicPort: http
       resources:
         requests:
-          memory: "1500Mi"
+          memory: "200Mi"
           cpu: "20m"
         limits:
+          memory: "200Mi"
           cpu: "1000m"
       monitoring: true
       monitoringConfig:
