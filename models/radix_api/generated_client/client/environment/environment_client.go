@@ -301,6 +301,8 @@ func (a *Client) ChangeComponentSecretContext(ctx context.Context, params *Chang
 
 // CreateEnvironment creates application environment.
 //
+// Requires application administrator access..
+//
 // This method does not support injected context.
 // However, timeout and opentracing contexts are honored whenever enabled.
 //
@@ -317,6 +319,8 @@ func (a *Client) CreateEnvironment(params *CreateEnvironmentParams, authInfo run
 }
 
 // CreateEnvironmentContext creates application environment.
+//
+// Requires application administrator access..
 //
 // Do not use the deprecated [CreateEnvironmentParams.Context] with this method: it would be ignored.
 func (a *Client) CreateEnvironmentContext(ctx context.Context, params *CreateEnvironmentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateEnvironmentOK, error) {
@@ -364,6 +368,8 @@ func (a *Client) CreateEnvironmentContext(ctx context.Context, params *CreateEnv
 
 // DeleteEnvironment deletes application environment.
 //
+// Requires application administrator access. Only orphaned environments can be deleted..
+//
 // This method does not support injected context.
 // However, timeout and opentracing contexts are honored whenever enabled.
 //
@@ -380,6 +386,8 @@ func (a *Client) DeleteEnvironment(params *DeleteEnvironmentParams, authInfo run
 }
 
 // DeleteEnvironmentContext deletes application environment.
+//
+// Requires application administrator access. Only orphaned environments can be deleted..
 //
 // Do not use the deprecated [DeleteEnvironmentParams.Context] with this method: it would be ignored.
 func (a *Client) DeleteEnvironmentContext(ctx context.Context, params *DeleteEnvironmentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteEnvironmentOK, error) {
