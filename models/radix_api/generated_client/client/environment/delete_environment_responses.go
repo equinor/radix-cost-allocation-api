@@ -29,6 +29,12 @@ func (o *DeleteEnvironmentReader) ReadResponse(response runtime.ClientResponse, 
 			return nil, err
 		}
 		return nil, result
+	case 403:
+		result := NewDeleteEnvironmentForbidden()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 404:
 		result := NewDeleteEnvironmentNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -144,6 +150,60 @@ func (o *DeleteEnvironmentUnauthorized) String() string {
 }
 
 func (o *DeleteEnvironmentUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	return nil
+}
+
+// NewDeleteEnvironmentForbidden creates a DeleteEnvironmentForbidden with default headers values
+func NewDeleteEnvironmentForbidden() *DeleteEnvironmentForbidden {
+	return &DeleteEnvironmentForbidden{}
+}
+
+// DeleteEnvironmentForbidden describes a response with status code 403, with default header values.
+//
+// Application administrator access required
+type DeleteEnvironmentForbidden struct {
+}
+
+// IsSuccess returns true when this delete environment forbidden response has a 2xx status code
+func (o *DeleteEnvironmentForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete environment forbidden response has a 3xx status code
+func (o *DeleteEnvironmentForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete environment forbidden response has a 4xx status code
+func (o *DeleteEnvironmentForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete environment forbidden response has a 5xx status code
+func (o *DeleteEnvironmentForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete environment forbidden response a status code equal to that given
+func (o *DeleteEnvironmentForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
+// Code gets the status code for the delete environment forbidden response
+func (o *DeleteEnvironmentForbidden) Code() int {
+	return 403
+}
+
+func (o *DeleteEnvironmentForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /applications/{appName}/environments/{envName}][%d] deleteEnvironmentForbidden", 403)
+}
+
+func (o *DeleteEnvironmentForbidden) String() string {
+	return fmt.Sprintf("[DELETE /applications/{appName}/environments/{envName}][%d] deleteEnvironmentForbidden", 403)
+}
+
+func (o *DeleteEnvironmentForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	return nil
 }

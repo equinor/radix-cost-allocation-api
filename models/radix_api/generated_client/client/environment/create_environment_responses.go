@@ -29,6 +29,12 @@ func (o *CreateEnvironmentReader) ReadResponse(response runtime.ClientResponse, 
 			return nil, err
 		}
 		return nil, result
+	case 403:
+		result := NewCreateEnvironmentForbidden()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	default:
 		return nil, runtime.NewAPIError("[POST /applications/{appName}/environments/{envName}] createEnvironment", response, response.Code())
 	}
@@ -138,6 +144,60 @@ func (o *CreateEnvironmentUnauthorized) String() string {
 }
 
 func (o *CreateEnvironmentUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	return nil
+}
+
+// NewCreateEnvironmentForbidden creates a CreateEnvironmentForbidden with default headers values
+func NewCreateEnvironmentForbidden() *CreateEnvironmentForbidden {
+	return &CreateEnvironmentForbidden{}
+}
+
+// CreateEnvironmentForbidden describes a response with status code 403, with default header values.
+//
+// Application administrator access required
+type CreateEnvironmentForbidden struct {
+}
+
+// IsSuccess returns true when this create environment forbidden response has a 2xx status code
+func (o *CreateEnvironmentForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create environment forbidden response has a 3xx status code
+func (o *CreateEnvironmentForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create environment forbidden response has a 4xx status code
+func (o *CreateEnvironmentForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create environment forbidden response has a 5xx status code
+func (o *CreateEnvironmentForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create environment forbidden response a status code equal to that given
+func (o *CreateEnvironmentForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
+// Code gets the status code for the create environment forbidden response
+func (o *CreateEnvironmentForbidden) Code() int {
+	return 403
+}
+
+func (o *CreateEnvironmentForbidden) Error() string {
+	return fmt.Sprintf("[POST /applications/{appName}/environments/{envName}][%d] createEnvironmentForbidden", 403)
+}
+
+func (o *CreateEnvironmentForbidden) String() string {
+	return fmt.Sprintf("[POST /applications/{appName}/environments/{envName}][%d] createEnvironmentForbidden", 403)
+}
+
+func (o *CreateEnvironmentForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	return nil
 }
