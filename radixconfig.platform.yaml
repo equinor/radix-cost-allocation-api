@@ -29,7 +29,7 @@ spec:
           memory: "1500Mi"
           cpu: "20m"
         limits:
-          memory: "3000Mi"
+          memory: "4000Mi"
           cpu: "1000m"
       monitoring: true
       monitoringConfig:
